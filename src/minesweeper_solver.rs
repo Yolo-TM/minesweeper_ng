@@ -8,7 +8,7 @@ use colored::Colorize;
 
 pub fn minesweeper_solver(field: MineSweeperField) {
 
-    let game = MinesweeperGame {
+    let mut game = MinesweeperGame {
         state: vec![vec![MineSweeperCellState::Hidden; field.width as usize]; field.height as usize],
         field: field,
         game_over: false,
@@ -32,4 +32,7 @@ pub fn minesweeper_solver(field: MineSweeperField) {
     }
 
     println!("Starting from cell: {:?}", empty_cell.unwrap());
+
+    game.reveal_field(empty_cell.unwrap().1, empty_cell.unwrap().0);
+    game.print();
 }

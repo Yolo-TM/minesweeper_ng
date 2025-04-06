@@ -88,7 +88,7 @@ impl MineSweeperField {
         /*
         Currently for testing purposes, but in the future a random seed will be used
         */
-        let seed: u64 = 42;
+        let seed: u64 = 40;
         let mut rng = StdRng::seed_from_u64(seed);
 
         while placed_mines < self.mines {
