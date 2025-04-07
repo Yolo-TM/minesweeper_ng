@@ -95,7 +95,7 @@ impl MinesweeperGame {
                     MineSweeperCellState::Revealed => match self.field.board[y][x] {
                         MineSweeperCell::Empty => print!("  "),
                         MineSweeperCell::Mine => print!("X "),
-                        MineSweeperCell::Number(n) => print!("{} ", n),
+                        MineSweeperCell::Number(n) => print!("{} ", self.field.get_colored_number(&n)),
                     },
                 }
             }

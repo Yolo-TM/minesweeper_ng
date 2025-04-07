@@ -63,7 +63,7 @@ impl MineSweeperField {
         }
     }
 
-    fn get_colored_number(&self, num: &u8) -> ColoredString {
+    pub fn get_colored_number(&self, num: &u8) -> ColoredString {
         match num {
             1 => "1".bright_blue(),
             2 => "2".green(),
@@ -136,4 +136,27 @@ impl MineSweeperField {
             }
         }
     }
+}
+
+pub fn get_ng_minesweeper_field() -> MineSweeperField {
+    let board = vec![vec![MineSweeperCell::Empty; 10 as usize]; 10 as usize];
+
+    let mut field = MineSweeperField{
+        width: 9,
+        height: 9,
+        mines: 10,
+        board,
+    };
+
+    let mine_positions = vec![
+        (0, 0), (0, 1), (1, 1), (4, 0), (3, 2),
+        (3, 3), (0, 5), (8, 5), (4, 7), (3, 8),
+    ];
+
+    for &(x, y) in &mine_positions {
+        field.board[y as usize][x as usize] = MineSweeperCell::Mine;
+    }
+
+    field.calculate_numbers();
+    field
 }
