@@ -9,24 +9,27 @@ pub enum MineSweeperCell {
     Number(u8),
 }
 
-#[derive(Clone, PartialEq)]
-pub enum MineSweeperCellState {
-    Hidden,
-    Revealed,
-    Flagged,
+impl MineSweeperCell {
+    pub fn get_number(&self) -> u8 {
+        match self {
+            MineSweeperCell::Empty => 0,
+            MineSweeperCell::Mine => 9,
+            MineSweeperCell::Number(num) => *num,
+        }
+    }
 }
 
 #[derive(Clone, PartialEq)]
 pub struct MineSweeperField {
-    pub width: u64,
-    pub height: u64,
+    pub width: usize,
+    pub height: usize,
     pub mines: u64,
     pub board: Vec<Vec<MineSweeperCell>>,
 }
 
 impl MineSweeperField {
-    pub fn new(width: u64, height: u64, mines: u64) -> Self {
-        let board = vec![vec![MineSweeperCell::Empty; width as usize]; height as usize];
+    pub fn new(width: usize, height: usize, mines: u64) -> Self {
+        let board = vec![vec![MineSweeperCell::Empty; height as usize]; width as usize];
 
         let mut field = MineSweeperField{
             width,
@@ -40,16 +43,16 @@ impl MineSweeperField {
         field
     }
 
-    pub fn new_percentage(width: u64, height: u64, mines: f32) -> Self {
+    pub fn new_percentage(width: usize, height: usize, mines: f32) -> Self {
         let mines = ((width * height) as f32 * mines).floor() as u64;
         Self::new(width, height, mines)
     }
 
     pub fn println(&self) {
         println!("Width: {}, Height: {}, Mines: {}", self.width, self.height, self.mines);
-        for row in &self.board {
-            for cell in row {
-                print!("{} ", self.get_colored_cell(cell));
+        for x in 0..self.width {
+            for y in 0..self.height {
+                print!("{} ", self.get_colored_cell(&self.board[x][y]));
             }
             println!();
         }
@@ -78,10 +81,9 @@ impl MineSweeperField {
     }
 
     fn create_mines(&mut self) {
-        // Randomly place mines on the board
         let mut placed_mines = 0;
 
-        if self.mines >= self.width * self.height {
+        if self.mines >= (self.width * self.height) as u64 {
             panic!("Too many mines for the given board size!");
         }
 
@@ -92,37 +94,35 @@ impl MineSweeperField {
         let mut rng = StdRng::seed_from_u64(seed);
 
         while placed_mines < self.mines {
-            let x = rng.random_range(0..u64::MAX) % self.width;
-            let y = rng.random_range(0..u64::MAX) % self.height;
+            let x = (rng.random_range(0..u64::MAX) % self.width as u64 ) as usize;
+            let y = (rng.random_range(0..u64::MAX) % self.height as u64 ) as usize;
 
-            if self.board[y as usize][x as usize] == MineSweeperCell::Empty {
-                self.board[y as usize][x as usize] = MineSweeperCell::Mine;
+            if self.board[x][y] == MineSweeperCell::Empty {
+                self.board[x][y] = MineSweeperCell::Mine;
                 placed_mines += 1;
             }
         }
     }
 
     fn calculate_numbers(&mut self) {
-        // Calculate the numbers for each cell based on the mines around it
-        for y in 0..self.height {
-            for x in 0..self.width {
-                if self.board[y as usize][x as usize] == MineSweeperCell::Mine {
-                    continue; // Skip mines
+        for x in 0..self.width {
+            for y in 0..self.height {
+                if self.board[x][y] == MineSweeperCell::Mine {
+                    continue;
                 }
 
                 let mut count = 0;
                 self.count_sourrounding_mines(&mut count, x, y);
                 if count != 0 {
-                    // Only set the cell if there are adjacent mines
-                    self.board[y as usize][x as usize] = MineSweeperCell::Number(count as u8);
+                    self.board[x][y] = MineSweeperCell::Number(count as u8);
                 }
             }
         }
     }
 
-    fn count_sourrounding_mines(&self, count: &mut u64, x: u64, y: u64) {
-        for dy in -1..=1 {
-            for dx in -1..=1 {
+    fn count_sourrounding_mines(&self, count: &mut u64, x: usize, y: usize) {
+        for dx in -1..=1 {
+            for dy in -1..=1 {
                 let nx = x as i64 + dx;
                 let ny = y as i64 + dy;
 
@@ -130,7 +130,7 @@ impl MineSweeperField {
                 && ny >= 0
                 && nx < self.width as i64
                 && ny < self.height as i64
-                && self.board[ny as usize][nx as usize] == MineSweeperCell::Mine {
+                && self.board[nx as usize][ny as usize] == MineSweeperCell::Mine {
                     *count += 1;
                 }
             }
@@ -142,43 +142,21 @@ pub fn get_ng_minesweeper_field() -> MineSweeperField {
     let board = vec![vec![MineSweeperCell::Empty; 10 as usize]; 10 as usize];
 
     let mut field = MineSweeperField{
-        width: 9,
-        height: 9,
+        width: 10,
+        height: 10,
         mines: 10,
         board,
     };
 
-    let mine_positions = vec![
-        (0, 0), (0, 1), (1, 1), (4, 0), (3, 2),
-        (3, 3), (0, 5), (8, 5), (4, 7), (3, 8),
+    let mine_positions: Vec<(usize, usize)> = vec![
+        (0, 0), (1, 0), (1, 1), (0, 4), (2, 3),
+        (3, 3), (5, 0), (5, 8), (7, 4), (8, 3),
     ];
 
     for &(x, y) in &mine_positions {
-        field.board[y as usize][x as usize] = MineSweeperCell::Mine;
+        field.board[x][y] = MineSweeperCell::Mine;
     }
 
     field.calculate_numbers();
     field
-}
-
-impl MineSweeperCell {
-    pub fn is_empty(&self) -> bool {
-        matches!(self, MineSweeperCell::Empty)
-    }
-
-    pub fn is_mine(&self) -> bool {
-        matches!(self, MineSweeperCell::Mine)
-    }
-
-    pub fn is_number(&self) -> bool {
-        matches!(self, MineSweeperCell::Number(_))
-    }
-
-    pub fn get_number(&self) -> Option<u8> {
-        if let MineSweeperCell::Number(num) = self {
-            Some(*num)
-        } else {
-            None
-        }
-    }
 }
