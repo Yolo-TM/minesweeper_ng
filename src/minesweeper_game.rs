@@ -58,7 +58,7 @@ impl MinesweeperGame {
         }
     }
 
-    fn reveal_surrounding_cells(&mut self, x: usize, y: usize) {
+    pub fn reveal_surrounding_cells(&mut self, x: usize, y: usize) {
         for i in -1..=1 {
             for j in -1..=1 {
                 let new_x = (x as isize + j) as usize;
@@ -72,7 +72,21 @@ impl MinesweeperGame {
         }
     }
 
-    fn get_surrounding_flag_count(&self, x: usize, y: usize) -> u8 {
+    pub fn flag_surrounding_cells(&mut self, x: usize, y: usize) {
+        for i in -1..=1 {
+            for j in -1..=1 {
+                let new_x = (x as isize + j) as usize;
+                let new_y = (y as isize + i) as usize;
+                if new_x < self.field.width as usize && new_y < self.field.height as usize {
+                    if self.state[new_y][new_x] == MineSweeperCellState::Hidden {
+                        self.flag_cell(new_x, new_y);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn get_surrounding_flag_count(&self, x: usize, y: usize) -> u8 {
         let mut count = 0;
         for i in -1..=1 {
             for j in -1..=1 {
@@ -86,6 +100,47 @@ impl MinesweeperGame {
             }
         }
         count
+    }
+
+    pub fn has_unrevealed_neighbours(&self, x: usize, y: usize) -> bool {
+        for i in -1..=1 {
+            for j in -1..=1 {
+                let new_x = (x as isize + j) as usize;
+                let new_y = (y as isize + i) as usize;
+                if new_x < self.field.width as usize && new_y < self.field.height as usize {
+                    if self.state[new_y][new_x] == MineSweeperCellState::Hidden {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    pub fn get_surrounding_unrevealed_count(&self, x: usize, y: usize) -> u8 {
+        let mut count = 0;
+        for i in -1..=1 {
+            for j in -1..=1 {
+                let new_x = (x as isize + j) as usize;
+                let new_y = (y as isize + i) as usize;
+                if new_x < self.field.width as usize && new_y < self.field.height as usize {
+                    if self.state[new_y][new_x] == MineSweeperCellState::Hidden {
+                        count += 1;
+                    }
+                }
+            }
+        }
+        count
+    }
+
+    pub fn flag_all_hidden_cells(&mut self) {
+        for y in 0..self.field.height as usize {
+            for x in 0..self.field.width as usize {
+                if self.state[y][x] == MineSweeperCellState::Hidden {
+                    self.flag_cell(x, y);
+                }
+            }
+        }
     }
 
     pub fn flag_cell(&mut self, x: usize, y: usize) {

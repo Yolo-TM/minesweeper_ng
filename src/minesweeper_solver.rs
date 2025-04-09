@@ -40,10 +40,10 @@ pub fn minesweeper_solver(field: MineSweeperField) {
 }
 
 fn get_empty_cell(field: &MineSweeperField) -> Option<(usize, usize)> {
-    for (i, row) in field.board.iter().enumerate() {
-        for (j, cell) in row.iter().enumerate() {
+    for (y, row) in field.board.iter().enumerate() {
+        for (x, cell) in row.iter().enumerate() {
             if *cell == MineSweeperCell::Empty {
-                return Some((j, i));
+                return Some((x, y));
             }
         }
     }
@@ -67,18 +67,26 @@ fn solver_recursive(mut game: MinesweeperGame, mut step_count: u64) -> SolverSol
     step_count += 1;
 
     if check_game_state(&game) {
+        game.flag_all_hidden_cells();
         return SolverSolution::FoundSolution(game);
     }
 
-    for (i, row) in game.state.iter().enumerate() {
-        for (j, cell) in row.iter().enumerate() {
-            if *cell == MineSweeperCellState::Revealed
-                && matches!(game.field.board[i][j], MineSweeperCell::Number(_))
-                && has_unrevealed_neighbours(i, j, &game) {
-                let flag_count = game.get_surrounding_flag_count(j, i);
-                let number = game.field.board[i][j].get_number().unwrap_or(0);
-                let unrevealed_count = game.get_surrounding_unrevealed_count(j, i);
-                
+    for y in 0..game.field.height as usize {
+        for x in 0..game.field.width as usize {
+            if game.state[y][x] == MineSweeperCellState::Revealed
+            && matches!(game.field.board[y][x], MineSweeperCell::Number(_))
+            && game.has_unrevealed_neighbours(x, y) {
+                let flag_count = game.get_surrounding_flag_count(x, y);
+                let number = game.field.board[y][x].get_number().unwrap_or(0);
+                let unrevealed_count = game.get_surrounding_unrevealed_count(x, y);
+
+                let needed_mines = number - flag_count as u8;
+                if needed_mines == unrevealed_count {
+                    game.flag_surrounding_cells(x, y);
+                }
+                if needed_mines == 0 {
+                    game.reveal_surrounding_cells(x, y);
+                }
             }
         }
     }
@@ -97,25 +105,9 @@ fn check_game_state(game: &MinesweeperGame) -> bool {
             return true;
     }
     if game.flag_count + game.hidden_count == game.field.mines {
-            println!("All cells revealed and all mines flagged. Game solved!");
+            println!("All non mine cells revealed and all mines flagged. Game solved!");
             return true;
     }
 
     return false
-}
-
-fn has_unrevealed_neighbours(y: usize, x: usize, game: &MinesweeperGame) -> bool {
-    for i in -1..=1 {
-        for j in -1..=1 {
-            let new_x = (x as isize + j) as usize;
-            let new_y = (y as isize + i) as usize;
-            if new_x < game.field.width as usize && new_y < game.field.height as usize {
-                if game.state[new_y][new_x] == MineSweeperCellState::Hidden {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
 }
