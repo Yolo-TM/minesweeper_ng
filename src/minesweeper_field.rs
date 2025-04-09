@@ -160,3 +160,25 @@ pub fn get_ng_minesweeper_field() -> MineSweeperField {
     field.calculate_numbers();
     field
 }
+
+impl MineSweeperCell {
+    pub fn is_empty(&self) -> bool {
+        matches!(self, MineSweeperCell::Empty)
+    }
+
+    pub fn is_mine(&self) -> bool {
+        matches!(self, MineSweeperCell::Mine)
+    }
+
+    pub fn is_number(&self) -> bool {
+        matches!(self, MineSweeperCell::Number(_))
+    }
+
+    pub fn get_number(&self) -> Option<u8> {
+        if let MineSweeperCell::Number(num) = self {
+            Some(*num)
+        } else {
+            None
+        }
+    }
+}

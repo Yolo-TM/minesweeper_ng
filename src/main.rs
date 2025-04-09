@@ -4,9 +4,9 @@ mod minesweeper_game;
 use minesweeper_field::{MineSweeperField, get_ng_minesweeper_field};
 
 fn main() {
-    //let field = MineSweeperField::new(10, 10, 20);
-    //field.println();
-    //println!();
+    let field = MineSweeperField::new_percentage(10, 10, 0.2);
+    field.println();
+    println!();
 
     let field2 = get_ng_minesweeper_field();
     field2.println();
