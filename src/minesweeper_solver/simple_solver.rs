@@ -1,5 +1,5 @@
 use core::panic;
-
+use std::thread;
 use colored::Colorize;
 use crate::minesweeper_field::{
     MineSweeperField,
@@ -222,18 +222,26 @@ pub fn simple_minesweeper_solver(field: MineSweeperField) {
     println!("\nSolving the field...");
     println!("Width: {}, Height: {}, Mines: {}", game.field.width.to_string().green(), game.field.height.to_string().green(), game.field.mines.to_string().red());
 
-    let mut step_count: u64 = 0;
-    let empty_cell = game.get_empty_cell();
-    game.reveal_field(empty_cell.0, empty_cell.1);
 
-    match solver_recursive(game, &mut step_count) {
-        SolverSolution::NoSolution => {
-            println!("No solution found. Stopped after {} steps.", step_count.to_string().red());
+    let handle = thread::Builder::new()
+    .stack_size(32 * 1024 * 1024) // 32 MB
+    .spawn(|| {
+        let mut step_count: u64 = 0;
+        let empty_cell = game.get_empty_cell();
+        game.reveal_field(empty_cell.0, empty_cell.1);
+
+        match solver_recursive(game, &mut step_count) {
+            SolverSolution::NoSolution => {
+                println!("No solution found. Stopped after {} steps.", step_count.to_string().red());
+            }
+            SolverSolution::FoundSolution => {
+                println!("Found a solution after {} steps.", step_count.to_string().green());
+            }
         }
-        SolverSolution::FoundSolution => {
-            println!("Found a solution after {} steps.", step_count.to_string().green());
-        }
-    }
+    })
+    .expect("Thread spawn failed");
+
+    handle.join().unwrap();
 }
 
 fn solver_recursive(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {

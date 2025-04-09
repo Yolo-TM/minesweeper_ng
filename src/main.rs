@@ -12,7 +12,7 @@ fn main() {
     println!();
     println!();
 
-    let field = MineSweeperField::new_percentage(10, 10, 0.2);
+    let field = MineSweeperField::new_percentage(100, 100, 0.2);
     field.println();
     simple_minesweeper_solver(field);
 }
