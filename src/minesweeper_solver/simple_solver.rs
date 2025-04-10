@@ -200,7 +200,7 @@ impl MineSweeperSolver {
                     let flag_count = self.get_surrounding_flag_count(x, y);
                     let number = self.field.board[x][y].get_number();
                     let unrevealed_count = self.get_surrounding_unrevealed_count(x, y);
-    
+
                     let needed_mines = number - flag_count;
                     if needed_mines == unrevealed_count {
                         self.flag_surrounding_cells(x, y);
@@ -216,12 +216,10 @@ impl MineSweeperSolver {
 
 
 pub fn simple_minesweeper_solver(field: MineSweeperField) {
-
     let mut game = MineSweeperSolver::new(field);
 
     println!("\nSolving the field...");
     println!("Width: {}, Height: {}, Mines: {}", game.field.width.to_string().green(), game.field.height.to_string().green(), game.field.mines.to_string().red());
-
 
     let handle = thread::Builder::new()
     .stack_size(32 * 1024 * 1024) // 32 MB
@@ -230,7 +228,7 @@ pub fn simple_minesweeper_solver(field: MineSweeperField) {
         let empty_cell = game.get_empty_cell();
         game.reveal_field(empty_cell.0, empty_cell.1);
 
-        match solver_recursive(game, &mut step_count) {
+        match solver(game, &mut step_count) {
             SolverSolution::NoSolution => {
                 println!("No solution found. Stopped after {} steps.", step_count.to_string().red());
             }
@@ -244,28 +242,27 @@ pub fn simple_minesweeper_solver(field: MineSweeperField) {
     handle.join().unwrap();
 }
 
-fn solver_recursive(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
-    (*step_count) += 1;
-    println!("Solving Step: {}", step_count.to_string().green());
-    game.print();
+fn solver(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
 
-    if (*step_count) >= 10 {
-        return SolverSolution::NoSolution;
-    }
-
-    if game.hidden_count == 0 {
-        println!("All cells revealed. Game solved!");
-        return SolverSolution::FoundSolution;
-    }
-
-    if (game.flag_count + game.hidden_count) == game.field.mines {
-        println!("All non mine cells revealed and all mines flagged. Game solved!");
-        game.flag_all_hidden_cells();
+    while (*step_count) < 10 {
+        (*step_count) += 1;
+        println!("Solving Step: {}", step_count.to_string().green());
         game.print();
-        return SolverSolution::FoundSolution;
+
+        if game.hidden_count == 0 {
+            println!("All cells revealed. Game solved!");
+            return SolverSolution::FoundSolution;
+        }
+
+        if (game.flag_count + game.hidden_count) == game.field.mines {
+            println!("All non mine cells revealed and all mines flagged. Game solved!");
+            game.flag_all_hidden_cells();
+            game.print();
+            return SolverSolution::FoundSolution;
+        }
+
+        game.do_solving_step();
     }
 
-    game.do_solving_step();
-
-    return solver_recursive(game, step_count);
+    return SolverSolution::NoSolution;
 }
