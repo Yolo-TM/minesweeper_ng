@@ -79,7 +79,7 @@ impl MineSweeperSolver {
             None => {} // Nothing found, do more complex research
         }
 
-        match self.apply_box_logic() {
+        match self.apply_basic_box_logic() {
             Some(_) => {
                 // Found something with box logic, go to next step
                 println!("Revealed or Flagged Fields based on box logic.");
@@ -268,7 +268,7 @@ impl MineSweeperSolver {
     }
 
 
-    fn apply_box_logic(&mut self) -> Option<()> {
+    fn apply_basic_box_logic(&mut self) -> Option<()> {
         let mut did_something = false;
 
         for x in 0..self.field.width {
@@ -348,9 +348,7 @@ impl MineSweeperSolver {
             return None;
         }
     }
-
 }
-
 
 pub fn minesweeper_solver(field: MineSweeperField) {
     let mut game = MineSweeperSolver::new(field);
