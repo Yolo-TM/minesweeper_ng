@@ -50,8 +50,8 @@ impl MineSweeperField {
 
     pub fn println(&self) {
         println!("Width: {}, Height: {}, Mines: {}", self.width, self.height, self.mines);
-        for x in 0..self.width {
-            for y in 0..self.height {
+        for y in 0..self.height {
+            for x in 0..self.width {
                 print!("{} ", self.get_colored_cell(&self.board[x][y]));
             }
             println!();
