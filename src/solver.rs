@@ -5,10 +5,18 @@ use crate::minesweeper_field::{
     MineSweeperField,
     MineSweeperCell,
 };
-use crate::minesweeper_solver::{
-    SolverSolution,
-    MineSweeperCellState,
-};
+
+enum SolverSolution {
+    NoSolution,
+    FoundSolution,
+}
+
+#[derive(Clone, PartialEq)]
+pub enum MineSweeperCellState {
+    Hidden,
+    Revealed,
+    Flagged,
+}
 
 #[derive(Clone, PartialEq)]
 pub struct MineSweeperSolver{
@@ -61,8 +69,29 @@ impl MineSweeperSolver {
         panic!("No empty cell found on this game.");
     }
 
-    pub fn do_solving_step(&mut self) {
-        self.do_basic_neighbour_check();
+    pub fn do_solving_step(&mut self) -> Option<()>{
+        match self.do_basic_neighbour_check(){
+            Some(_) => {
+                // Found something with basic logic, go to next step
+                println!("Revealed or Flagged Fields based on basic count logic.");
+                return Some(());
+            },
+            None => {} // Nothing found, do more complex research
+        }
+
+        match self.apply_box_logic() {
+            Some(_) => {
+                // Found something with box logic, go to next step
+                println!("Revealed or Flagged Fields based on box logic.");
+                return Some(());
+            },
+            None => {} // Nothing found, do more complex research
+        }
+        None
+    }
+
+    fn apply_box_logic(&mut self) -> Option<()> {
+        None
     }
 
     pub fn flag_all_hidden_cells(&mut self) {
@@ -191,7 +220,9 @@ impl MineSweeperSolver {
         count
     }
 
-    fn do_basic_neighbour_check(&mut self) {
+    fn do_basic_neighbour_check(&mut self) -> Option<()> {
+        let mut did_something = false;
+
         for x in 0..self.field.width {
             for y in 0..self.field.height {
                 if self.state[x][y] == MineSweeperCellState::Revealed
@@ -204,18 +235,26 @@ impl MineSweeperSolver {
                     let needed_mines = number - flag_count;
                     if needed_mines == unrevealed_count {
                         self.flag_surrounding_cells(x, y);
+                        did_something = true;
                     }
                     if needed_mines == 0 {
                         self.reveal_surrounding_cells(x, y);
+                        did_something = true;
                     }
                 }
             }
+        }
+
+        if did_something {
+            return Some(());
+        } else {
+            return None;
         }
     }
 }
 
 
-pub fn simple_minesweeper_solver(field: MineSweeperField) {
+pub fn minesweeper_solver(field: MineSweeperField) {
     let mut game = MineSweeperSolver::new(field);
 
     println!("\nSolving the field...");
@@ -243,8 +282,9 @@ pub fn simple_minesweeper_solver(field: MineSweeperField) {
 }
 
 fn solver(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
+    let mut nothing_count = 0;
 
-    while (*step_count) < 10 {
+    loop {
         (*step_count) += 1;
         println!("Solving Step: {}", step_count.to_string().green());
         game.print();
@@ -261,7 +301,18 @@ fn solver(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
             return SolverSolution::FoundSolution;
         }
 
-        game.do_solving_step();
+        match game.do_solving_step() {
+            Some(_) => {
+                nothing_count = 0;
+            },
+            None => {
+                nothing_count += 1;
+                if nothing_count > 3 {
+                    println!("Nothing found in 3 steps. Stopping solver.");
+                    return SolverSolution::NoSolution;
+                }
+            }
+        }
     }
 
     return SolverSolution::NoSolution;

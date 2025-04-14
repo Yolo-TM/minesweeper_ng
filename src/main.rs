@@ -1,18 +1,15 @@
 mod minesweeper_field;
-mod minesweeper_solver;
+mod solver;
 
-use minesweeper_solver::simple_solver::simple_minesweeper_solver;
+use solver::minesweeper_solver;
 use minesweeper_field::{MineSweeperField, get_ng_minesweeper_field};
 
 fn main() {
-    let field2 = get_ng_minesweeper_field();
-    field2.println();
-    simple_minesweeper_solver(field2);
-
-    println!();
-    println!();
-
-    let field = MineSweeperField::new_percentage(100, 100, 0.2);
+    let field = get_ng_minesweeper_field();
     field.println();
-    simple_minesweeper_solver(field);
+    minesweeper_solver(field);
+
+    let field2 = MineSweeperField::new_percentage(16, 16, 0.2);
+    field2.println();
+    minesweeper_solver(field2);
 }
