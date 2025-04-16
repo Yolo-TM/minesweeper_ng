@@ -73,20 +73,26 @@ impl MineSweeperSolver {
     pub fn do_solving_step(&mut self) -> Option<()>{
         match self.do_basic_neighbour_check(){
             Some(_) => {
-                // Found something with basic logic, go to next step
                 println!("Revealed or Flagged Fields based on basic count logic.");
                 return Some(());
             },
-            None => {} // Nothing found, do more complex research
+            None => {}
         }
 
         match self.apply_basic_box_logic() {
             Some(_) => {
-                // Found something with box logic, go to next step
                 println!("Revealed or Flagged Fields based on box logic.");
                 return Some(());
             },
-            None => {} // Nothing found, do more complex research
+            None => {}
+        }
+
+        match self.apply_extended_box_logic() {
+            Some(_) => {
+                println!("Revealed or Flagged Fields based on extended box logic.");
+                return Some(());
+            },
+            None => {}
         }
         None
     }
@@ -124,9 +130,9 @@ impl MineSweeperSolver {
         }
     }
 
-    fn flag_cell(&mut self, x: usize, y: usize) {
+    fn flag_cell(&mut self, x: usize, y: usize) -> bool{
         if self.state[x][y] == MineSweeperCellState::Revealed {
-            return;
+            return false;
         }
 
         if self.state[x][y] == MineSweeperCellState::Flagged {
@@ -134,17 +140,22 @@ impl MineSweeperSolver {
             self.flag_count -= 1;
             self.hidden_count += 1;
             self.remaining_mines += 1;
+            return false;
         } else {
             self.state[x][y] = MineSweeperCellState::Flagged;
             self.flag_count += 1;
             self.hidden_count -= 1;
             self.remaining_mines -= 1;
+            return true;
         }
     }
 
     fn reveal_surrounding_cells(&mut self, x: usize, y: usize) {
         for i in -1..=1 {
             for j in -1..=1 {
+                if x as isize + j < 0 || y as isize + i < 0 {
+                    continue;
+                }
                 let new_x = (x as isize + j) as usize;
                 let new_y = (y as isize + i) as usize;
                 if new_x < self.field.width && new_y < self.field.height {
@@ -159,6 +170,9 @@ impl MineSweeperSolver {
     fn flag_surrounding_cells(&mut self, x: usize, y: usize) {
         for i in -1..=1 {
             for j in -1..=1 {
+                if x as isize + j < 0 || y as isize + i < 0 {
+                    continue;
+                }
                 let new_x = (x as isize + j) as usize;
                 let new_y = (y as isize + i) as usize;
                 if new_x < self.field.width && new_y < self.field.height {
@@ -173,6 +187,9 @@ impl MineSweeperSolver {
     fn has_unrevealed_neighbours(&self, x: usize, y: usize) -> bool {
         for i in -1..=1 {
             for j in -1..=1 {
+                if x as isize + j < 0 || y as isize + i < 0 {
+                    continue;
+                }
                 let new_x = (x as isize + j) as usize;
                 let new_y = (y as isize + i) as usize;
                 if new_x < self.field.width && new_y < self.field.height {
@@ -189,6 +206,9 @@ impl MineSweeperSolver {
         let mut count = 0;
         for i in -1..=1 {
             for j in -1..=1 {
+                if x as isize + j < 0 || y as isize + i < 0 {
+                    continue;
+                }
                 let new_x = (x as isize + j) as usize;
                 let new_y = (y as isize + i) as usize;
                 if new_x < self.field.width && new_y < self.field.height {
@@ -205,6 +225,9 @@ impl MineSweeperSolver {
         let mut count = 0;
         for i in -1..=1 {
             for j in -1..=1 {
+                if x as isize + j < 0 || y as isize + i < 0 {
+                    continue;
+                }
                 let new_x = (x as isize + j) as usize;
                 let new_y = (y as isize + i) as usize;
                 if new_x < self.field.width as usize && new_y < self.field.height as usize {
@@ -221,6 +244,9 @@ impl MineSweeperSolver {
         let mut hidden = vec![];
         for i in -1..=1 {
             for j in -1..=1 {
+                if x as isize + j < 0 || y as isize + i < 0 {
+                    continue;
+                }
                 let new_x = (x as isize + j) as usize;
                 let new_y = (y as isize + i) as usize;
                 if new_x < self.field.width as usize && new_y < self.field.height as usize {
@@ -283,10 +309,13 @@ impl MineSweeperSolver {
                     // Check surrounding numbers if they are solvable with this extra informations
                     for dx in -5..5 {
                         for dy in -5..5 {
+                            if x as isize + dx < 0 || y as isize + dy < 0 {
+                                continue;
+                            }
                             let new_x = (x as isize + dx) as usize;
                             let new_y = (y as isize + dy) as usize;
 
-                            if new_x < self.field.width && new_y < self.field.height && new_x >= 0 && new_y >= 0
+                            if new_x < self.field.width && new_y < self.field.height
                             && (new_x != x || new_y != y)
                             && self.state[new_x][new_y] == MineSweeperCellState::Revealed
                             && matches!(self.field.board[new_x][new_y], MineSweeperCell::Number(_))
@@ -351,10 +380,91 @@ impl MineSweeperSolver {
     }
 
     fn apply_extended_box_logic(&mut self) -> Option<()> {
-        None
+        let mut did_something = false;
+        let mut boxes: Vec<Box> = vec![];
+
+        for x in 0..self.field.width {
+            for y in 0..self.field.height {
+                if self.state[x][y] == MineSweeperCellState::Revealed
+                && matches!(self.field.board[x][y], MineSweeperCell::Number(_))
+                && self.has_unrevealed_neighbours(x, y) {
+                    let mut new_box = Box::new(x, y, self.get_reduced_count(x, y));
+                    let surrounding_hidden_fields = self.get_surrounding_unrevealed(x, y);
+                    for cell in &surrounding_hidden_fields {
+                        new_box.add_field(cell.0, cell.1);
+                    }
+                    boxes.push(new_box);
+                }
+            }
+        }
+
+        let mut reduced_boxes: Vec<Box> = vec![];
+        for box_a in &boxes {
+            let mines_a = box_a.get_mine_count();
+            for box_b in &boxes {
+                if box_a.is_owner(box_b.owner.0, box_b.owner.1) {
+                    continue;
+                }
+                if !box_a.is_neighbouring(box_b.owner.0, box_b.owner.1) {
+                    continue
+                }
+
+                let (shared, this_only, other_only) = box_a.compare_to(box_b);
+                let mines_b = box_b.get_mine_count();
+                let mine_diff: i8 = mines_a as i8 - mines_b as i8;
+
+                if mine_diff >= shared.len() as i8 {
+                    continue
+                }
+
+                if mine_diff == 0 {
+                    if this_only.len() == 0 {
+                        other_only.iter().for_each(|cell| {
+                            self.reveal_field(cell.0, cell.1);
+                            did_something = true;
+                        });
+                    } else if other_only.len() == 0 {
+                        this_only.iter().for_each(|cell| {
+                            self.reveal_field(cell.0, cell.1);
+                            did_something = true;
+                        });
+                    }
+                } else if mine_diff > 0 {
+                    if mine_diff == this_only.len() as i8 {
+                        this_only.iter().for_each(|cell| {
+                            let flag_placed = self.flag_cell(cell.0, cell.1);
+                            // bug, there should always be a flag placed here but somehow it is not
+                            did_something = flag_placed;
+                        });
+
+                        other_only.iter().for_each(|cell| {
+                            self.reveal_field(cell.0, cell.1);
+                            did_something = true;
+                        });
+                    } else {
+                        let mut new_box = Box::new(box_a.owner.0, box_a.owner.1, mine_diff as u8);
+                        for cell in &this_only {
+                            new_box.add_field(cell.0, cell.1);
+                        }
+
+                        reduced_boxes.push(box_b.clone());
+                        reduced_boxes.push(new_box);
+                    }
+                }
+            }
+        }
+
+        
+
+        if did_something {
+            return Some(());
+        } else {
+            return None;
+        }
     }
 }
 
+#[derive(Debug, Clone)]
 struct Box{
     fields: Vec<(usize, usize)>,
     owner: (usize, usize),
@@ -362,11 +472,11 @@ struct Box{
 }
 
 impl Box{
-    fn new(x: usize, y: usize) -> Self {
+    fn new(x: usize, y: usize, mines: u8) -> Self {
         Box {
             fields: vec![],
             owner: (x, y),
-            mines: 0,
+            mines: mines,
         }
     }
 
@@ -387,23 +497,29 @@ impl Box{
         return self.owner.0 == x && self.owner.1 == y
     }
 
-    fn get_neighbouring_numbers(&self, minesweeper_field: &MineSweeperSolver) -> Vec<(usize, usize, u8)> {
-        let mut surrounding_numbers = HashSet::new();
-        
+    fn get_mine_count(&self) -> u8 {
+        return self.mines;
+    }
+
+    fn compare_to(&self, other: &Box) -> (Vec<(usize, usize)>, Vec<(usize, usize)>, Vec<(usize, usize)>) {
+        let mut shared: Vec<(usize, usize)> = vec![];
+        let mut this_only = vec![];
+        let mut other_only = vec![];
+
         for field in &self.fields {
-            let x = field.0;
-            let y = field.1;
-            if minesweeper_field.state[x][y] == MineSweeperCellState::Revealed {
-                match minesweeper_field.field.board[x][y] {
-                    MineSweeperCell::Number(n) => {
-                        surrounding_numbers.insert((x, y, n));
-                    },
-                    _ => {}
-                }
+            if !other.fields.contains(field) {
+                this_only.push(*field);
+            } else {
+                shared.push(*field);
+            }
+        }
+        for field in &other.fields {
+            if !self.fields.contains(field) {
+                other_only.push(*field);
             }
         }
 
-        return surrounding_numbers.into_iter().collect();
+        (shared, this_only, other_only)
     }
 }
 
