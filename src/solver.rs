@@ -1,6 +1,5 @@
-use core::panic;
 use std::thread;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use colored::Colorize;
 use crate::minesweeper_field::{
     MineSweeperField,
@@ -428,6 +427,8 @@ impl MineSweeperSolver {
                             self.reveal_field(cell.0, cell.1);
                             did_something = true;
                         });
+                    } else {
+                        reduced_boxes.push(box_a.clone());
                     }
                 } else if mine_diff > 0 {
                     if mine_diff == this_only.len() as i8 {
@@ -454,7 +455,30 @@ impl MineSweeperSolver {
             }
         }
 
-        
+        // Deduplicating the boxes
+        let mut box_map: HashMap<(usize, usize), Box> = HashMap::new();
+
+        for _box in reduced_boxes {
+            let key = (_box.owner.0, _box.owner.1);
+            if !box_map.contains_key(&key) {
+                box_map.insert(key, _box);
+            } else {
+                let existing_box = box_map.get(&key).unwrap();
+
+                if existing_box.fields.len() > _box.fields.len() {
+                    box_map.insert(key, _box);
+                }
+            }
+        }
+
+        println!("Reduced Boxes: {}", box_map.len());
+
+        for bbox in &boxes {
+            let key = (bbox.owner.0, bbox.owner.1);
+            if !box_map.contains_key(&key) {
+                println!("Box not found in reduced boxes: {:?}", bbox);
+            }
+        }
 
         if did_something {
             return Some(());
@@ -464,7 +488,7 @@ impl MineSweeperSolver {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Box{
     fields: Vec<(usize, usize)>,
     owner: (usize, usize),
@@ -576,7 +600,7 @@ fn solver(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
             },
             None => {
                 nothing_count += 1;
-                if nothing_count > 3 {
+                if nothing_count >= 3 {
                     println!("Nothing found in 3 steps. Stopping solver.");
                     game.print();
                     return SolverSolution::NoSolution;
