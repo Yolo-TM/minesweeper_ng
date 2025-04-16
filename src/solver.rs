@@ -1,5 +1,6 @@
 use core::panic;
 use std::thread;
+use std::collections::HashSet;
 use colored::Colorize;
 use crate::minesweeper_field::{
     MineSweeperField,
@@ -347,6 +348,62 @@ impl MineSweeperSolver {
         } else {
             return None;
         }
+    }
+
+    fn apply_extended_box_logic(&mut self) -> Option<()> {
+        None
+    }
+}
+
+struct Box{
+    fields: Vec<(usize, usize)>,
+    owner: (usize, usize),
+    mines: u8,
+}
+
+impl Box{
+    fn new(x: usize, y: usize) -> Self {
+        Box {
+            fields: vec![],
+            owner: (x, y),
+            mines: 0,
+        }
+    }
+
+    fn add_field(&mut self, x: usize, y: usize) {
+        self.fields.push((x, y));
+    }
+
+    fn is_neighbouring(&self, x: usize, y: usize) -> bool {
+        for field in &self.fields {
+            if (field.0 as isize - x as isize).abs() <= 1 && (field.1 as isize - y as isize).abs() <= 1 {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn is_owner(&self, x: usize, y: usize) -> bool {
+        return self.owner.0 == x && self.owner.1 == y
+    }
+
+    fn get_neighbouring_numbers(&self, minesweeper_field: &MineSweeperSolver) -> Vec<(usize, usize, u8)> {
+        let mut surrounding_numbers = HashSet::new();
+        
+        for field in &self.fields {
+            let x = field.0;
+            let y = field.1;
+            if minesweeper_field.state[x][y] == MineSweeperCellState::Revealed {
+                match minesweeper_field.field.board[x][y] {
+                    MineSweeperCell::Number(n) => {
+                        surrounding_numbers.insert((x, y, n));
+                    },
+                    _ => {}
+                }
+            }
+        }
+
+        return surrounding_numbers.into_iter().collect();
     }
 }
 
