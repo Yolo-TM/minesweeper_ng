@@ -1,15 +1,18 @@
-mod minesweeper_field;
-mod solver;
+#![cfg_attr(debug_assertions, allow(dead_code))]
 
-use solver::minesweeper_solver;
-use minesweeper_field::{MineSweeperField, get_ng_minesweeper_field};
+mod ng_generator;
+mod field_generator;
+
+use field_generator::minesweeper_field;
+use ng_generator::minesweeper_solver;
+use ng_generator::get_evil_field;
 
 fn main() {
-    let field2 = MineSweeperField::new_percentage(45, 26, 0.22);
-    field2.println();
-    minesweeper_solver(field2);
+    let field = minesweeper_field(45, 26, 0.22);
+    field.print();
+    minesweeper_solver(field);
 
-    let ng_field = get_ng_minesweeper_field();
-    ng_field.println();
+    let ng_field = get_evil_field();
+    ng_field.print();
     minesweeper_solver(ng_field);
 }

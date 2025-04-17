@@ -1,10 +1,9 @@
 use std::thread;
 use std::collections::HashMap;
 use colored::Colorize;
-use crate::minesweeper_field::{
-    MineSweeperField,
-    MineSweeperCell,
-};
+use crate::field_generator::minesweeper_field::MineSweeperField;
+use crate::field_generator::minesweeper_cell::MineSweeperCell;
+use super::boxes::Box;
 
 enum SolverSolution {
     NoSolution,
@@ -12,14 +11,14 @@ enum SolverSolution {
 }
 
 #[derive(Clone, PartialEq)]
-pub enum MineSweeperCellState {
+enum MineSweeperCellState {
     Hidden,
     Revealed,
     Flagged,
 }
 
-#[derive(Clone, PartialEq)]
-pub struct MineSweeperSolver{
+#[derive(Clone)]
+struct MineSweeperSolver{
     pub field: MineSweeperField,
     pub state: Vec<Vec<MineSweeperCellState>>,
     pub flag_count: u64,
@@ -40,7 +39,7 @@ impl MineSweeperSolver {
         }
     }
 
-    pub fn print(&self) {
+    fn print(&self) {
         for y in 0..self.field.height {
             for x in 0..self.field.width {
                 match self.state[x][y] {
@@ -49,7 +48,7 @@ impl MineSweeperSolver {
                     MineSweeperCellState::Revealed => match self.field.board[x][y] {
                         MineSweeperCell::Empty => print!("  "),
                         MineSweeperCell::Mine => print!("{} ", "X".red()),
-                        MineSweeperCell::Number(n) => print!("{} ", self.field.get_colored_number(&n)),
+                        MineSweeperCell::Number(_n) => print!("{} ", self.field.board[x][y].get_colored()),
                     },
                 }
             }
@@ -57,7 +56,7 @@ impl MineSweeperSolver {
         }
     }
 
-    pub fn get_empty_cell(&self) -> (usize, usize) {
+    fn get_empty_cell(&self) -> (usize, usize) {
         for x in 0..self.field.width {
             for y in 0..self.field.height {
                 if self.field.board[x][y] == MineSweeperCell::Empty {
@@ -69,7 +68,7 @@ impl MineSweeperSolver {
         panic!("No empty cell found on this game.");
     }
 
-    pub fn do_solving_step(&mut self) -> Option<()>{
+    fn do_solving_step(&mut self) -> Option<()>{
         match self.do_basic_neighbour_check(){
             Some(_) => {
                 println!("Revealed or Flagged Fields based on basic count logic.");
@@ -96,7 +95,7 @@ impl MineSweeperSolver {
         None
     }
 
-    pub fn flag_all_hidden_cells(&mut self) {
+    fn flag_all_hidden_cells(&mut self) {
         for x in 0..self.field.width {
             for y in 0..self.field.height {
                 if self.state[x][y] == MineSweeperCellState::Hidden {
@@ -106,7 +105,7 @@ impl MineSweeperSolver {
         }
     }
 
-    pub fn reveal_field(&mut self, x: usize, y: usize) {
+    fn reveal_field(&mut self, x: usize, y: usize) {
         if self.state[x][y] == MineSweeperCellState::Revealed {
             return;
         }
@@ -488,66 +487,8 @@ impl MineSweeperSolver {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct Box{
-    fields: Vec<(usize, usize)>,
-    owner: (usize, usize),
-    mines: u8,
-}
 
-impl Box{
-    fn new(x: usize, y: usize, mines: u8) -> Self {
-        Box {
-            fields: vec![],
-            owner: (x, y),
-            mines: mines,
-        }
-    }
-
-    fn add_field(&mut self, x: usize, y: usize) {
-        self.fields.push((x, y));
-    }
-
-    fn is_neighbouring(&self, x: usize, y: usize) -> bool {
-        for field in &self.fields {
-            if (field.0 as isize - x as isize).abs() <= 1 && (field.1 as isize - y as isize).abs() <= 1 {
-                return true;
-            }
-        }
-        false
-    }
-
-    fn is_owner(&self, x: usize, y: usize) -> bool {
-        return self.owner.0 == x && self.owner.1 == y
-    }
-
-    fn get_mine_count(&self) -> u8 {
-        return self.mines;
-    }
-
-    fn compare_to(&self, other: &Box) -> (Vec<(usize, usize)>, Vec<(usize, usize)>, Vec<(usize, usize)>) {
-        let mut shared: Vec<(usize, usize)> = vec![];
-        let mut this_only = vec![];
-        let mut other_only = vec![];
-
-        for field in &self.fields {
-            if !other.fields.contains(field) {
-                this_only.push(*field);
-            } else {
-                shared.push(*field);
-            }
-        }
-        for field in &other.fields {
-            if !self.fields.contains(field) {
-                other_only.push(*field);
-            }
-        }
-
-        (shared, this_only, other_only)
-    }
-}
-
-pub fn minesweeper_solver(field: MineSweeperField) {
+pub fn start(field: MineSweeperField) {
     let mut game = MineSweeperSolver::new(field);
 
     println!("\nSolving the field...");
