@@ -4,7 +4,6 @@ mod minesweeper_field_iterator;
 pub mod minesweeper_field;
 pub mod minesweeper_cell;
 
-
 pub fn minesweeper_field(width: usize, height: usize, percentage: f32) -> MineSweeperField {
     MineSweeperField::new(width, height, percentage)
 }

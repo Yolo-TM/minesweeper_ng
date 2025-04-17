@@ -1,7 +1,7 @@
 #![cfg_attr(debug_assertions, allow(dead_code))]
 
-mod field_generator;
-mod ng_generator;
+pub mod field_generator;
+pub mod ng_generator;
 
 use field_generator::minesweeper_field;
 use ng_generator::{get_evil_field, minesweeper_solver};

@@ -12,21 +12,15 @@ pub struct MineSweeperField {
 }
 
 impl MineSweeperField {
-    pub fn new_field(width: usize, height: usize, mines: u64) -> Self {
-        let percentage = mines as f32 / (width * height) as f32;
-
-        Self::new(width, height, percentage)
-    }
-
     pub fn new(width: usize, height: usize, percentage: f32) -> Self {
         let board = vec![vec![MineSweeperCell::Empty; height]; width];
 
-        if percentage > 1.0 {
-            panic!("Too many mines for the given board size!");
+        if percentage >= 0.9 {
+            panic!("Too many mines, this won't be solvable!");
         }
 
-        if percentage < 0.0 {
-            panic!("Negative percentage of mines!");
+        if percentage <= 0.0 {
+            panic!("Negative or zero percentage of mines!");
         }
 
         if percentage > 0.3 {
@@ -46,6 +40,12 @@ impl MineSweeperField {
         field.place_mines();
         field.initialize();
         field
+    }
+
+    pub fn new_field(width: usize, height: usize, mines: u64) -> Self {
+        let percentage = mines as f32 / (width * height) as f32;
+
+        Self::new(width, height, percentage)
     }
 
     pub fn initialize(&mut self) {
@@ -78,8 +78,10 @@ impl MineSweeperField {
     }
 
     fn set_start_field(&mut self) {
-        // Set the start field to the first empty cell found
-        // Can later also be set to a random empty cell
+        /*
+        Set the start field to the first empty cell found
+        Can later also be set to a random empty cell
+        */
         for (x, y) in self.sorted_fields() {
             if self.board[x][y] == MineSweeperCell::Empty {
                 self.start_field = (x, y);
