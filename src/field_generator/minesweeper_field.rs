@@ -30,7 +30,7 @@ impl MineSweeperField {
         }
 
         if percentage > 0.3 {
-            println!("Warning: {}% of the fields are mines!", percentage);
+            println!("Warning: {}% of the fields are mines!", percentage * 100.0);
         }
 
         let mines = ((width * height) as f32 * percentage) as u64;
@@ -55,25 +55,24 @@ impl MineSweeperField {
 
     pub fn print(&self) {
         println!("Width: {}, Height: {}, Mines: {}", self.width, self.height, self.mines);
-        for y in 0..self.height {
-            for x in 0..self.width {
-                print!("{} ", &self.board[x][y].get_colored());
+        for (x, y) in self.sorted_fields() {
+            print!("{} ", &self.board[x][y].get_colored());
+
+            if x == self.width - 1 {
+                println!();
             }
-            println!();
         }
     }
 
     fn assign_numbers(&mut self) {
-        for x in 0..self.width {
-            for y in 0..self.height {
-                if self.board[x][y] == MineSweeperCell::Mine {
-                    continue;
-                }
+        for (x, y) in self.sorted_fields() {
+            if self.board[x][y] == MineSweeperCell::Mine {
+                continue;
+            }
 
-                let count = self.get_sourrounding_mine_count(x, y);
-                if count != 0 {
-                    self.board[x][y] = MineSweeperCell::Number(count);
-                }
+            let count = self.get_sourrounding_mine_count(x, y);
+            if count != 0 {
+                self.board[x][y] = MineSweeperCell::Number(count);
             }
         }
     }
@@ -81,12 +80,10 @@ impl MineSweeperField {
     fn set_start_field(&mut self) {
         // Set the start field to the first empty cell found
         // Can later also be set to a random empty cell
-        for x in 0..self.width {
-            for y in 0..self.height {
-                if self.board[x][y] == MineSweeperCell::Empty {
-                    self.start_field = (x, y);
-                    return;
-                }
+        for (x, y) in self.sorted_fields() {
+            if self.board[x][y] == MineSweeperCell::Empty {
+                self.start_field = (x, y);
+                return;
             }
         }
     }
@@ -122,8 +119,7 @@ impl MineSweeperField {
                 let nx = x as i64 + dx;
                 let ny = y as i64 + dy;
 
-                if nx >= 0
-                && ny >= 0
+                if nx >= 0 && ny >= 0
                 && nx < self.width as i64
                 && ny < self.height as i64
                 && self.board[nx as usize][ny as usize] == MineSweeperCell::Mine {

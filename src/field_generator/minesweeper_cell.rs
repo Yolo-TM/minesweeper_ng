@@ -1,4 +1,3 @@
-
 use colored::{ColoredString, Colorize};
 
 #[derive(Clone, PartialEq)]

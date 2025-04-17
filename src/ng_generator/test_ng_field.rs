@@ -14,6 +14,7 @@ pub fn get_ng_minesweeper_field() -> MineSweeperField {
         start_field: (4, 6),
     };
 
+    // This are the mine positions of an evil field from minesweeper.online for testing purposes.
     let mine_positions: Vec<(usize, usize)> = vec![
         (0,2), (0,3), (0,5), (0,17),
         (1,3), (1,5), (1,7), (1,16), (1,17),
