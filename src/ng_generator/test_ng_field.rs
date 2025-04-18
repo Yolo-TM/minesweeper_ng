@@ -11,7 +11,7 @@ pub fn get_ng_minesweeper_field() -> MineSweeperField {
         height: height,
         mines: 130,
         board,
-        start_field: (4, 6),
+        start_field: (0, 0),
     };
 
     // This are the mine positions of an evil field from minesweeper.online for testing purposes.
@@ -53,5 +53,6 @@ pub fn get_ng_minesweeper_field() -> MineSweeperField {
     }
 
     field.initialize();
+    field.start_field = (4, 6);
     field
 }

@@ -18,9 +18,9 @@ impl Box{
         self.fields.push((x, y));
     }
 
-    pub fn is_neighbouring(&self, x: usize, y: usize) -> bool {
+    pub fn contains(&self, x: usize, y: usize) -> bool {
         for field in &self.fields {
-            if (field.0 as isize - x as isize).abs() <= 1 && (field.1 as isize - y as isize).abs() <= 1 {
+            if field.0 == x && field.1 == y {
                 return true;
             }
         }
@@ -29,6 +29,15 @@ impl Box{
 
     pub fn is_owner(&self, x: usize, y: usize) -> bool {
         return self.owner.0 == x && self.owner.1 == y
+    }
+
+    pub fn is_neighbouring(&self, x: usize, y: usize) -> bool {
+        for field in &self.fields {
+            if (field.0 as isize - x as isize).abs() <= 1 && (field.1 as isize - y as isize).abs() <= 1 {
+                return true;
+            }
+        }
+        false
     }
 
     pub fn get_mine_count(&self) -> u8 {

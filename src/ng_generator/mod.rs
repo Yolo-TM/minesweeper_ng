@@ -2,6 +2,7 @@ use crate::field_generator::minesweeper_field::MineSweeperField;
 
 mod test_ng_field;
 mod boxes;
+mod surrounding_fields_iterator;
 
 pub mod solver;
 

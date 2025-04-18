@@ -55,6 +55,7 @@ impl MineSweeperField {
 
     pub fn print(&self) {
         println!("Width: {}, Height: {}, Mines: {}", self.width, self.height, self.mines);
+        println!("Start field: {:?}", self.start_field);
         for (x, y) in self.sorted_fields() {
             print!("{} ", &self.board[x][y].get_colored());
 
