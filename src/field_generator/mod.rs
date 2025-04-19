@@ -1,5 +1,6 @@
 use minesweeper_field::MineSweeperField;
 mod minesweeper_field_iterator;
+mod surrounding_fields_iterator;
 
 pub mod minesweeper_field;
 pub mod minesweeper_cell;

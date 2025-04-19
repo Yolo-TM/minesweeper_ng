@@ -1,7 +1,6 @@
 use crate::field_generator::minesweeper_field::MineSweeperField;
 use crate::field_generator::minesweeper_cell::MineSweeperCell;
 use super::boxes::Box;
-use super::surrounding_fields_iterator::{surrounding_fields, extended_surrounding_fields};
 use colored::Colorize;
 use std::collections::HashMap;
 use std::thread;
@@ -137,7 +136,7 @@ impl MineSweeperSolver {
     }
 
     fn reveal_surrounding_cells(&mut self, x: usize, y: usize) {
-        for (new_x, new_y) in surrounding_fields(x, y, self.field.width, self.field.height) {
+        for (new_x, new_y) in self.field.surrounding_fields(x, y) {
             if self.state[new_x][new_y] == MineSweeperCellState::Hidden {
                 self.reveal_field(new_x, new_y);
             }
@@ -145,7 +144,7 @@ impl MineSweeperSolver {
     }
 
     fn flag_surrounding_cells(&mut self, x: usize, y: usize) {
-        for (new_x, new_y) in surrounding_fields(x, y, self.field.width, self.field.height) {
+        for (new_x, new_y) in self.field.surrounding_fields(x, y) {
             if self.state[new_x][new_y] == MineSweeperCellState::Hidden {
                 self.flag_cell(new_x, new_y);
             }
@@ -153,7 +152,7 @@ impl MineSweeperSolver {
     }
 
     fn has_unrevealed_neighbours(&self, x: usize, y: usize) -> bool {
-        for (new_x, new_y) in surrounding_fields(x, y, self.field.width, self.field.height) {
+        for (new_x, new_y) in self.field.surrounding_fields(x, y) {
             if self.state[new_x][new_y] == MineSweeperCellState::Hidden {
                 return true;
             }
@@ -165,7 +164,7 @@ impl MineSweeperSolver {
     fn get_surrounding_flag_count(&self, x: usize, y: usize) -> u8 {
         let mut count = 0;
 
-        for (new_x, new_y) in surrounding_fields(x, y, self.field.width, self.field.height) {
+        for (new_x, new_y) in self.field.surrounding_fields(x, y) {
             if self.state[new_x][new_y] == MineSweeperCellState::Flagged {
                 count += 1;
             }
@@ -177,7 +176,7 @@ impl MineSweeperSolver {
     fn get_surrounding_unrevealed_count(&self, x: usize, y: usize) -> u8 {
         let mut count = 0;
 
-        for (new_x, new_y) in surrounding_fields(x, y, self.field.width, self.field.height) {
+        for (new_x, new_y) in self.field.surrounding_fields(x, y) {
             if self.state[new_x][new_y] == MineSweeperCellState::Hidden {
                 count += 1;
             }
@@ -189,7 +188,7 @@ impl MineSweeperSolver {
     fn get_surrounding_unrevealed(&self, x: usize, y: usize) -> Vec<(usize, usize)> {
         let mut hidden = vec![];
 
-        for (new_x, new_y) in surrounding_fields(x, y, self.field.width, self.field.height) {
+        for (new_x, new_y) in self.field.surrounding_fields(x, y) {
             if self.state[new_x][new_y] == MineSweeperCellState::Hidden {
                 hidden.push((new_x, new_y));
             }
@@ -201,6 +200,10 @@ impl MineSweeperSolver {
     fn get_reduced_count(&self, x: usize, y: usize) -> u8 {
         let flag_count = self.get_surrounding_flag_count(x, y);
         let number = self.field.board[x][y].get_number();
+
+        if flag_count > number {
+            panic!("Flag count is greater than number at ({}, {})", x, y);
+        }
 
         number - flag_count
     }
@@ -244,7 +247,7 @@ impl MineSweeperSolver {
                 let reduced_count = self.get_reduced_count(x, y);
                 let surrounding_hidden_fields = self.get_surrounding_unrevealed(x, y);
 
-                for (new_x, new_y) in extended_surrounding_fields(x, y, self.field.width, self.field.height) {
+                for (new_x, new_y) in self.field.extended_surrounding_fields(x, y, 5) {
                     if self.has_informations(new_x, new_y) {
                         let reduced_count2 = self.get_reduced_count(new_x, new_y);
                         let surrounding_hidden_fields2 = self.get_surrounding_unrevealed(new_x, new_y);

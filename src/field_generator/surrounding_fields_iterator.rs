@@ -1,10 +1,4 @@
-pub fn surrounding_fields(x: usize, y: usize, width: usize, height: usize) -> SurroundingFieldsIterator {
-    SurroundingFieldsIterator::new(x, y, width, height, 1)
-}
-
-pub fn extended_surrounding_fields(x: usize, y: usize, width: usize, height: usize) -> SurroundingFieldsIterator {
-    SurroundingFieldsIterator::new(x, y, width, height, 5)
-}
+use super::minesweeper_field::MineSweeperField;
 
 pub struct SurroundingFieldsIterator {
     x: isize,
@@ -16,13 +10,25 @@ pub struct SurroundingFieldsIterator {
     dy: isize,
 }
 
-impl SurroundingFieldsIterator {
-    pub fn new(x: usize, y: usize, width: usize, height: usize, range: isize) -> Self {
-        Self {
+impl MineSweeperField {
+    pub fn surrounding_fields(&self, x: usize, y: usize) -> SurroundingFieldsIterator {
+        SurroundingFieldsIterator {
             x: x as isize,
             y: y as isize,
-            width: width as isize,
-            height: height as isize,
+            width: self.width as isize,
+            height: self.height as isize,
+            range: 1,
+            dx: -1,
+            dy: -1,
+        }
+    }
+
+    pub fn extended_surrounding_fields(&self, x: usize, y: usize, range: isize) -> SurroundingFieldsIterator {
+        SurroundingFieldsIterator {
+            x: x as isize,
+            y: y as isize,
+            width: self.width as isize,
+            height: self.height as isize,
             range,
             dx: -range,
             dy: -range,

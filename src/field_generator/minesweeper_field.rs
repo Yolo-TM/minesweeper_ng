@@ -23,7 +23,7 @@ impl MineSweeperField {
             panic!("Negative or zero percentage of mines!");
         }
 
-        if percentage > 0.3 {
+        if percentage > 0.25 {
             println!("Warning: {}% of the fields are mines!", percentage * 100.0);
         }
 
@@ -117,17 +117,9 @@ impl MineSweeperField {
 
     fn get_sourrounding_mine_count(&self, x: usize, y: usize) -> u8 {
         let mut count = 0;
-        for dx in -1..=1 {
-            for dy in -1..=1 {
-                let nx = x as i64 + dx;
-                let ny = y as i64 + dy;
-
-                if nx >= 0 && ny >= 0
-                && nx < self.width as i64
-                && ny < self.height as i64
-                && self.board[nx as usize][ny as usize] == MineSweeperCell::Mine {
-                    count += 1;
-                }
+        for (x, y) in self.surrounding_fields(x, y) {
+            if self.board[x][y] == MineSweeperCell::Mine {
+                count += 1;
             }
         }
         count
