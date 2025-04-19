@@ -468,9 +468,45 @@ fn solver(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
                 if nothing_count >= 3 {
                     println!("Nothing found in 3 steps. Stopping solver.");
                     game.print();
+                    println!("Hidden Count: {}", game.hidden_count.to_string().red());
+                    println!("Island Count: {}", search_for_islands(&game).len());
+                    println!("islands: {:?}", search_for_islands(&game));
                     return SolverSolution::NoSolution;
                 }
             }
+        }
+    }
+}
+
+
+// bei mehreren nicht lösbaren islands, Minen von einer Box bei einer Island in eine andere reinpacken und dann schauen ob es lösbar wird
+
+fn search_for_islands(game: &MineSweeperSolver) -> Vec<Vec<(usize, usize)>> {
+    let mut visited = vec![vec![false; game.field.height]; game.field.width];
+    let mut islands = vec![];
+
+    for (x, y) in game.field.sorted_fields() {
+        if visited[x][y] || game.state[x][y] != MineSweeperCellState::Hidden {
+            continue;
+        }
+
+        let mut fields = vec![];
+        recursive_search(x, y, &mut fields, &mut visited, game);
+        if fields.len() > 0 {
+            islands.push(fields);
+        }
+    }
+
+    islands
+}
+
+fn recursive_search(x: usize, y: usize, fields: &mut Vec<(usize,usize)>, visited : &mut Vec<Vec<bool>>, game: &MineSweeperSolver) {
+    visited[x][y] = true;
+    fields.push((x, y));
+
+    for (new_x, new_y) in game.field.surrounding_fields(x, y) {
+        if !visited[new_x][new_y] && game.state[new_x][new_y] == MineSweeperCellState::Hidden {
+            recursive_search(new_x, new_y, fields, visited, game);
         }
     }
 }
