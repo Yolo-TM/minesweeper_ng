@@ -2,7 +2,6 @@ use crate::field_generator::minesweeper_field::MineSweeperField;
 use crate::field_generator::minesweeper_cell::MineSweeperCell;
 use super::boxes::Box;
 use colored::Colorize;
-use std::collections::HashMap;
 use std::thread;
 
 enum SolverSolution {
@@ -238,7 +237,6 @@ impl MineSweeperSolver {
         }
     }
 
-
     fn apply_basic_box_logic(&mut self) -> Option<()> {
         let mut did_something = false;
 
@@ -310,10 +308,11 @@ impl MineSweeperSolver {
         let mut did_something = false;
         let mut boxes: Vec<Box> = vec![];
 
+        // Recursive generierung??
         for (x, y) in self.field.sorted_fields() {
             if self.has_informations(x, y) {
-                let mut new_box = Box::new(x, y, self.get_reduced_count(x, y));
                 let surrounding_hidden_fields = self.get_surrounding_unrevealed(x, y);
+                let mut new_box = Box::new(x, y, self.get_reduced_count(x, y));
                 for cell in &surrounding_hidden_fields {
                     new_box.add_field(cell.0, cell.1);
                 }
@@ -321,88 +320,9 @@ impl MineSweeperSolver {
             }
         }
 
-        let mut reduced_boxes: Vec<Box> = vec![];
-        for box_a in &boxes {
-            let mines_a = box_a.get_mine_count();
-            for box_b in &boxes {
-                if box_a.is_owner(box_b.owner.0, box_b.owner.1) {
-                    continue;
-                }
-                if !box_a.is_neighbouring(box_b.owner.0, box_b.owner.1) {
-                    continue
-                }
+        // Strip all boxes which dont contain any useful information
 
-                let (shared, this_only, other_only) = box_a.compare_to(box_b);
-                let mines_b = box_b.get_mine_count();
-                let mine_diff: i8 = mines_a as i8 - mines_b as i8;
-
-                if mine_diff >= shared.len() as i8 {
-                    continue
-                }
-
-                if mine_diff == 0 {
-                    if this_only.len() == 0 {
-                        other_only.iter().for_each(|cell| {
-                            self.reveal_field(cell.0, cell.1);
-                            did_something = true;
-                        });
-                    } else if other_only.len() == 0 {
-                        this_only.iter().for_each(|cell| {
-                            self.reveal_field(cell.0, cell.1);
-                            did_something = true;
-                        });
-                    } else {
-                        reduced_boxes.push(box_a.clone());
-                    }
-                } else if mine_diff > 0 {
-                    if mine_diff == this_only.len() as i8 {
-                        this_only.iter().for_each(|cell| {
-                            let flag_placed = self.flag_cell(cell.0, cell.1);
-                            // bug, there should always be a flag placed here but somehow it is not
-                            did_something = flag_placed;
-                        });
-
-                        other_only.iter().for_each(|cell| {
-                            self.reveal_field(cell.0, cell.1);
-                            did_something = true;
-                        });
-                    } else {
-                        let mut new_box = Box::new(box_a.owner.0, box_a.owner.1, mine_diff as u8);
-                        for cell in &this_only {
-                            new_box.add_field(cell.0, cell.1);
-                        }
-
-                        reduced_boxes.push(box_b.clone());
-                        reduced_boxes.push(new_box);
-                    }
-                }
-            }
-        }
-
-        // Deduplicating the boxes
-        let mut box_map: HashMap<(usize, usize), Box> = HashMap::new();
-
-        for _box in reduced_boxes {
-            let key = (_box.owner.0, _box.owner.1);
-            if !box_map.contains_key(&key) {
-                box_map.insert(key, _box);
-            } else {
-                let existing_box = box_map.get(&key).unwrap();
-
-                if existing_box.fields.len() > _box.fields.len() {
-                    box_map.insert(key, _box);
-                }
-            }
-        }
-
-        println!("Reduced Boxes: {}", box_map.len());
-
-        for bbox in &boxes {
-            let key = (bbox.owner.0, bbox.owner.1);
-            if !box_map.contains_key(&key) {
-                println!("Box not found in reduced boxes: {:?}", bbox);
-            }
-        }
+        println!("Boxes: {:?}", boxes);
 
         if did_something {
             return Some(());
@@ -470,7 +390,7 @@ fn solver(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
                     game.print();
                     println!("Hidden Count: {}", game.hidden_count.to_string().red());
                     println!("Island Count: {}", search_for_islands(&game).len());
-                    println!("islands: {:?}", search_for_islands(&game));
+                    //println!("islands: {:?}", search_for_islands(&game));
                     return SolverSolution::NoSolution;
                 }
             }
