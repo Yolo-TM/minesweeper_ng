@@ -2,7 +2,7 @@ use crate::field_generator::minesweeper_field::MineSweeperField;
 use crate::field_generator::minesweeper_cell::MineSweeperCell;
 use super::boxes::Box;
 use colored::Colorize;
-use std::thread;
+use std::{collections::HashMap, thread, vec};
 
 enum SolverSolution {
     NoSolution,
@@ -308,21 +308,52 @@ impl MineSweeperSolver {
         let mut did_something = false;
         let mut boxes: Vec<Box> = vec![];
 
-        // Recursive generierung??
+        // Create Boxes around fields with unrevealed neighbours
         for (x, y) in self.field.sorted_fields() {
-            if self.has_informations(x, y) {
-                let surrounding_hidden_fields = self.get_surrounding_unrevealed(x, y);
-                let mut new_box = Box::new(x, y, self.get_reduced_count(x, y));
-                for cell in &surrounding_hidden_fields {
-                    new_box.add_field(cell.0, cell.1);
+            if !self.has_informations(x, y) {
+                continue;
+            }
+
+            let surrounding_hidden_fields = self.get_surrounding_unrevealed(x, y);
+            let mut new_box = Box::new(x, y, self.get_reduced_count(x, y));
+            for cell in &surrounding_hidden_fields {
+                new_box.add_field(cell.0, cell.1);
+            }
+            boxes.push(new_box);
+        }
+
+        let mut field_map: HashMap<(usize, usize), Vec<Box>> = HashMap::new();
+        for (x, y) in self.field.sorted_fields() {
+            if !self.has_informations(x, y) {
+                continue;
+            }
+
+            for box_ in &boxes {
+                if box_.is_neighbouring(x, y) {
+                    field_map.entry((x, y)).or_insert(vec![]).push(box_.clone());
                 }
-                boxes.push(new_box);
             }
         }
 
-        // Strip all boxes which dont contain any useful information
+        // Check if overlapping boxes exist and if they contain an information for solving the field
+        for ((x, y), boxes) in &field_map {
+            let mut new_boxes = vec![];
+            let mines = self.get_reduced_count(*x, *y);
+            let fields = self.get_surrounding_unrevealed(*x, *y);
 
-        println!("Boxes: {:?}", boxes);
+            println!("Box at ({}, {}) has {} boxes in its reach", x, y, boxes.len());
+
+            for box_ in boxes {
+                // Ignore boxes which dont help us (including the box we created for this field)
+                // Boxes which hold the same mine count AND the same number of fields can be ignored (as some of the fields are shared)
+                if mines == box_.mines && fields.len() == box_.fields.len() {
+                    continue;
+                }
+                new_boxes.push(box_);
+            }
+
+            println!("New Boxes in Reach: {}", new_boxes.len());
+        }
 
         if did_something {
             return Some(());

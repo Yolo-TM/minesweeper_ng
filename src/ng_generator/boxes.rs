@@ -18,6 +18,10 @@ impl Box{
         self.fields.push((x, y));
     }
 
+    pub fn remove_field(&mut self, x: usize, y: usize) {
+        self.fields.retain(|&field| field != (x, y));
+    }
+
     pub fn contains(&self, x: usize, y: usize) -> bool {
         for field in &self.fields {
             if field.0 == x && field.1 == y {
@@ -44,24 +48,33 @@ impl Box{
         return self.mines;
     }
 
-    pub fn compare_to(&self, other: &Box) -> (Vec<(usize, usize)>, Vec<(usize, usize)>, Vec<(usize, usize)>) {
+    pub fn compare_to(&self, other: &Vec<(usize, usize)>) -> (Vec<(usize, usize)>, Vec<(usize, usize)>, Vec<(usize, usize)>) {
         let mut shared: Vec<(usize, usize)> = vec![];
         let mut this_only = vec![];
         let mut other_only = vec![];
 
         for field in &self.fields {
-            if !other.fields.contains(field) {
+            if !other.contains(field) {
                 this_only.push(*field);
             } else {
                 shared.push(*field);
             }
         }
-        for field in &other.fields {
+        for field in other {
             if !self.fields.contains(field) {
                 other_only.push(*field);
             }
         }
 
         (shared, this_only, other_only)
+    }
+
+    pub fn is_inside(&self, other: &Box) -> bool {
+        for field in &self.fields {
+            if !other.fields.contains(field) {
+                return false;
+            }
+        }
+        true
     }
 }
