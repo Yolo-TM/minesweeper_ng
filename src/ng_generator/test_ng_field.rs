@@ -56,3 +56,33 @@ pub fn get_ng_minesweeper_field() -> MineSweeperField {
     field.start_field = (4, 6);
     field
 }
+
+pub fn get_small_test_field() -> MineSweeperField {
+    let width = 10;
+    let height = 10;
+    let board = vec![vec![MineSweeperCell::Empty; height]; width];
+
+    let mut field = MineSweeperField{
+        width: width,
+        height: height,
+        mines: 20,
+        board,
+        start_field: (4, 7),
+    };
+
+    // This are the mine positions of an evil field from minesweeper.online for testing purposes.
+    let mine_positions: Vec<(usize, usize)> = vec![
+        (6, 0), (2, 1), (4, 1), (4, 2), (5, 2),
+        (0, 3), (1, 3), (4, 3), (5, 3), (7, 4),
+        (0, 5), (1, 5), (5, 5), (7, 5), (0, 7),
+        (1, 7), (6, 7), (2, 9), (5, 9), (6, 9),
+    ];
+
+    for &(x, y) in &mine_positions {
+        field.board[x][y] = MineSweeperCell::Mine;
+    }
+
+    field.initialize();
+    field.start_field = (4, 7);
+    field
+}

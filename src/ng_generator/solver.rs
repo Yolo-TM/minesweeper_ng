@@ -57,21 +57,21 @@ impl MineSweeperSolver {
     }
 
     fn do_solving_step(&mut self) -> Option<()>{
-        match self.do_basic_neighbour_check(){
-            Some(_) => {
-                println!("Revealed or Flagged Fields based on basic count logic.");
-                return Some(());
-            },
-            None => {}
-        }
+        //match self.do_basic_neighbour_check(){
+        //    Some(_) => {
+        //        println!("Revealed or Flagged Fields based on basic count logic.");
+        //        return Some(());
+        //    },
+        //    None => {}
+        //}
 
-        match self.apply_basic_box_logic() {
-            Some(_) => {
-                println!("Revealed or Flagged Fields based on box logic.");
-                return Some(());
-            },
-            None => {}
-        }
+        //match self.apply_basic_box_logic() {
+        //    Some(_) => {
+        //        println!("Revealed or Flagged Fields based on box logic.");
+        //        return Some(());
+        //    },
+        //    None => {}
+        //}
 
         match self.apply_extended_box_logic() {
             Some(_) => {
