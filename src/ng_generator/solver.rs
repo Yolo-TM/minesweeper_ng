@@ -80,6 +80,14 @@ impl MineSweeperSolver {
             },
             None => {}
         }
+
+        match self.apply_permutation_checks() {
+            Some(_) => {
+                println!("Revealed or Flagged Fields based on tested permutations.");
+                return Some(());
+            },
+            None => {}
+        }
         None
     }
 
@@ -360,6 +368,10 @@ impl MineSweeperSolver {
         } else {
             return None;
         }
+    }
+
+    fn apply_permutation_checks(&mut self) -> Option<()> {
+        None
     }
 }
 
