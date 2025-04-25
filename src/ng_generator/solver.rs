@@ -123,24 +123,16 @@ impl MineSweeperSolver {
         }
     }
 
-    fn flag_cell(&mut self, x: usize, y: usize) -> bool {
-        if self.state[x][y] == MineSweeperCellState::Revealed {
-            return false;
+    fn flag_cell(&mut self, x: usize, y: usize) {
+        if self.state[x][y] == MineSweeperCellState::Revealed || self.state[x][y] == MineSweeperCellState::Flagged {
+            println!("Cell ({}, {}) is already revealed or flagged.", x, y);
+            return;
         }
 
-        if self.state[x][y] == MineSweeperCellState::Flagged {
-            self.state[x][y] = MineSweeperCellState::Hidden;
-            self.flag_count -= 1;
-            self.hidden_count += 1;
-            self.remaining_mines += 1;
-            return false;
-        } else {
-            self.state[x][y] = MineSweeperCellState::Flagged;
-            self.flag_count += 1;
-            self.hidden_count -= 1;
-            self.remaining_mines -= 1;
-            return true;
-        }
+        self.state[x][y] = MineSweeperCellState::Flagged;
+        self.flag_count += 1;
+        self.hidden_count -= 1;
+        self.remaining_mines -= 1;
     }
 
     #[track_caller]
@@ -332,6 +324,7 @@ impl MineSweeperSolver {
             boxes.push(new_box);
         }
 
+        // Create a Map of all fields with unrevealed neighbours and the boxes which are in their reach
         let mut field_map: HashMap<(usize, usize), Vec<Box>> = HashMap::new();
         for (x, y) in self.field.sorted_fields() {
             if !self.has_informations(x, y) {
@@ -350,7 +343,6 @@ impl MineSweeperSolver {
             let mut new_boxes = vec![];
             let mines = self.get_reduced_count(*x, *y);
             let fields = self.get_surrounding_unrevealed(*x, *y);
-
             println!("Box at ({}, {}) has {} boxes in its reach", x, y, boxes.len());
 
             for box_ in boxes {
@@ -361,14 +353,66 @@ impl MineSweeperSolver {
                 }
                 new_boxes.push(box_);
             }
-
             println!("New Boxes in Reach: {}", new_boxes.len());
+
+            let mut field_tuples: Vec<(std::ops::RangeInclusive<u8>, Vec<(usize, usize)>)> = vec![];
+            let mut safe_fields: Vec<(usize, usize)> = vec![];
+            let mut mine_fields: Vec<(usize, usize)> = vec![];
+            field_tuples.push((mines..=mines, fields));
+
+            self.recursive_search(&mut field_tuples, &mut new_boxes, 0, &mut safe_fields, &mut mine_fields);
+            for cell in &safe_fields {
+                self.reveal_field(cell.0, cell.1);
+                did_something = true;
+            }
+            for cell in &mine_fields {
+                self.flag_cell(cell.0, cell.1);
+                did_something = true;
+            }
+            println!("Field Tuples after search: {:?}\n\n", field_tuples);
         }
 
         if did_something {
             return Some(());
         } else {
             return None;
+        }
+    }
+
+    fn recursive_search(
+            &mut self,
+            field_tuples: &mut Vec<(std::ops::RangeInclusive<u8>, Vec<(usize, usize)>)>,
+            new_boxes: &mut Vec<&Box>,
+            current_box_index: usize,
+            safe_fields: &mut Vec<(usize, usize)>,
+            mine_fields: &mut Vec<(usize, usize)>
+        ) {
+
+        if current_box_index == new_boxes.len() {
+            return;
+        }
+        {
+            let box_ = new_boxes[current_box_index];
+            println!("Box: ID {} : {:?}", current_box_index, box_);
+            println!("Len of field_tuples: {}", field_tuples.len());
+            for i in 0..field_tuples.len() {
+                let (shared, this_only, other_only) = box_.compare_to(&field_tuples[i].1);
+                if shared.len() == 0 {
+                    continue;
+                }
+
+                if this_only.len() == 0 && other_only.len() != 0 {
+                    let box_mines = box_.get_mine_count();
+                    field_tuples.push((*field_tuples[i].0.start()..=field_tuples[i].0.end() - box_mines, other_only));
+                    field_tuples.push((box_mines..=box_mines, shared));
+                    field_tuples.remove(i);
+                    break;
+                }
+            }
+        }
+        self.recursive_search(field_tuples, new_boxes, current_box_index + 1, safe_fields, mine_fields);
+        {
+            println!("Box ID {} done", current_box_index);
         }
     }
 
