@@ -99,6 +99,7 @@ impl MineSweeperSolver {
         }
     }
 
+    #[track_caller]
     fn reveal_field(&mut self, x: usize, y: usize) {
         if self.state[x][y] == MineSweeperCellState::Revealed {
             return;
@@ -142,6 +143,7 @@ impl MineSweeperSolver {
         }
     }
 
+    #[track_caller]
     fn reveal_surrounding_cells(&mut self, x: usize, y: usize) {
         for (new_x, new_y) in self.field.surrounding_fields(x, y) {
             if self.state[new_x][new_y] == MineSweeperCellState::Hidden {
@@ -209,7 +211,7 @@ impl MineSweeperSolver {
         let number = self.field.board[x][y].get_number();
 
         if flag_count > number {
-            panic!("Flag count is greater than number at ({}, {})", x, y);
+            panic!("Flag count is greater than number at ({}, {}) Flagcount: {}\t Number: {}", x, y, flag_count, number);
         }
 
         number - flag_count

@@ -12,6 +12,7 @@ pub struct MineSweeperField {
 }
 
 impl MineSweeperField {
+    #[track_caller]
     pub fn new(width: usize, height: usize, percentage: f32) -> Self {
         let board = vec![vec![MineSweeperCell::Empty; height]; width];
 
@@ -91,6 +92,7 @@ impl MineSweeperField {
         }
     }
 
+    #[track_caller]
     fn place_mines(&mut self) {
         let mut placed_mines = 0;
 
