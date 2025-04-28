@@ -2,6 +2,7 @@ use crate::field_generator::minesweeper_field::MineSweeperField;
 use crate::field_generator::minesweeper_cell::MineSweeperCell;
 use super::boxes::Box;
 use colored::Colorize;
+use core::panic;
 use std::{collections::HashMap, thread, vec};
 
 enum SolverSolution {
@@ -342,7 +343,6 @@ impl MineSweeperSolver {
             let mut new_boxes = vec![];
             let mines = self.get_reduced_count(*x, *y);
             let fields = self.get_surrounding_unrevealed(*x, *y);
-            if !(*x == 4 && *y == 4) { continue; }
             print!("Box at ({}, {}) has ", x, y);
             
             for box_ in boxes {
@@ -370,7 +370,6 @@ impl MineSweeperSolver {
                 did_something = true;
             }
             println!("Field Tuples after search: {:?}\n\n", field_tuples);
-            break;
         }
 
         if did_something {
@@ -381,25 +380,24 @@ impl MineSweeperSolver {
     }
 
     fn recursive_search(
-            &mut self,
-            original_fields: &Vec<(usize, usize)>,
-            field_tuples: &mut Vec<(std::ops::RangeInclusive<u8>, Vec<(usize, usize)>)>,
-            new_boxes: &mut Vec<&Box>,
-            current_box_index: usize,
-            safe_fields: &mut Vec<(usize, usize)>,
-            mine_fields: &mut Vec<(usize, usize)>
-        ) {
-
+        &mut self,
+        original_fields: &Vec<(usize, usize)>,
+        field_tuples: &mut Vec<(std::ops::RangeInclusive<u8>, Vec<(usize, usize)>)>,
+        new_boxes: &mut Vec<&Box>,
+        current_box_index: usize,
+        safe_fields: &mut Vec<(usize, usize)>,
+        mine_fields: &mut Vec<(usize, usize)>
+    ) {
         if current_box_index == new_boxes.len() {
             return;
         }
+        let box_ = new_boxes[current_box_index];
         {
-            let box_ = new_boxes[current_box_index];
             println!("Box: ID {} : {:?}", current_box_index, box_);
             println!("Len of field_tuples: {}", field_tuples.len());
             for i in 0..field_tuples.len() {
                 let (shared, this_only, other_only) = box_.compare_to(&field_tuples[i].1);
-                if shared.len() == 0 {
+                if shared.len() == 0 || (shared.len() as i8) < (this_only.len() as i8 - box_.get_mine_count() as i8) {
                     continue;
                 }
                 println!("Field Tuples bevor: {:?}", field_tuples);
@@ -429,7 +427,10 @@ impl MineSweeperSolver {
                     } else {
                         lower_bound = 0;
                     }
-                    let upper_bound = shared.len() as u8;
+                    let mut upper_bound = shared.len() as u8;
+                    if upper_bound > box_mines {
+                        upper_bound = box_mines;
+                    }
                     field_tuples.push((lower_bound..=upper_bound, shared));
 
                     let new_lower_bound;
@@ -458,7 +459,61 @@ impl MineSweeperSolver {
             }
         }
         self.recursive_search(original_fields, field_tuples, new_boxes, current_box_index + 1, safe_fields, mine_fields);
-        {}
+        {
+            for i in 0..field_tuples.len() {
+                let field_count = field_tuples[i].1.len() as u8;
+
+                if field_count == 0 {
+                    panic!("Field Count is 0. This should not happen.");
+                }
+
+                if field_tuples[i].0.start() == &0 {
+                    continue;
+                }
+
+                if field_tuples[i].0.start() == field_tuples[i].0.end() {
+                    continue;
+                }
+
+                if field_count < *field_tuples[i].0.end() {
+                    let diff = *field_tuples[i].0.end() - field_count;
+                    for j in 0..field_tuples.len() {
+                        if i == j {
+                            continue;
+                        }
+                        if field_tuples[j].0.start() == field_tuples[j].0.end() {
+                            continue;
+                        }
+
+                        if !field_tuples[j].0.start() == 0 {
+                            continue;
+                        }
+                        let start = field_tuples[j].0.start().clone() + diff;
+                        field_tuples[j].0 = start..=*field_tuples[j].0.end();
+                        break;
+                    }
+                    let start = field_tuples[i].0.start().clone();
+                    field_tuples[i].0 = start..=field_count;
+                    println!("Fixed : {:?}", field_tuples);
+                }
+            }
+
+            for i in 0..field_tuples.len() {
+                if field_tuples[i].0.start() != field_tuples[i].0.end() {
+                    continue;
+                }
+
+                if field_tuples[i].0.start() == &0 {
+                    for cell in &field_tuples[i].1 {
+                        safe_fields.push(*cell);
+                    }
+                } else if *field_tuples[i].0.start() == field_tuples[i].1.len() as u8 {
+                    for cell in &field_tuples[i].1 {
+                        mine_fields.push(*cell);
+                    }
+                }
+            }
+        }
     }
 
     fn apply_permutation_checks(&mut self) -> Option<()> {
