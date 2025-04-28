@@ -3,7 +3,7 @@ use crate::field_generator::minesweeper_cell::MineSweeperCell;
 use super::boxes::Box;
 use colored::Colorize;
 use core::panic;
-use std::{collections::HashMap, thread, vec};
+use std::{collections::HashMap, hash::Hash, thread, vec};
 
 enum SolverSolution {
     NoSolution,
@@ -300,7 +300,41 @@ impl MineSweeperSolver {
     }
 
     fn apply_permutation_checks(&mut self) -> Option<()> {
-        None
+        let mut did_something = false;
+        let mut permutation_field: HashMap<(usize, usize), u64>  = HashMap::new();
+        let mut possible_permutations: u64 = 0;
+
+        // create a map with all fields which we use for permutations
+        for (x, y) in self.field.sorted_fields() {
+            if self.has_informations(x, y) {
+                permutation_field.insert((x, y), 0);
+            }
+        }
+
+        // generate all possible permutations for the fields
+        let max_permutations = permutation_field.len() ^ 2;
+
+
+        // apply found informations to the map
+        for ((x, y), permutation_mines) in permutation_field {
+            if permutation_mines == 0 {
+                // Field is in every possible way empty
+                self.reveal_field(x, y);
+                did_something = true;
+            }
+
+            if permutation_mines == possible_permutations {
+                // Field is in every possible way a mine
+                self.flag_cell(x, y);
+                did_something = true;
+            }
+        }
+
+        if did_something {
+            return Some(());
+        } else {
+            return None;
+        }
     }
 }
 
