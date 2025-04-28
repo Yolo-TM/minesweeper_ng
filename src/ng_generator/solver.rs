@@ -312,7 +312,7 @@ impl MineSweeperSolver {
         }
 
         // generate all possible permutations for the fields
-        let max_permutations = permutation_field.len() ^ 2;
+
 
 
         // apply found informations to the map
