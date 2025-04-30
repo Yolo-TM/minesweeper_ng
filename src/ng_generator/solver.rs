@@ -74,6 +74,14 @@ impl MineSweeperSolver {
         //    None => {}
         //}
 
+        match self.apply_extended_box_logic() {
+            Some(_) => {
+                println!("Revealed or Flagged Fields based on extended box logic.");
+                return Some(());
+            },
+            None => {}
+        }
+
         match self.apply_permutation_checks() {
             Some(_) => {
                 println!("Revealed or Flagged Fields based on tested permutations.");
@@ -148,6 +156,16 @@ impl MineSweeperSolver {
     fn has_unrevealed_neighbours(&self, x: usize, y: usize) -> bool {
         for (new_x, new_y) in self.field.surrounding_fields(x, y) {
             if self.state[new_x][new_y] == MineSweeperCellState::Hidden {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    fn has_revealed_neighbours(&self, x: usize, y: usize) -> bool {
+        for (new_x, new_y) in self.field.surrounding_fields(x, y) {
+            if self.state[new_x][new_y] == MineSweeperCellState::Revealed {
                 return true;
             }
         }
@@ -299,34 +317,262 @@ impl MineSweeperSolver {
         }
     }
 
-    fn apply_permutation_checks(&mut self) -> Option<()> {
-        let mut did_something = false;
-        let mut permutation_field: HashMap<(usize, usize), u64>  = HashMap::new();
-        let mut possible_permutations: u64 = 0;
+    fn apply_extended_box_logic(&mut self) -> Option<()> {
+        // Nope, this doesnt work yet.
+        return None;
 
-        // create a map with all fields which we use for permutations
+        let mut did_something = false;
+        let mut boxes: Vec<Box> = vec![];
+        
+        // Create Boxes around fields with unrevealed neighbours
         for (x, y) in self.field.sorted_fields() {
-            if self.has_informations(x, y) {
-                permutation_field.insert((x, y), 0);
+            if !self.has_informations(x, y) {
+                continue;
+            }
+
+            let surrounding_hidden_fields = self.get_surrounding_unrevealed(x, y);
+            let mut new_box = Box::new(x, y, self.get_reduced_count(x, y));
+            for cell in &surrounding_hidden_fields {
+                new_box.add_field(cell.0, cell.1);
+            }
+            boxes.push(new_box);
+        }
+
+        // Create a Map of all fields with unrevealed neighbours and the boxes which are in their reach
+        let mut field_map: HashMap<(usize, usize), Vec<Box>> = HashMap::new();
+        for (x, y) in self.field.sorted_fields() {
+            if !self.has_informations(x, y) {
+                continue;
+            }
+
+            for box_ in &boxes {
+                if box_.is_neighbouring(x, y) {
+                    field_map.entry((x, y)).or_insert(vec![]).push(box_.clone());
+                }
             }
         }
 
-        // generate all possible permutations for the fields
+        for ((x, y), boxes) in &field_map {
+            let mut new_boxes = vec![];
+            let mines = self.get_reduced_count(*x, *y);
+            let fields = self.get_surrounding_unrevealed(*x, *y);
+            print!("Box at ({}, {}) has ", x, y);
+            for box_ in boxes {
+                // Ignore boxes which dont help us (including the box we created for this field)
+                // Boxes which hold the same mine count AND the same number of fields can be ignored (as some of the fields are shared)
+                if mines == box_.mines && fields.len() == box_.fields.len() {
+                    continue;
+                }
+                new_boxes.push(box_);
+            }
+            println!("New Boxes in Reach: {}", new_boxes.len());
 
+            let mut field_tuples: Vec<(std::ops::RangeInclusive<u8>, Vec<(usize, usize)>)> = vec![];
+            let mut safe_fields: Vec<(usize, usize)> = vec![];
+            let mut mine_fields: Vec<(usize, usize)> = vec![];
+            field_tuples.push((mines..=mines, fields.clone()));
 
-
-        // apply found informations to the map
-        for ((x, y), permutation_mines) in permutation_field {
-            if permutation_mines == 0 {
-                // Field is in every possible way empty
-                self.reveal_field(x, y);
+            self.recursive_search(&fields, &mut field_tuples, &mut new_boxes, 0, &mut safe_fields, &mut mine_fields);
+            for cell in &safe_fields {
+                self.reveal_field(cell.0, cell.1);
                 did_something = true;
             }
-
-            if permutation_mines == possible_permutations {
-                // Field is in every possible way a mine
-                self.flag_cell(x, y);
+            for cell in &mine_fields {
+                self.flag_cell(cell.0, cell.1);
                 did_something = true;
+            }
+            println!("Field Tuples after search: {:?}\n\n", field_tuples);
+        }
+
+        if did_something {
+            return Some(());
+        } else {
+            return None;
+        }
+    }
+
+    fn recursive_search(
+        &mut self,
+        original_fields: &Vec<(usize, usize)>,
+        field_tuples: &mut Vec<(std::ops::RangeInclusive<u8>, Vec<(usize, usize)>)>,
+        new_boxes: &mut Vec<&Box>,
+        current_box_index: usize,
+        safe_fields: &mut Vec<(usize, usize)>,
+        mine_fields: &mut Vec<(usize, usize)>
+    ) {
+        if current_box_index == new_boxes.len() {
+            return;
+        }
+        let box_ = new_boxes[current_box_index];
+        {
+            println!("Box: ID {} : {:?}", current_box_index, box_);
+            println!("Len of field_tuples: {}", field_tuples.len());
+            for i in 0..field_tuples.len() {
+                let (shared, this_only, other_only) = box_.compare_to(&field_tuples[i].1);
+                if shared.len() == 0 || (shared.len() as i8) < (this_only.len() as i8 - box_.get_mine_count() as i8) {
+                    continue;
+                }
+                println!("Field Tuples bevor: {:?}", field_tuples);
+                let box_mines = box_.get_mine_count();
+
+                if this_only.len() == 0 && other_only.len() != 0 {
+                    field_tuples.push((*field_tuples[i].0.start() - box_mines..=field_tuples[i].0.end() - box_mines, other_only));
+                    field_tuples.push((box_mines..=box_mines, shared));
+                    field_tuples.remove(i);
+                } else if this_only.len() != 0 && other_only.len() != 0 {
+                    let mut this_only_len = this_only.len();
+
+                    if field_tuples.len() > 1 {
+                        for cell in &this_only {
+                            if original_fields.contains(cell) {
+                                this_only_len += 1;
+                            }
+                        }
+                        if this_only_len == 0 {
+                            continue;
+                        }
+                    }
+
+                    let lower_bound;
+                    if this_only_len <= box_mines as usize {
+                        lower_bound = box_mines - this_only_len as u8;
+                    } else {
+                        lower_bound = 0;
+                    }
+
+                    let mut upper_bound = shared.len() as u8;
+                    if upper_bound > box_mines {
+                        upper_bound = box_mines;
+                    }
+                    field_tuples.push((lower_bound..=upper_bound, shared));
+
+                    let new_lower_bound;
+                    if *field_tuples[i].0.start() < upper_bound as u8 {
+                        new_lower_bound = 0;
+                        println!("Bug a? New Lower Bound: {}", new_lower_bound);
+                    } else {
+                        new_lower_bound = *field_tuples[i].0.start() - upper_bound;
+                        println!("New Lower Bound: {}", new_lower_bound);
+                    }
+
+                    let mut new_upper_bound;
+                    if *field_tuples[i].0.end() < lower_bound as u8 {
+                        new_upper_bound = 0;
+                    } else {
+                        new_upper_bound = field_tuples[i].0.end() - lower_bound;
+                    }
+
+                    if new_upper_bound > other_only.len() as u8 {
+                        new_upper_bound = other_only.len() as u8;
+                    }
+
+                    field_tuples.push((new_lower_bound..=new_upper_bound, other_only));
+                    field_tuples.remove(i);
+                }
+                println!("Field Tuples after: {:?}", field_tuples);
+            }
+        }
+        self.recursive_search(original_fields, field_tuples, new_boxes, current_box_index + 1, safe_fields, mine_fields);
+        {
+            for i in 0..field_tuples.len() {
+                let field_count = field_tuples[i].1.len() as u8;
+
+                if field_count == 0 {
+                    panic!("Field Count is 0. This should not happen.");
+                }
+
+                if field_tuples[i].0.start() == &0 {
+                    continue;
+                }
+
+                if field_tuples[i].0.start() == field_tuples[i].0.end() {
+                    continue;
+                }
+
+                if field_count < *field_tuples[i].0.end() {
+                    let diff = *field_tuples[i].0.end() - field_count;
+                    for j in 0..field_tuples.len() {
+                        if i == j {
+                            continue;
+                        }
+                        if field_tuples[j].0.start() == field_tuples[j].0.end() {
+                            continue;
+                        }
+
+                        if !field_tuples[j].0.start() == 0 {
+                            continue;
+                        }
+                        let start = field_tuples[j].0.start().clone() + diff;
+                        field_tuples[j].0 = start..=*field_tuples[j].0.end();
+                        break;
+                    }
+                    let start = field_tuples[i].0.start().clone();
+                    field_tuples[i].0 = start..=field_count;
+                    println!("Fixed : {:?}", field_tuples);
+                }
+            }
+
+            for i in 0..field_tuples.len() {
+                if field_tuples[i].0.start() != field_tuples[i].0.end() {
+                    continue;
+                }
+
+                if field_tuples[i].0.start() == &0 {
+                    for cell in &field_tuples[i].1 {
+                        safe_fields.push(*cell);
+                    }
+                } else if *field_tuples[i].0.start() == field_tuples[i].1.len() as u8 {
+                    for cell in &field_tuples[i].1 {
+                        mine_fields.push(*cell);
+                    }
+                }
+            }
+        }
+    }
+
+    fn apply_permutation_checks(&mut self) -> Option<()> {
+        let mut did_something = false;
+
+        let islands = search_for_islands(self);
+
+        if islands.len() == 0 {
+            panic!("No islands found. This should not happen.");
+        }
+
+        for island in &islands {
+            let mut possible_permutations: u32 = 0;
+            let mut permutation_field: HashMap<(usize, usize), u32> = HashMap::new();
+            let mut permutation_vector: Vec<((usize, usize), bool)> = vec![];
+
+            for &(x, y) in island {
+                if self.has_revealed_neighbours(x, y) {
+                    permutation_field.insert((x, y), 0);
+                    continue;
+                }
+            }
+
+            for ((x, y), _) in permutation_field {
+                permutation_vector.push(((x, y), false));
+            }
+
+            sort_by_min_distance(&mut permutation_vector);
+            // recursively, generate all possible permutations of mine placements
+            self.recursively_apply_permutations(&mut permutation_vector, 0, &mut permutation_field, &mut possible_permutations);
+
+            // apply found informations to the map
+            continue; // For now, dont
+            for ((x, y), permutation_mines) in permutation_field {
+                if permutation_mines == 0 {
+                    // Field is in every possible way empty
+                    self.reveal_field(x, y);
+                    did_something = true;
+                }
+                
+                if permutation_mines == possible_permutations {
+                    // Field is in every possible way a mine
+                    self.flag_cell(x, y);
+                    did_something = true;
+                }
             }
         }
 
@@ -335,6 +581,30 @@ impl MineSweeperSolver {
         } else {
             return None;
         }
+    }
+
+    fn recursively_apply_permutations(
+        &mut self,
+        permutation_vector: &mut Vec<((usize, usize), bool)>,
+        index: usize,
+        permutation_field: &mut HashMap<(usize, usize), u32>,
+        possible_permutations: &mut u32
+    ) {
+        if index == permutation_vector.len() {
+            return;
+        }
+
+        // TOOD:
+        // Check if we are allowed to place a mine here? -> check surrounding numbers and if they are satisfied
+
+        // If there is no forced free field, start both variants
+        let (x, y) = permutation_vector[index].0;
+        let mut new_permutation_vector = permutation_vector.clone();
+        new_permutation_vector[index].1 = true;
+        self.recursively_apply_permutations(&mut new_permutation_vector, index + 1, permutation_field, possible_permutations);
+        
+        new_permutation_vector[index].1 = false;
+        self.recursively_apply_permutations(&mut new_permutation_vector, index + 1, permutation_field, possible_permutations);
     }
 }
 
@@ -435,4 +705,42 @@ fn recursive_search(x: usize, y: usize, fields: &mut Vec<(usize,usize)>, visited
             recursive_search(new_x, new_y, fields, visited, game);
         }
     }
+}
+
+use std::cmp::Ordering;
+
+fn sort_by_min_distance(permutation_vector: &mut Vec<((usize, usize), bool)>) {
+    if permutation_vector.is_empty() {
+        return;
+    }
+
+    // Start with the first element as the initial point
+    let mut sorted_vector = vec![permutation_vector.remove(0)];
+
+    while !permutation_vector.is_empty() {
+        // Find the closest point to the last point in the sorted vector
+        let last_point = sorted_vector.last().unwrap().0;
+        let (index, _) = permutation_vector
+            .iter()
+            .enumerate()
+            .min_by(|(_, a), (_, b)| {
+                let dist_a = distance(last_point, a.0);
+                let dist_b = distance(last_point, b.0);
+                dist_a.partial_cmp(&dist_b).unwrap_or(Ordering::Equal)
+            })
+            .unwrap();
+
+        // Add the closest point to the sorted vector and remove it from the original vector
+        sorted_vector.push(permutation_vector.remove(index));
+    }
+
+    // Replace the original vector with the sorted one
+    *permutation_vector = sorted_vector;
+}
+
+// Helper function to calculate the Euclidean distance between two points
+fn distance(a: (usize, usize), b: (usize, usize)) -> f64 {
+    let dx = a.0 as f64 - b.0 as f64;
+    let dy = a.1 as f64 - b.1 as f64;
+    (dx * dx + dy * dy).sqrt()
 }
