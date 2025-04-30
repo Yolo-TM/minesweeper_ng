@@ -551,7 +551,7 @@ impl MineSweeperSolver {
                 }
             }
 
-            for ((x, y), _) in permutation_field {
+            for (&(x, y), _) in &permutation_field {
                 permutation_vector.push(((x, y), false));
             }
 
@@ -593,18 +593,16 @@ impl MineSweeperSolver {
         if index == permutation_vector.len() {
             return;
         }
+        permutation_vector[index].1 = false;
+        let (x, y) = permutation_vector[index].0;
 
         // TOOD:
         // Check if we are allowed to place a mine here? -> check surrounding numbers and if they are satisfied
 
         // If there is no forced free field, start both variants
-        let (x, y) = permutation_vector[index].0;
-        let mut new_permutation_vector = permutation_vector.clone();
-        new_permutation_vector[index].1 = true;
-        self.recursively_apply_permutations(&mut new_permutation_vector, index + 1, permutation_field, possible_permutations);
+        self.recursively_apply_permutations(permutation_vector, index + 1, permutation_field, possible_permutations);
         
-        new_permutation_vector[index].1 = false;
-        self.recursively_apply_permutations(&mut new_permutation_vector, index + 1, permutation_field, possible_permutations);
+        self.recursively_apply_permutations(permutation_vector, index + 1, permutation_field, possible_permutations);
     }
 }
 
