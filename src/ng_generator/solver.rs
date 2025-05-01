@@ -532,16 +532,21 @@ impl MineSweeperSolver {
 
     fn apply_permutation_checks(&mut self) -> Option<()> {
         let mut did_something = false;
-
+        let max_mines = self.field.mines - self.flag_count;
         let islands = search_for_islands(self);
 
         if islands.len() == 0 {
             panic!("No islands found. This should not happen.");
         }
 
+        if max_mines <= 0 {
+            panic!("No remaining mines. This should not happen.");
+        }
+
         for island in &islands {
-            let mut possible_permutations: u32 = 0;
-            let mut permutation_field: HashMap<(usize, usize), u32> = HashMap::new();
+            println!("\n\nRunning for island: {:?}", island);
+            let mut possible_permutations: u64 = 0;
+            let mut permutation_field: HashMap<(usize, usize), u64> = HashMap::new();
             let mut permutation_vector: Vec<((usize, usize), bool)> = vec![];
 
             for &(x, y) in island {
@@ -558,7 +563,14 @@ impl MineSweeperSolver {
             sort_by_min_distance(&mut permutation_vector);
             println!("Permutation Vector: {:?}", permutation_vector);
             // recursively, generate all possible permutations of mine placements
-            self.recursively_apply_permutations(&mut permutation_vector, 0, &mut permutation_field, &mut possible_permutations);
+            self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut possible_permutations);
+
+            // change the order of the vector to get arrangements where the first and last points are neighbouring
+            let second_half = permutation_vector.split_off(permutation_vector.len() / 2);
+            permutation_vector.splice(0..0, second_half);
+
+            println!("Permutation Vector rotated: {:?}", permutation_vector);
+            self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut possible_permutations);
 
             // apply found informations to the map
             println!("Possible Permutations: {}", possible_permutations.to_string().green());
@@ -595,8 +607,9 @@ impl MineSweeperSolver {
         &mut self,
         permutation_vector: &mut Vec<((usize, usize), bool)>,
         index: usize,
-        permutation_field: &mut HashMap<(usize, usize), u32>,
-        possible_permutations: &mut u32
+        max_remaining_mines: u64,
+        permutation_field: &mut HashMap<(usize, usize), u64>,
+        possible_permutations: &mut u64
     ) {
         if index == permutation_vector.len() {
             self.insert_if_valid(&permutation_vector, permutation_field, possible_permutations);
@@ -605,26 +618,30 @@ impl MineSweeperSolver {
         permutation_vector[index].1 = false;
         let (x, y) = permutation_vector[index].0;
 
-        // TOOD:
         // Check if we are allowed to place a mine here? -> check surrounding numbers and if they are satisfied
         for (new_x, new_y) in self.field.surrounding_fields(x, y) {
-            if self.has_informations(new_x, new_y) && self.is_number_satisfied(x, y, permutation_vector) {
+            if self.has_informations(new_x, new_y) && self.is_number_satisfied(new_x, new_y, permutation_vector) {
                 // Dont Place a mine here, this would be too much
-                self.recursively_apply_permutations(permutation_vector, index + 1, permutation_field, possible_permutations);
+                self.recursively_apply_permutations(permutation_vector, index + 1, max_remaining_mines, permutation_field, possible_permutations);
                 return;
             }
         }
-        // There is no indication that here is no mine allowed, so try without placing a mine here.
-        self.recursively_apply_permutations(permutation_vector, index + 1, permutation_field, possible_permutations);
 
-        // But here can be a mine, so lets try this also
+        // There is no indication that here is no mine allowed, so try without placing a mine here.
+        self.recursively_apply_permutations(permutation_vector, index + 1, max_remaining_mines, permutation_field, possible_permutations);
+
+        // But here can be a mine, so lets try this also if we have enough remaining mines
+        if max_remaining_mines == 0 {
+            return;
+        }
         permutation_vector[index].1 = true;
-        self.recursively_apply_permutations(permutation_vector, index + 1, permutation_field, possible_permutations);
+        self.recursively_apply_permutations(permutation_vector, index + 1, max_remaining_mines - 1, permutation_field, possible_permutations);
     }
 
     fn is_number_satisfied(&self, x: usize, y: usize, permutation_vector: &Vec<((usize, usize), bool)>) -> bool {
-        let mine_count = self.field.board[x][y].get_number();
         let mut flag_count: u8 = 0;
+        let mine_count = self.field.board[x][y].get_number();
+
         for (new_x, new_y) in self.field.surrounding_fields(x, y) {
             if self.state[new_x][new_y] == MineSweeperCellState::Flagged {
                 flag_count += 1;
@@ -647,15 +664,17 @@ impl MineSweeperSolver {
     fn insert_if_valid(
         &mut self,
         permutation_vector: &Vec<((usize, usize), bool)>,
-        permutation_field: &mut HashMap<(usize, usize), u32>,
-        possible_permutations: &mut u32
+        permutation_field: &mut HashMap<(usize, usize), u64>,
+        possible_permutations: &mut u64
     ) {
-        // Check if all current information fields would be satisfied with this permutation
-        // if not, return
-        for (x, y) in self.field.sorted_fields() {
-            if self.has_informations(x, y) {
-                if !self.is_number_satisfied(x, y, permutation_vector) {
-                    return;
+        // Get all neighbouring information fields to the permutation vector and check if they are satisfied
+        for &((x, y), _mine) in permutation_vector {
+            for (new_x, new_y) in self.field.surrounding_fields(x, y) {
+                if self.has_informations(new_x, new_y) {
+                    if !self.is_number_satisfied(new_x, new_y, permutation_vector) {
+                        println!("Rejected Permutation Vector: {:?}", permutation_vector);
+                        return;
+                    }
                 }
             }
         }
@@ -663,12 +682,12 @@ impl MineSweeperSolver {
         println!("Found a valid permutation!");
 
         *possible_permutations += 1;
-        for ((x, y), mine) in permutation_vector {
+        for &((x, y), mine) in permutation_vector {
             if !mine {
                 continue;
             }
 
-            if let Some(count) = permutation_field.get_mut(&(*x, *y)) {
+            if let Some(count) = permutation_field.get_mut(&(x, y)) {
                 *count += 1;
             } else {
                 panic!("Field ({}, {}) not found in permutation field.", x, y);
