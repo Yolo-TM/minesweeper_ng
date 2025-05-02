@@ -560,22 +560,23 @@ impl MineSweeperSolver {
                 permutation_vector.push(((x, y), false));
             }
 
-            sort_by_min_distance(&mut permutation_vector);
+            //sort_by_min_distance(&mut permutation_vector);
             println!("Permutation Vector: {:?}", permutation_vector);
             // recursively, generate all possible permutations of mine placements
             self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut possible_permutations);
 
+            // invert the vector so we go the other way around?
             // change the order of the vector to get arrangements where the first and last points are neighbouring
             let second_half = permutation_vector.split_off(permutation_vector.len() / 2);
             permutation_vector.splice(0..0, second_half);
 
-            println!("Permutation Vector rotated: {:?}", permutation_vector);
-            self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut possible_permutations);
+            //println!("Permutation Vector rotated: {:?}", permutation_vector);
+            //self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut possible_permutations);
 
             // apply found informations to the map
             println!("Possible Permutations: {}", possible_permutations.to_string().green());
             println!("Permutation Field: {:?}", permutation_field);
-            //continue; // For now, dont
+            continue; // For now, dont
 
             if possible_permutations == 0 {
                 continue; // No possible permutations found, skip this island
@@ -672,7 +673,7 @@ impl MineSweeperSolver {
             for (new_x, new_y) in self.field.surrounding_fields(x, y) {
                 if self.has_informations(new_x, new_y) {
                     if !self.is_number_satisfied(new_x, new_y, permutation_vector) {
-                        println!("Rejected Permutation Vector: {:?}", permutation_vector);
+                        *possible_permutations += 1;
                         return;
                     }
                 }
