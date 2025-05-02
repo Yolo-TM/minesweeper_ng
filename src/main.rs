@@ -16,7 +16,14 @@ fn main() {
     //ng_field.print();
     //minesweeper_solver(ng_field);
 
+    /*
+    Solver doesnt solve 1 or 2 cell islands ??
+    optimisation needs to be added  ~8 min for 29 cells is too long
+    
+    */
+    let start = std::time::Instant::now();
     let small_field = ng_generator::get_small_test_field();
-    small_field.print();
     minesweeper_solver(small_field);
+    let duration = start.elapsed();
+    println!("Time elapsed in small field is: {:?}", duration);
 }

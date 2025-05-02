@@ -559,10 +559,10 @@ impl MineSweeperSolver {
             for (&(x, y), _) in &permutation_field {
                 permutation_vector.push(((x, y), false));
             }
-            println!("\n\nRunning for island with {} cells and {} testable fields", island.len().to_string().green(), permutation_vector.len().to_string().green());
-
             sort_by_min_distance(&mut permutation_vector);
-            //println!("Permutation Vector: {:?}", permutation_vector);
+            println!("\n\nRunning for island with {} cells and {} testable fields with max_mines {}", island.len().to_string().green(), permutation_vector.len().to_string().green(), max_mines.to_string().red());
+
+            println!("Permutation Vector: {:?}", permutation_vector);
                 self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut possible_permutations, &mut wrong_permutations);
             // recursively, generate all possible permutations of mine placements
             //for i in 0..permutation_vector.len() * 2 {
@@ -623,6 +623,9 @@ impl MineSweeperSolver {
         permutation_vector[index].1 = false;
         let (x, y) = permutation_vector[index].0;
 
+        // new method is overflagged? -> check if this makes sense what we are doing here
+
+
         // Check if we are allowed to place a mine here? -> check surrounding numbers and if they are satisfied
         //for (new_x, new_y) in self.field.surrounding_fields(x, y) {
         //    if self.has_informations(new_x, new_y) && self.is_number_satisfied(new_x, new_y, permutation_vector) {
@@ -672,10 +675,12 @@ impl MineSweeperSolver {
         possible_permutations: &mut u64,
         wrong_permutations: &mut u64
     ) {
+        // This function rejects to much currently. (eg 2 1 cell islands neighbouring each other)
         // Get all neighbouring information fields to the permutation vector and check if they are satisfied
         for &((x, y), _mine) in permutation_vector {
             for (new_x, new_y) in self.field.surrounding_fields(x, y) {
                 if self.has_informations(new_x, new_y) {
+                    // check if the number has more hidden field neighbours which are / are not in the permutation vector and only check if the number is not overflagged
                     if !self.is_number_satisfied(new_x, new_y, permutation_vector) {
                         *wrong_permutations += 1;
                         return;
@@ -763,7 +768,6 @@ fn solver(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
         }
     }
 }
-
 
 // bei mehreren nicht lösbaren islands, Minen von einer Box bei einer Island in eine andere reinpacken und dann schauen ob es lösbar wird
 
