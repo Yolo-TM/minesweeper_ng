@@ -1,8 +1,8 @@
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Box{
-    pub fields: Vec<(usize, usize)>,
-    pub owner: (usize, usize),
-    pub mines: u8,
+    fields: Vec<(usize, usize)>,
+    owner: (usize, usize),
+    mines: u8,
 }
 
 impl Box{
@@ -14,15 +14,23 @@ impl Box{
         }
     }
 
+    pub fn get_mines(&self) -> u8 {
+        return self.mines;
+    }
+
+    pub fn get_field_count(&self) -> usize {
+        return self.fields.len();
+    }
+
     pub fn add_field(&mut self, x: usize, y: usize) {
         self.fields.push((x, y));
     }
 
-    pub fn remove_field(&mut self, x: usize, y: usize) {
+    fn remove_field(&mut self, x: usize, y: usize) {
         self.fields.retain(|&field| field != (x, y));
     }
 
-    pub fn contains(&self, x: usize, y: usize) -> bool {
+    fn contains(&self, x: usize, y: usize) -> bool {
         for field in &self.fields {
             if field.0 == x && field.1 == y {
                 return true;
@@ -31,7 +39,7 @@ impl Box{
         false
     }
 
-    pub fn is_owner(&self, x: usize, y: usize) -> bool {
+    fn is_owner(&self, x: usize, y: usize) -> bool {
         return self.owner.0 == x && self.owner.1 == y
     }
 
@@ -42,10 +50,6 @@ impl Box{
             }
         }
         false
-    }
-
-    pub fn get_mine_count(&self) -> u8 {
-        return self.mines;
     }
 
     pub fn compare_to(&self, other: &Vec<(usize, usize)>) -> (Vec<(usize, usize)>, Vec<(usize, usize)>, Vec<(usize, usize)>) {
@@ -69,7 +73,7 @@ impl Box{
         (shared, this_only, other_only)
     }
 
-    pub fn is_inside(&self, other: &Box) -> bool {
+    fn is_inside(&self, other: &Box) -> bool {
         for field in &self.fields {
             if !other.fields.contains(field) {
                 return false;

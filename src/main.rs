@@ -1,9 +1,9 @@
 #![cfg_attr(debug_assertions, allow(dead_code))]
 #![cfg_attr(debug_assertions, allow(unused_imports))]
 
-pub mod field_generator;
-pub mod ng_generator;
-pub mod minesweeper_solver;
+mod field_generator;
+mod ng_generator;
+mod minesweeper_solver;
 
 use field_generator::minesweeper_field;
 use ng_generator::get_evil_field;
@@ -15,9 +15,9 @@ fn main() {
     //field.print();
     //minesweeper_solver(field);
 
-    let ng_field = get_evil_field();
-    ng_field.print();
-    minesweeper_solver(ng_field);
+    //let ng_field = get_evil_field();
+    //ng_field.print();
+    //minesweeper_solver(ng_field);
 
     let small_field = ng_generator::get_small_test_field();
     minesweeper_solver(small_field);

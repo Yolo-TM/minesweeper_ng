@@ -1,8 +1,8 @@
 mod minesweeper_field_iterator;
 mod surrounding_fields_iterator;
 
-pub mod minesweeper_field;
-pub mod minesweeper_cell;
+mod minesweeper_field;
+mod minesweeper_cell;
 pub use minesweeper_field::MineSweeperField;
 pub use minesweeper_cell::MineSweeperCell;
 

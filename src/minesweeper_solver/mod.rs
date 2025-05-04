@@ -16,14 +16,13 @@ enum MineSweeperCellState {
     Flagged,
 }
 
-
 #[derive(Clone)]
 struct MineSweeperSolver{
-    pub field: MineSweeperField,
-    pub state: Vec<Vec<MineSweeperCellState>>,
-    pub flag_count: u64,
-    pub hidden_count: u64,
-    pub remaining_mines: u64
+    field: MineSweeperField,
+    state: Vec<Vec<MineSweeperCellState>>,
+    flag_count: u64,
+    hidden_count: u64,
+    remaining_mines: u64
 }
 
 pub fn minesweeper_solver(field: MineSweeperField) {

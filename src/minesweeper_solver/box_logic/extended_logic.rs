@@ -1,3 +1,5 @@
+#![cfg_attr(debug_assertions, allow(unreachable_code))]
+
 use super::Box;
 use crate::field_generator::{MineSweeperField, MineSweeperCell};
 use super::super::MineSweeperSolver;
@@ -49,7 +51,7 @@ impl MineSweeperSolver {
             for box_ in boxes {
                 // Ignore boxes which dont help us (including the box we created for this field)
                 // Boxes which hold the same mine count AND the same number of fields can be ignored (as some of the fields are shared)
-                if mines == box_.mines && fields.len() == box_.fields.len() {
+                if mines == box_.get_mines() && fields.len() == box_.get_field_count() {
                     continue;
                 }
                 new_boxes.push(box_);
@@ -98,11 +100,11 @@ impl MineSweeperSolver {
             println!("Len of field_tuples: {}", field_tuples.len());
             for i in 0..field_tuples.len() {
                 let (shared, this_only, other_only) = box_.compare_to(&field_tuples[i].1);
-                if shared.len() == 0 || (shared.len() as i8) < (this_only.len() as i8 - box_.get_mine_count() as i8) {
+                if shared.len() == 0 || (shared.len() as i8) < (this_only.len() as i8 - box_.get_mines() as i8) {
                     continue;
                 }
                 println!("Field Tuples bevor: {:?}", field_tuples);
-                let box_mines = box_.get_mine_count();
+                let box_mines = box_.get_mines();
 
                 if this_only.len() == 0 && other_only.len() != 0 {
                     field_tuples.push((*field_tuples[i].0.start() - box_mines..=field_tuples[i].0.end() - box_mines, other_only));

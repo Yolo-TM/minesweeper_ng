@@ -9,7 +9,7 @@ use core::panic;
 use std::{cmp::Ordering, collections::HashMap, hash::Hash, thread, vec};
 
 impl MineSweeperSolver {
-    pub fn new(field : MineSweeperField) -> Self {
+    fn new(field : MineSweeperField) -> Self {
         let state = vec![vec![MineSweeperCellState::Hidden; field.height]; field.width];
 
         MineSweeperSolver {
@@ -21,7 +21,7 @@ impl MineSweeperSolver {
         }
     }
 
-    pub fn print(&self) {
+    fn print(&self) {
         for (x, y) in self.field.sorted_fields() {
             match self.state[x][y] {
                 MineSweeperCellState::Hidden => print!("? "),
@@ -39,7 +39,7 @@ impl MineSweeperSolver {
         }
     }
 
-    pub fn do_solving_step(&mut self) -> Option<()>{
+    fn do_solving_step(&mut self) -> Option<()>{
         match self.do_basic_neighbour_check(){
             Some(_) => {
                 println!("Revealed or Flagged Fields based on basic count logic.");
@@ -74,7 +74,7 @@ impl MineSweeperSolver {
         None
     }
 
-    pub fn flag_all_hidden_cells(&mut self) {
+    fn flag_all_hidden_cells(&mut self) {
         for (x, y) in self.field.sorted_fields() {
             if self.state[x][y] == MineSweeperCellState::Hidden {
                 self.flag_cell(x, y);
@@ -208,7 +208,7 @@ impl MineSweeperSolver {
         && self.has_unrevealed_neighbours(x, y)
     }
 
-    pub fn do_basic_neighbour_check(&mut self) -> Option<()> {
+    fn do_basic_neighbour_check(&mut self) -> Option<()> {
         let mut did_something = false;
 
         for (x, y) in self.field.sorted_fields() {
