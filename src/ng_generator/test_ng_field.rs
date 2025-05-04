@@ -1,5 +1,4 @@
-use crate::field_generator::minesweeper_cell::MineSweeperCell;
-use crate::field_generator::minesweeper_field::MineSweeperField;
+use crate::field_generator::{MineSweeperField, MineSweeperCell};
 
 pub fn get_ng_minesweeper_field() -> MineSweeperField {
     let width = 30;

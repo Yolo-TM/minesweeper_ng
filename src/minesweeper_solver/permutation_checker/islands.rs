@@ -1,6 +1,5 @@
-use crate::field_generator::minesweeper_field::MineSweeperField;
-use crate::field_generator::minesweeper_cell::MineSweeperCell;
-use crate::minesweeper_solver::box_logic::boxes::Box;
+use crate::field_generator::{MineSweeperField, MineSweeperCell};
+use crate::minesweeper_solver::box_logic::Box;
 use crate::minesweeper_solver::MineSweeperSolver;
 use crate::minesweeper_solver::MineSweeperCellState;
 use colored::Colorize;

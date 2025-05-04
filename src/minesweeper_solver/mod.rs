@@ -1,4 +1,4 @@
-use crate::minesweeper_field::MineSweeperField;
+use crate::field_generator::MineSweeperField;
 
 mod box_logic;
 mod permutation_checker;

@@ -1,4 +1,4 @@
-use super::minesweeper_cell::MineSweeperCell;
+use super::MineSweeperCell;
 use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 

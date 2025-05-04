@@ -1,9 +1,8 @@
-use crate::field_generator::minesweeper_field::MineSweeperField;
-use crate::field_generator::minesweeper_cell::MineSweeperCell;
+use crate::field_generator::{MineSweeperCell, MineSweeperField};
 use super::SolverSolution;
 use super::MineSweeperCellState;
-use super::box_logic::boxes::Box;
-use super::permutation_checker::islands::search_for_islands;
+use super::box_logic::Box;
+use super::permutation_checker::search_for_islands;
 use super::MineSweeperSolver;
 use colored::Colorize;
 use core::panic;

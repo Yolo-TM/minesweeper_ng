@@ -1,7 +1,6 @@
-use crate::field_generator::minesweeper_field::MineSweeperField;
-use crate::field_generator::minesweeper_cell::MineSweeperCell;
-use super::boxes::Box;
-use crate::minesweeper_solver::MineSweeperSolver;
+use crate::field_generator::{MineSweeperField, MineSweeperCell};
+use super::Box;
+use super::super::MineSweeperSolver;
 use colored::Colorize;
 use core::panic;
 use std::{cmp::Ordering, collections::HashMap, hash::Hash, thread, vec};

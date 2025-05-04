@@ -1,10 +1,9 @@
-use crate::field_generator::minesweeper_field::MineSweeperField;
-use crate::field_generator::minesweeper_cell::MineSweeperCell;
+use crate::field_generator::{MineSweeperField, MineSweeperCell};
 use super::sort::sort_by_min_distance;
-use crate::minesweeper_solver::box_logic::boxes::Box;
+use crate::minesweeper_solver::box_logic::Box;
 use crate::minesweeper_solver::MineSweeperCellState;
 use crate::minesweeper_solver::MineSweeperSolver;
-use crate::minesweeper_solver::permutation_checker::islands::{search_for_islands, merge_islands};
+use crate::minesweeper_solver::permutation_checker::{search_for_islands, merge_islands};
 use colored::Colorize;
 use core::panic;
 use std::{cmp::Ordering, collections::HashMap, hash::Hash, thread, vec};

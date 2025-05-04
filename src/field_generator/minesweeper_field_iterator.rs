@@ -1,4 +1,4 @@
-use super::minesweeper_field::MineSweeperField;
+use super::MineSweeperField;
 
 pub struct MineSweeperFieldIterator {
     width: usize,

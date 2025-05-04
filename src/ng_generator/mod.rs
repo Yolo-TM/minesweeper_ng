@@ -1,4 +1,4 @@
-use crate::field_generator::minesweeper_field::MineSweeperField;
+use crate::field_generator::MineSweeperField;
 
 mod test_ng_field;
 
