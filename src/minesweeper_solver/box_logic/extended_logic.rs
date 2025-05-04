@@ -5,7 +5,6 @@ use colored::Colorize;
 use core::panic;
 use std::{cmp::Ordering, collections::HashMap, hash::Hash, thread, vec};
 
-
 impl MineSweeperSolver {
     pub fn apply_extended_box_logic(&mut self) -> Option<()> {
         // Nope, this doesnt work yet.

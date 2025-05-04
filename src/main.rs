@@ -10,19 +10,15 @@ use ng_generator::get_evil_field;
 use minesweeper_solver::minesweeper_solver;
 
 fn main() {
+    let start = std::time::Instant::now();
     //let field = minesweeper_field(45, 26, 0.22);
     //field.print();
     //minesweeper_solver(field);
 
-    //let ng_field = get_evil_field();
-    //ng_field.print();
-    //minesweeper_solver(ng_field);
+    let ng_field = get_evil_field();
+    ng_field.print();
+    minesweeper_solver(ng_field);
 
-    /*
-    Solver doesnt solve 1 or 2 cell islands ??
-    optimisation needs to be added  ~8 min for 29 cells is too long
-    */
-    let start = std::time::Instant::now();
     let small_field = ng_generator::get_small_test_field();
     minesweeper_solver(small_field);
     let duration = start.elapsed();

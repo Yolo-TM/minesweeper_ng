@@ -12,12 +12,11 @@ impl MineSweeperSolver {
 
         for (x, y) in self.field.sorted_fields() {
             if self.has_informations(x, y) {
-                let reduced_count = self.get_reduced_count(x, y);
-                let surrounding_hidden_fields = self.get_surrounding_unrevealed(x, y);
-
                 for (new_x, new_y) in self.field.extended_surrounding_fields(x, y, 5) {
                     if self.has_informations(new_x, new_y) {
+                        let reduced_count = self.get_reduced_count(x, y);
                         let reduced_count2 = self.get_reduced_count(new_x, new_y);
+                        let surrounding_hidden_fields = self.get_surrounding_unrevealed(x, y);
                         let surrounding_hidden_fields2 = self.get_surrounding_unrevealed(new_x, new_y);
 
                         let mut shared_fields = vec![];
@@ -54,7 +53,6 @@ impl MineSweeperSolver {
                                 }
                             }
                             let reduced_diff = (reduced_count - reduced_count2) as usize;
-
                             if reduced_diff == rest_fields.len() {
                                 for cell in &rest_fields {
                                     self.flag_cell(cell.0, cell.1);
