@@ -95,7 +95,7 @@ impl MineSweeperSolver {
         possible_permutations: &mut u64,
         wrong_permutations: &mut u64
         ) {
-        // run on gpu ?? 
+        // run on gpu ??
         let cores = num_cpus::get();
         let threads = (cores * 2) as u64;
         let mut thread_pool = vec![];
@@ -119,6 +119,7 @@ impl MineSweeperSolver {
             let new_self: MineSweeperSolver = self.clone(); // Clone the current instance of self
 
             let mask = collect_bits(bit_mask);
+            // implement a check if this mask is already a valid permutation and if not skip it
             for i in 0..permutation_vector_clone.len() {
                 if mask[i] == 1 {
                     permutation_vector_clone[i].1 = true;

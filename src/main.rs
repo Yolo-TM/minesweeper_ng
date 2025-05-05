@@ -15,12 +15,12 @@ fn main() {
     //field.print();
     //minesweeper_solver(field);
 
-    //let ng_field = get_evil_field();
-    //ng_field.print();
-    //minesweeper_solver(ng_field);
+    let ng_field = get_evil_field();
+    ng_field.print();
+    minesweeper_solver(ng_field);
 
-    let small_field = ng_generator::get_small_test_field();
-    minesweeper_solver(small_field);
+    //let small_field = ng_generator::get_small_test_field();
+    //minesweeper_solver(small_field);
     let duration = start.elapsed();
     println!("Time elapsed: {:?}", duration);
 }
