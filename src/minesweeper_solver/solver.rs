@@ -56,21 +56,22 @@ impl MineSweeperSolver {
             None => {}
         }
 
-        //match self.apply_extended_box_logic() {
-        //    Some(_) => {
-        //        println!("Revealed or Flagged Fields based on extended box logic.");
-        //        return Some(());
-        //    },
-        //    None => {}
-        //}
-
-        match self.apply_permutation_checks() {
+        match self.apply_extended_box_logic() {
             Some(_) => {
-                println!("Revealed or Flagged Fields based on tested permutations.");
+                println!("Revealed or Flagged Fields based on extended box logic.");
                 return Some(());
             },
             None => {}
         }
+
+        // could be more optimised, for now its enough
+        //match self.apply_permutation_checks() {
+        //    Some(_) => {
+        //        println!("Revealed or Flagged Fields based on tested permutations.");
+        //        return Some(());
+        //    },
+        //    None => {}
+        //}
         None
     }
 
