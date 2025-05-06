@@ -42,11 +42,13 @@ impl MineSweeperSolver {
         let mut all_wrong_permutations: u64 = 0;
         let mut permutation_field: HashMap<(usize, usize), u64> = HashMap::new();
         let mut permutation_vector: Vec<((usize, usize), bool)> = vec![];
+        let mut no_revealed_neighbours: u64 = 0;
 
         for &(x, y) in island {
             if self.has_revealed_neighbours(x, y) {
                 permutation_field.insert((x, y), 0);
-                continue;
+            } else {
+                no_revealed_neighbours += 1;
             }
         }
 
@@ -60,9 +62,21 @@ impl MineSweeperSolver {
 
         if permutation_vector.len() >= 20 {
             // This would take way too long, start multiple threads for speed up
-            self.start_permutation_threads(permutation_vector, max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
+            self.start_permutation_threads(permutation_vector.clone(), max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
         } else {
-            self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
+            let mut permutations = permutation_vector.clone();
+            self.recursively_apply_permutations(&mut permutations, 0, max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
+        }
+
+        if max_mines > no_revealed_neighbours {
+            // Edge Case, it could be solvable if all non information fields are mines and we give a reduced max mines to our permutation all_wrong_permutations
+            let max_mines = max_mines - no_revealed_neighbours;
+            if permutation_vector.len() >= 20 {
+                // This would take way too long, start multiple threads for speed up
+                self.start_permutation_threads(permutation_vector.clone(), max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
+            } else {
+                self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
+            }
         }
 
         println!("Possible Permutations: {}", all_possible_permutations.to_string().green());

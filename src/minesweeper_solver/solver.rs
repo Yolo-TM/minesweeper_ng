@@ -109,7 +109,6 @@ impl MineSweeperSolver {
 
     pub fn flag_cell(&mut self, x: usize, y: usize) {
         if self.state[x][y] == MineSweeperCellState::Revealed || self.state[x][y] == MineSweeperCellState::Flagged {
-            println!("Cell ({}, {}) is already revealed or flagged.", x, y);
             return;
         }
 
