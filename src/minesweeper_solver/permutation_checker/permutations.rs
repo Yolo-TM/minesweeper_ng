@@ -68,7 +68,32 @@ impl MineSweeperSolver {
             self.recursively_apply_permutations(&mut permutations, 0, max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
         }
 
-        if max_mines > no_revealed_neighbours {
+        println!("Possible Permutations: {}", all_possible_permutations.to_string().green());
+        println!("Wrong Permutations: {}", all_wrong_permutations.to_string().red());
+
+        if all_possible_permutations == 0 {
+           return; // No possible permutations found, skip this island
+        }
+
+        for ((x, y), permutation_mines) in &permutation_field {
+            if *permutation_mines == 0 {
+                // Field is in every possible way empty
+                self.reveal_field(*x, *y);
+                *did_something = true;
+            }
+
+            if *permutation_mines == all_possible_permutations {
+                // Field is in every possible way a mine
+                self.flag_cell(*x, *y);
+                *did_something = true;
+            }
+        }
+
+        if !*did_something && max_mines > no_revealed_neighbours {
+            let mut all_possible_permutations: u64 = 0;
+            let mut all_wrong_permutations: u64 = 0;
+            let mut permutation_field: HashMap<(usize, usize), u64> = HashMap::new();
+
             // Edge Case, it could be solvable if all non information fields are mines and we give a reduced max mines to our permutation all_wrong_permutations
             let max_mines = max_mines - no_revealed_neighbours;
             if permutation_vector.len() >= 20 {
@@ -77,26 +102,26 @@ impl MineSweeperSolver {
             } else {
                 self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
             }
-        }
 
-        println!("Possible Permutations: {}", all_possible_permutations.to_string().green());
-        println!("Wrong Permutations: {}", all_wrong_permutations.to_string().red());
+            println!("Edge Case Possible Permutations: {}", all_possible_permutations.to_string().green());
+            println!("Edge Case Wrong Permutations: {}", all_wrong_permutations.to_string().red());
 
-        if all_possible_permutations == 0 {
-           return; // No possible permutations found, skip this island
-        }
-
-        for ((x, y), permutation_mines) in permutation_field {
-            if permutation_mines == 0 {
-                // Field is in every possible way empty
-                self.reveal_field(x, y);
-                *did_something = true;
+            if all_possible_permutations == 0 {
+               return; // No possible permutations found, skip this island
             }
 
-            if permutation_mines == all_possible_permutations {
-                // Field is in every possible way a mine
-                self.flag_cell(x, y);
-                *did_something = true;
+            for ((x, y), permutation_mines) in permutation_field {
+                if permutation_mines == 0 {
+                    // Field is in every possible way empty
+                    self.reveal_field(x, y);
+                    *did_something = true;
+                }
+
+                if permutation_mines == all_possible_permutations {
+                    // Field is in every possible way a mine
+                    self.flag_cell(x, y);
+                    *did_something = true;
+                }
             }
         }
     }
