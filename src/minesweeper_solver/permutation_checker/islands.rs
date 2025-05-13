@@ -1,11 +1,5 @@
-use crate::field_generator::{MineSweeperField, MineSweeperCell};
-use crate::minesweeper_solver::box_logic::Box;
 use crate::minesweeper_solver::MineSweeperSolver;
 use crate::minesweeper_solver::MineSweeperCellState;
-use colored::Colorize;
-use core::panic;
-use std::{cmp::Ordering, collections::HashMap, hash::Hash, thread, vec};
-
 
 pub fn search_for_islands(game: &MineSweeperSolver) -> Vec<Vec<(usize, usize)>> {
     let mut visited = vec![vec![false; game.field.height]; game.field.width];

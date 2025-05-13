@@ -1,13 +1,10 @@
-use crate::field_generator::{MineSweeperField, MineSweeperCell};
 use super::sort::sort_by_min_distance;
-use crate::minesweeper_solver::box_logic::Box;
 use crate::minesweeper_solver::MineSweeperCellState;
 use crate::minesweeper_solver::MineSweeperSolver;
-use crate::minesweeper_solver::permutation_checker::{search_for_islands, merge_islands};
+use super::{search_for_islands, merge_islands};
 use colored::Colorize;
-use core::panic;
 use num_cpus;
-use std::{cmp::Ordering, collections::HashMap, hash::Hash, thread, vec};
+use std::{thread, collections::HashMap};
 
 impl MineSweeperSolver {
     pub fn apply_permutation_checks(&mut self) -> Option<()> {

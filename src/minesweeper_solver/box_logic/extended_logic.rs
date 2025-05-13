@@ -1,11 +1,8 @@
 #![cfg_attr(debug_assertions, allow(unreachable_code))]
 
 use super::Box;
-use crate::field_generator::{MineSweeperField, MineSweeperCell};
 use super::super::MineSweeperSolver;
-use colored::Colorize;
-use core::panic;
-use std::{cmp::Ordering, collections::HashMap, hash::Hash, thread, vec};
+use std::collections::HashMap;
 
 impl MineSweeperSolver {
     pub fn apply_extended_box_logic(&mut self) -> Option<()> {

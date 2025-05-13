@@ -1,10 +1,4 @@
-use crate::field_generator::{MineSweeperField, MineSweeperCell};
-use super::Box;
 use super::super::MineSweeperSolver;
-use colored::Colorize;
-use core::panic;
-use std::{cmp::Ordering, collections::HashMap, hash::Hash, thread, vec};
-
 
 impl MineSweeperSolver {
     pub fn apply_basic_box_logic(&mut self) -> Option<()> {

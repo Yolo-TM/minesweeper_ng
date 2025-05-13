@@ -1,12 +1,10 @@
 use crate::field_generator::{MineSweeperCell, MineSweeperField};
 use super::SolverSolution;
 use super::MineSweeperCellState;
-use super::box_logic::Box;
 use super::permutation_checker::search_for_islands;
 use super::MineSweeperSolver;
 use colored::Colorize;
-use core::panic;
-use std::{cmp::Ordering, collections::HashMap, hash::Hash, thread, vec};
+use std::thread;
 
 impl MineSweeperSolver {
     fn new(field : MineSweeperField) -> Self {

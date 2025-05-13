@@ -1,9 +1,4 @@
-use crate::field_generator::{MineSweeperField, MineSweeperCell};
-use crate::minesweeper_solver::box_logic::Box;
-use colored::Colorize;
-use core::panic;
-use std::{cmp::Ordering, collections::HashMap, hash::Hash, thread, vec};
-
+use std::cmp::Ordering;
 
 pub fn sort_by_min_distance(permutation_vector: &mut Vec<((usize, usize), bool)>) {
     if permutation_vector.is_empty() {
