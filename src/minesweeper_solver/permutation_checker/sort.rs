@@ -27,7 +27,6 @@ pub fn sort_by_min_distance(permutation_vector: &mut Vec<((usize, usize), bool)>
 
     let mut sorted_vector = vec![start_point];
 
-
     while !permutation_vector.is_empty() {
         // Find the closest point to the last point in the sorted vector
         let last_point = sorted_vector.last().unwrap().0;

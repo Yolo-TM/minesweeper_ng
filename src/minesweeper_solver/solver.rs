@@ -19,7 +19,7 @@ impl MineSweeperSolver {
         }
     }
 
-    fn print(&self) {
+    pub fn print(&self) {
         for (x, y) in self.field.sorted_fields() {
             match self.state[x][y] {
                 MineSweeperCellState::Hidden => print!("? "),
@@ -63,13 +63,13 @@ impl MineSweeperSolver {
         }
 
         // could be more optimised, for now its enough
-        //match self.apply_permutation_checks() {
-        //    Some(_) => {
-        //        println!("Revealed or Flagged Fields based on tested permutations.");
-        //        return Some(());
-        //    },
-        //    None => {}
-        //}
+        match self.apply_permutation_checks() {
+            Some(_) => {
+                println!("Revealed or Flagged Fields based on tested permutations.");
+                return Some(());
+            },
+            None => {}
+        }
         None
     }
 
@@ -262,8 +262,8 @@ fn solver(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
 
     loop {
         (*step_count) += 1;
-        println!("Solving Step: {}", step_count.to_string().green());
-        game.print();
+        //println!("Solving Step: {}", step_count.to_string().green());
+        //game.print();
         if game.hidden_count == 0 {
             println!("All cells revealed. Game solved!");
             game.print();

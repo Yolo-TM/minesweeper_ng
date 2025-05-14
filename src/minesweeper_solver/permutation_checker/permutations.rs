@@ -43,19 +43,18 @@ impl MineSweeperSolver {
 
         for &(x, y) in island {
             if self.has_revealed_neighbours(x, y) {
-                permutation_field.insert((x, y), 0);
+                permutation_vector.push(((x, y), false));
             } else {
                 no_revealed_neighbours += 1;
             }
         }
 
-        for (&(x, y), _) in &permutation_field {
-            permutation_vector.push(((x, y), false));
+        for &((x, y), _) in &permutation_vector {
+            permutation_field.insert((x, y), 0);
         }
 
-        // useless !? -> to be tested 
         sort_by_min_distance(&mut permutation_vector);
-        println!("\n\nRunning for island with {} cells and {} testable fields with max_mines {}", island.len().to_string().green(), permutation_vector.len().to_string().green(), max_mines.to_string().red());
+        println!("Running for island with {} cells and {} testable fields with max_mines {}", island.len().to_string().green(), permutation_vector.len().to_string().green(), max_mines.to_string().red());
 
         if permutation_vector.len() >= 20 {
             // This would take way too long, start multiple threads for speed up
@@ -68,28 +67,29 @@ impl MineSweeperSolver {
         println!("Possible Permutations: {}", all_possible_permutations.to_string().green());
         println!("Wrong Permutations: {}", all_wrong_permutations.to_string().red());
 
-        if all_possible_permutations == 0 {
-           return; // No possible permutations found, skip this island
-        }
-
-        for ((x, y), permutation_mines) in &permutation_field {
-            if *permutation_mines == 0 {
-                // Field is in every possible way empty
-                self.reveal_field(*x, *y);
-                *did_something = true;
-            }
-
-            if *permutation_mines == all_possible_permutations {
-                // Field is in every possible way a mine
-                self.flag_cell(*x, *y);
-                *did_something = true;
+        if all_possible_permutations != 0 {
+            for ((x, y), permutation_mines) in &permutation_field {
+                if *permutation_mines == 0 {
+                    // Field is in every possible way empty
+                    self.reveal_field(*x, *y);
+                    *did_something = true;
+                }
+                if *permutation_mines == all_possible_permutations {
+                    // Field is in every possible way a mine
+                    self.flag_cell(*x, *y);
+                    *did_something = true;
+                }
             }
         }
 
-        if !*did_something && max_mines > no_revealed_neighbours {
+        if *did_something == false && max_mines > no_revealed_neighbours {
             let mut all_possible_permutations: u64 = 0;
             let mut all_wrong_permutations: u64 = 0;
             let mut permutation_field: HashMap<(usize, usize), u64> = HashMap::new();
+
+            for &((x, y), _) in &permutation_vector {
+                permutation_field.insert((x, y), 0);
+            }
 
             // Edge Case, it could be solvable if all non information fields are mines and we give a reduced max mines to our permutation all_wrong_permutations
             let max_mines = max_mines - no_revealed_neighbours;
@@ -100,24 +100,21 @@ impl MineSweeperSolver {
                 self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
             }
 
-            println!("Edge Case Possible Permutations: {}", all_possible_permutations.to_string().green());
-            println!("Edge Case Wrong Permutations: {}", all_wrong_permutations.to_string().red());
+            if all_possible_permutations != 0 {
+                println!("Edge Case Possible Permutations: {}", all_possible_permutations.to_string().green());
+                println!("Edge Case Wrong Permutations: {}", all_wrong_permutations.to_string().red());
+                for ((x, y), permutation_mines) in permutation_field {
+                    if permutation_mines == 0 {
+                        // Field is in every possible way empty
+                        self.reveal_field(x, y);
+                        *did_something = true;
+                    }
 
-            if all_possible_permutations == 0 {
-               return; // No possible permutations found, skip this island
-            }
-
-            for ((x, y), permutation_mines) in permutation_field {
-                if permutation_mines == 0 {
-                    // Field is in every possible way empty
-                    self.reveal_field(x, y);
-                    *did_something = true;
-                }
-
-                if permutation_mines == all_possible_permutations {
-                    // Field is in every possible way a mine
-                    self.flag_cell(x, y);
-                    *did_something = true;
+                    if permutation_mines == all_possible_permutations {
+                        // Field is in every possible way a mine
+                        self.flag_cell(x, y);
+                        *did_something = true;
+                    }
                 }
             }
         }
@@ -132,30 +129,16 @@ impl MineSweeperSolver {
         wrong_permutations: &mut u64
         ) {
         // run on gpu ??
-        let cores = num_cpus::get();
-        let threads = (cores * 2) as u64;
+        let (thread_count, masks, start_index) = self.generate_start_masks(&permutation_vector);
+        println!("Starting {} threads for 2^{} permutations", thread_count.to_string().green(), permutation_vector.len().to_string().green());
+
         let mut thread_pool = vec![];
-        let mut start_index = 0;
-
-        // Calculate the start index for each thread, the start index is the index of the last one (+1) in the bitwise number threads
-        // This is done to ensure that each thread has a unique set of permutations to work on
-        let mask = collect_bits(threads - 1);
-        for i in 0..mask.len() {
-            if mask[i] == 1 {
-                start_index = i;
-            }
-        }
-        start_index += 1; // Start at the next index
-
-        println!("Starting {} threads for 2^{} permutations", threads.to_string().green(), permutation_vector.len().to_string().green());
-
-        for bit_mask in 0..threads {
+        for bit_mask in 0..thread_count {
             let mut permutation_vector_clone = permutation_vector.clone();
             let mut permutation_field_clone = permutation_field.clone();
             let new_self: MineSweeperSolver = self.clone(); // Clone the current instance of self
 
-            let mask = collect_bits(bit_mask);
-            // implement a check if this mask is already a valid permutation and if not skip it
+            let mask = collect_bits(masks[bit_mask]);
             for i in 0..permutation_vector_clone.len() {
                 if mask[i] == 1 {
                     permutation_vector_clone[i].1 = true;
@@ -192,6 +175,104 @@ impl MineSweeperSolver {
                 }
             }
         }
+    }
+
+    fn generate_start_masks(&self, permutation_vector: &Vec<((usize, usize), bool)>) -> (usize, Vec<u64>, usize) {
+        let mut start_index: usize = 0;
+        let mut numbers = vec![];
+        let min_threads = num_cpus::get() as usize * 3;
+        // generate dynamically number of threads to optimize performance
+
+        if permutation_vector.len() > min_threads {
+            start_index = permutation_vector.len() / 2;
+        }
+
+        let mut counter = 0;
+        while numbers.len() < min_threads || start_index >= get_last_one_bit(counter) + 1 {
+            let possible_new_start = get_last_one_bit(counter) + 1;
+            if self.is_possible_start(counter, permutation_vector, possible_new_start) {
+                numbers.push(counter);
+
+                if possible_new_start >= start_index {
+                    // we have a bigger start index, generate all possible masks for this startindex
+                    start_index = possible_new_start;
+                }
+            }
+            counter += 1;
+        }
+
+        // print all the masks in binary
+        //for i in 0..numbers.len() {
+        //    let mask = collect_bits(numbers[i]);
+        //    let mut mask_str = String::new();
+        //    for j in 0..start_index * 2 {
+        //        mask_str.push_str(&mask[j].to_string());
+        //    }
+        //    println!("Mask \t{}:\t {}", numbers[i].to_string().green(), mask_str.blue());
+        //}
+        //println!("Perms: {:?}", permutation_vector);
+        return (numbers.len(), numbers, start_index);
+    }
+
+    fn is_possible_start(&self, mask: u64, permutation_vector: &Vec<((usize, usize), bool)>, check_until: usize) -> bool {
+        let bits = collect_bits(mask);
+        let mut permutation_vector_clone = vec![];
+        for i in 0..check_until {
+            if bits[i] == 1 {
+                permutation_vector_clone.push((permutation_vector[i].0, true));
+            } else {
+                permutation_vector_clone.push((permutation_vector[i].0, false));
+            }
+        }
+
+        for i in 0..check_until {
+            let (x, y) = permutation_vector_clone[i].0;
+
+            for (new_x, new_y) in self.field.surrounding_fields(x, y) {
+                if self.has_informations(new_x, new_y) {
+                    if !self.can_number_be_satisfied(new_x, new_y, &permutation_vector_clone) {
+                        return false;
+                    }
+                }
+            }
+        }
+        true
+    }
+
+    fn can_number_be_satisfied(&self, x: usize, y: usize, permutation_vector: &Vec<((usize, usize), bool)>) -> bool {
+        let mine_count = self.field.board[x][y].get_number();
+        let mut flag_count = 0;
+        let mut unknown_count = 0;
+
+        for (new_x, new_y) in self.field.surrounding_fields(x, y) {
+            if self.state[new_x][new_y] == MineSweeperCellState::Revealed {
+                // revealed field, ignore
+                continue;
+            }
+
+            if self.state[new_x][new_y] == MineSweeperCellState::Flagged {
+                flag_count += 1;
+            } else if let Some(field) = permutation_vector.iter().find(|&&((x, y), _)| x == new_x && y == new_y) {
+                if field.1 {
+                    flag_count += 1;
+                }
+            } else {
+                // this field is not in the permutation vector, so it could be everything
+                unknown_count += 1;
+            }
+        }
+
+        if flag_count > mine_count {
+            // Too many flags, this is not a valid permutation
+            return false;
+        }
+
+        if (mine_count - flag_count) > unknown_count {
+            // Not enough unknown fields to satisfy the number, this is not a valid permutation
+            return false;
+        }
+
+        true
     }
 
     fn recursively_apply_permutations(
@@ -298,4 +379,17 @@ fn collect_bits(number: u64) -> Vec<u8> {
         bits.push(bit);
     }
     bits
+}
+
+fn get_last_one_bit(number: u64) -> usize {
+    let bits = collect_bits(number);
+    let mut index = 0;
+
+    for i in 0..bits.len() {
+        if bits[i] == 1 {
+            index = i;
+        }
+    }
+
+    index
 }
