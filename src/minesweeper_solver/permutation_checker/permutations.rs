@@ -135,14 +135,6 @@ impl MineSweeperSolver {
         // run on gpu ??
         let (thread_count, masks, start_index) = self.generate_start_masks(&permutation_vector);
         println!("Starting {} threads for 2^{} permutations at start index {}", thread_count.to_string().green(), permutation_vector.len().to_string().green(), start_index.to_string().green());
-        for i in 0..masks.len() {
-            let mask = collect_bits(masks[i]);
-            let mut mask_str = String::new();
-            for j in 0..start_index * 2 {
-                mask_str.push_str(&mask[j].to_string());
-            }
-            println!("Mask \t{}:\t {}", masks[i].to_string().green(), mask_str.blue());
-        }
 
         let mut thread_pool = vec![];
         for bit_mask in 0..thread_count {
@@ -201,6 +193,7 @@ impl MineSweeperSolver {
             return (numbers.len(), numbers, start_index);
         }
 
+        let start_time = std::time::Instant::now();
         // We have a lot of permutations for masks already, so calulate them also multithreaded
         start_index = permutation_vector.len() - MAXIMUM_PERMUTATIONS_IN_THREAD;
 
@@ -250,6 +243,7 @@ impl MineSweeperSolver {
 
         // deduplicate the mask vector
         numbers.dedup();
+        println!("Took {:?} to generate {} masks using {} threads.", start_time.elapsed(), numbers.len(), thread_count);
         return(numbers.len(), numbers, start_index);
     }
 
