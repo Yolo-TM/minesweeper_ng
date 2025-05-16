@@ -26,7 +26,9 @@ impl MineSweeperSolver {
         let merged_islands = merge_islands(islands, 3, 16);
         
         for island in &merged_islands {
+            let start_time = std::time::Instant::now();
             self.try_permutation_solving(island, max_mines, &mut did_something);
+            println!("This Permutation solving took: {:?}", start_time.elapsed());
         }
 
         if did_something {

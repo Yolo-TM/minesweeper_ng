@@ -236,6 +236,7 @@ pub fn start(field: MineSweeperField) {
     println!("\nSolving the field...");
     println!("Width: {}, Height: {}, Mines: {}", game.field.width.to_string().green(), game.field.height.to_string().green(), game.field.mines.to_string().red());
 
+    let start_time = std::time::Instant::now();
     let handle = thread::Builder::new()
     .stack_size(32 * 1024 * 1024) // 32 MB
     .spawn(|| {
@@ -254,6 +255,8 @@ pub fn start(field: MineSweeperField) {
     .expect("Thread spawn failed");
 
     handle.join().unwrap();
+    println!("Time elapsed: {:?}", start_time.elapsed());
+    println!("Solver thread finished.");
 }
 
 fn solver(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
@@ -282,8 +285,8 @@ fn solver(mut game: MineSweeperSolver, step_count: &mut u64) -> SolverSolution {
             },
             None => {
                 nothing_count += 1;
-                if nothing_count >= 3 {
-                    println!("Nothing found in 3 steps. Stopping solver.");
+                if nothing_count == 2 {
+                    println!("Nothing found in 2 steps. Stopping solver.");
                     game.print();
                     println!("Hidden Count: {}", game.hidden_count.to_string().red());
                     println!("Island Count: {}", search_for_islands(&game).len());
