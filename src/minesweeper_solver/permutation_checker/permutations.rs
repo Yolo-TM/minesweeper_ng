@@ -6,6 +6,8 @@ use colored::Colorize;
 use num_cpus;
 use std::{thread, collections::HashMap};
 
+const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 24;
+
 impl MineSweeperSolver {
     pub fn apply_permutation_checks(&mut self) -> Option<()> {
         let mut did_something = false;
@@ -130,7 +132,15 @@ impl MineSweeperSolver {
         ) {
         // run on gpu ??
         let (thread_count, masks, start_index) = self.generate_start_masks(&permutation_vector);
-        println!("Starting {} threads for 2^{} permutations", thread_count.to_string().green(), permutation_vector.len().to_string().green());
+        println!("Starting {} threads for 2^{} permutations at start index {}", thread_count.to_string().green(), permutation_vector.len().to_string().green(), start_index.to_string().green());
+        for i in 0..masks.len() {
+            let mask = collect_bits(masks[i]);
+            let mut mask_str = String::new();
+            for j in 0..start_index * 2 {
+                mask_str.push_str(&mask[j].to_string());
+            }
+            println!("Mask \t{}:\t {}", masks[i].to_string().green(), mask_str.blue());
+        }
 
         let mut thread_pool = vec![];
         for bit_mask in 0..thread_count {
@@ -147,7 +157,6 @@ impl MineSweeperSolver {
                 }
             }
 
-            // Create a thread for each core
             let handle = thread::spawn(move || {
                 let mut local_possible_permutations: u64 = 0;
                 let mut local_wrong_permutations: u64 = 0;
@@ -178,40 +187,89 @@ impl MineSweeperSolver {
     }
 
     fn generate_start_masks(&self, permutation_vector: &Vec<((usize, usize), bool)>) -> (usize, Vec<u64>, usize) {
-        let mut start_index: usize = 0;
-        let mut numbers = vec![];
-        let min_threads = num_cpus::get() as usize * 3;
-        // generate dynamically number of threads to optimize performance
+        // Atleast use as much as we can
+        let min_threads = num_cpus::get() * 2;
 
-        if permutation_vector.len() > min_threads {
-            start_index = permutation_vector.len() / 2;
+        let mut numbers = vec![];
+        let mut start_index: usize = 0;
+
+        // we can calculate the masks for the threads in the main thread
+        if permutation_vector.len() <= MAXIMUM_PERMUTATIONS_IN_THREAD {
+            self.calculate_masks(0, 2^permutation_vector.len() as u64, &mut numbers, &mut start_index, permutation_vector, min_threads);
+            return (numbers.len(), numbers, start_index);
         }
 
-        let mut counter = 0;
-        while numbers.len() < min_threads || start_index >= get_last_one_bit(counter) + 1 {
+        // We have a lot of permutations for masks already, so calulate them also multithreaded
+        start_index = permutation_vector.len() - MAXIMUM_PERMUTATIONS_IN_THREAD;
+
+        // Maximum Number of possible bit patterns for masks
+        let mut max_number = 1;
+        for _ in 0..start_index {
+            max_number *= 2;
+        }
+
+        // Thread Count for generating masks
+        let mut thread_count = 1;
+        for _ in (0..start_index).step_by(3) {
+            thread_count *= 2;
+        }
+
+        let mut thread_pool = vec![];
+        for i in 0..thread_count {
+            let count_start = max_number * i / thread_count;
+            let count_end = max_number * (i + 1) / thread_count;
+
+            let mut sindex = start_index.clone();
+            let perm_vec = permutation_vector.clone();
+            let new_self = self.clone();
+
+            let handle = thread::spawn(move || {
+                let mut valid_masks = vec![];
+                new_self.calculate_masks(count_start, count_end, &mut valid_masks, &mut sindex, &perm_vec, 2);
+
+                valid_masks
+            });
+
+            thread_pool.push(handle);
+        }
+
+        for handle in thread_pool {
+            match handle.join() {
+                Ok(valid_masks) => {
+                    for mask in valid_masks {
+                        numbers.push(mask);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Thread panicked: {:?}", e);
+                }
+            }
+        }
+
+        // deduplicate the mask vector
+        numbers.dedup();
+        return(numbers.len(), numbers, start_index);
+    }
+
+    fn calculate_masks(&self, start_counter: u64, counter_maximum: u64, numbers: &mut Vec<u64>, start_index: &mut usize, permutation_vector: &Vec<((usize, usize), bool)>, min_threads: usize) {
+        let mut counter = start_counter;
+        while numbers.len() < min_threads || *start_index >= get_last_one_bit(counter) + 1 {
             let possible_new_start = get_last_one_bit(counter) + 1;
             if self.is_possible_start(counter, permutation_vector, possible_new_start) {
                 numbers.push(counter);
 
-                if possible_new_start >= start_index {
+                if *start_index < possible_new_start {
                     // we have a bigger start index, generate all possible masks for this startindex
-                    start_index = possible_new_start;
+                    // a bigger start index reduces the amount of permutations calculated in each thread
+                    *start_index = possible_new_start;
                 }
             }
             counter += 1;
-        }
 
-        // print all the masks in binary
-        //for i in 0..numbers.len() {
-        //    let mask = collect_bits(numbers[i]);
-        //    let mut mask_str = String::new();
-        //    for j in 0..start_index * 2 {
-        //        mask_str.push_str(&mask[j].to_string());
-        //    }
-        //    println!("Mask \t{}:\t {}", numbers[i].to_string().green(), mask_str.blue());
-        //}
-        //println!("Perms: {:?}", permutation_vector);
-        return (numbers.len(), numbers, start_index);
+            if counter == counter_maximum {
+                break;
+            }
+        }
     }
 
     fn is_possible_start(&self, mask: u64, permutation_vector: &Vec<((usize, usize), bool)>, check_until: usize) -> bool {
