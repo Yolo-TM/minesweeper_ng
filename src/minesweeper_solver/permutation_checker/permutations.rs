@@ -6,7 +6,7 @@ use colored::Colorize;
 use num_cpus;
 use std::{thread, collections::HashMap};
 
-const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 24;
+const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 18;
 
 impl MineSweeperSolver {
     pub fn apply_permutation_checks(&mut self) -> Option<()> {
@@ -60,7 +60,7 @@ impl MineSweeperSolver {
         sort_by_min_distance(&mut permutation_vector);
         println!("Running for island with {} cells and {} testable fields with max_mines {}", island.len().to_string().green(), permutation_vector.len().to_string().green(), max_mines.to_string().red());
 
-        if permutation_vector.len() >= 20 {
+        if permutation_vector.len() >= 15 {
             // This would take way too long, start multiple threads for speed up
             self.start_permutation_threads(permutation_vector.clone(), max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
         } else {
