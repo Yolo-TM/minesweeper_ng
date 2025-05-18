@@ -1,10 +1,8 @@
-use super::sort::sort_by_min_distance;
-use crate::minesweeper_solver::MineSweeperCellState;
-use crate::minesweeper_solver::MineSweeperSolver;
-use super::{search_for_islands, merge_islands};
+use crate::minesweeper_solver::{MineSweeperCellState, MineSweeperSolver};
+use super::{sort::sort_by_min_distance, search_for_islands, merge_islands, collect_bits, get_last_one_bit};
+use std::{thread, collections::HashMap};
 use colored::Colorize;
 use num_cpus;
-use std::{thread, collections::HashMap};
 
 const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 18;
 
@@ -212,7 +210,8 @@ impl MineSweeperSolver {
         let mut thread_pool = vec![];
         for i in 0..thread_count {
             let count_start = max_number * i / thread_count;
-            let count_end = max_number * (i + 1) / thread_count;
+            let count_end = max_number * (i + 1) / thread_count - 1;
+            println!("Thread {}: {} to {}", i.to_string().green(), count_start.to_string().green(), count_end.to_string().green());
 
             let mut sindex = start_index.clone();
             let perm_vec = permutation_vector.clone();
@@ -241,8 +240,6 @@ impl MineSweeperSolver {
             }
         }
 
-        // deduplicate the mask vector
-        numbers.dedup();
         println!("Took {:?} to generate {} masks using {} threads.", start_time.elapsed(), numbers.len(), thread_count);
         return(numbers.len(), numbers, start_index);
     }
@@ -424,26 +421,4 @@ impl MineSweeperSolver {
             }
         }
     }
-}
-
-fn collect_bits(number: u64) -> Vec<u8> {
-    let mut bits = Vec::new();
-    for i in 0..64 {
-        let bit = ((number >> i) & 1) as u8;
-        bits.push(bit);
-    }
-    bits
-}
-
-fn get_last_one_bit(number: u64) -> usize {
-    let bits = collect_bits(number);
-    let mut index = 0;
-
-    for i in 0..bits.len() {
-        if bits[i] == 1 {
-            index = i;
-        }
-    }
-
-    index
 }
