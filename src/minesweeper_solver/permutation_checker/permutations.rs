@@ -211,7 +211,6 @@ impl MineSweeperSolver {
         for i in 0..thread_count {
             let count_start = max_number * i / thread_count;
             let count_end = max_number * (i + 1) / thread_count - 1;
-            println!("Thread {}: {} to {}", i.to_string().green(), count_start.to_string().green(), count_end.to_string().green());
 
             let mut sindex = start_index.clone();
             let perm_vec = permutation_vector.clone();
