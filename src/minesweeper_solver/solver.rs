@@ -242,15 +242,10 @@ where
 }
 
 pub fn start<M: MineSweeperField>(field: M) {
-    let start_time = std::time::Instant::now();
-
     let handle = thread::Builder::new()
     .stack_size(32 * 1024 * 1024) // 32 MB
-    .spawn(|| {
+    .spawn( || {
         let mut game = MineSweeperSolver::new(field);
-        println!("\nSolving the field...");
-        let (w, h, m) = game.field.get_dimensions();
-        println!("Width: {}, Height: {}, Mines: {}", w.to_string().green(), h.to_string().green(), m.to_string().red());
 
         let mut step_count: u64 = 0;
         game.reveal_field(game.field.get_start_field().0, game.field.get_start_field().1);
@@ -267,23 +262,15 @@ pub fn start<M: MineSweeperField>(field: M) {
     .expect("Thread spawn failed");
 
     handle.join().unwrap();
-    println!("Time elapsed: {:?}", start_time.elapsed());
-    println!("Solver thread finished.");
 }
 
 fn solver<M:  MineSweeperField>(mut game: MineSweeperSolver<M>, step_count: &mut u64) -> SolverSolution {
     loop {
         (*step_count) += 1;
-        println!("Solving Step: {}", step_count.to_string().green());
-        game.print();
-        if game.hidden_count == 0 {
-            println!("All cells revealed. Game solved!");
-            game.print();
-            return SolverSolution::FoundSolution;
-        }
+        //println!("Solving Step: {}", step_count.to_string().green());
+        //game.print();
 
-        if (game.flag_count + game.hidden_count) == game.field.get_mines() {
-            println!("All non mine cells revealed and all mines flagged. Game solved!");
+        if game.hidden_count == 0 || (game.flag_count + game.hidden_count) == game.field.get_mines() {
             game.flag_all_hidden_cells();
             game.print();
             return SolverSolution::FoundSolution;
@@ -296,8 +283,6 @@ fn solver<M:  MineSweeperField>(mut game: MineSweeperSolver<M>, step_count: &mut
             None => {
                 println!("Cant find anything more, Stopping solver.");
                 game.print();
-                println!("Hidden Count: {}", game.hidden_count.to_string().red());
-                println!("Island Count: {}", search_for_islands(&game).len());
 
                 return SolverSolution::NoSolution;
             }

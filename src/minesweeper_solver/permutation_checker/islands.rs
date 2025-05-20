@@ -1,8 +1,7 @@
-use crate::minesweeper_solver::MineSweeperSolver;
-use crate::minesweeper_solver::MineSweeperCellState;
+use crate::minesweeper_solver::{MineSweeperSolver, MineSweeperCellState};
 use crate::field_generator::MineSweeperField;
 
-pub fn search_for_islands<M: MineSweeperField + Clone>(game: &MineSweeperSolver<M>) -> Vec<Vec<(u32, u32)>> {
+pub fn search_for_islands<M: MineSweeperField>(game: &MineSweeperSolver<M>) -> Vec<Vec<(u32, u32)>> {
     let mut visited = vec![vec![false; game.field.get_height() as usize]; game.field.get_width() as usize];
     let mut islands = vec![];
 
@@ -21,7 +20,7 @@ pub fn search_for_islands<M: MineSweeperField + Clone>(game: &MineSweeperSolver<
     islands
 }
 
-fn recursive_search<M: MineSweeperField + Clone>(x: u32, y: u32, fields: &mut Vec<(u32,u32)>, visited : &mut Vec<Vec<bool>>, game: &MineSweeperSolver<M>) {
+fn recursive_search<M: MineSweeperField>(x: u32, y: u32, fields: &mut Vec<(u32,u32)>, visited : &mut Vec<Vec<bool>>, game: &MineSweeperSolver<M>) {
     visited[x as usize][y as usize] = true;
     fields.push((x, y));
 
@@ -32,7 +31,7 @@ fn recursive_search<M: MineSweeperField + Clone>(x: u32, y: u32, fields: &mut Ve
     }
 }
 
-pub fn merge_islands(islands: Vec<Vec<(u32, u32)>>, max_distance: usize, max_size: usize) -> Vec<Vec<(u32, u32)>> {
+pub fn merge_islands(islands: Vec<Vec<(u32, u32)>>, max_distance: u32, max_size: usize) -> Vec<Vec<(u32, u32)>> {
     let mut merged_islands: Vec<Vec<(u32, u32)>> = vec![];
     let mut visited = vec![false; islands.len()];
 
@@ -66,7 +65,7 @@ pub fn merge_islands(islands: Vec<Vec<(u32, u32)>>, max_distance: usize, max_siz
 }
 
 // Helper function to check if two islands are within the max distance
-fn are_islands_within_reach(island1: &Vec<(u32, u32)>, island2: &Vec<(u32, u32)>, max_distance: usize) -> bool {
+fn are_islands_within_reach(island1: &Vec<(u32, u32)>, island2: &Vec<(u32, u32)>, max_distance: u32) -> bool {
     for &(x1, y1) in island1 {
         for &(x2, y2) in island2 {
             if manhattan_distance((x1, y1), (x2, y2)) <= max_distance {
@@ -78,6 +77,6 @@ fn are_islands_within_reach(island1: &Vec<(u32, u32)>, island2: &Vec<(u32, u32)>
 }
 
 // Helper function to calculate Manhattan distance between two points
-fn manhattan_distance(a: (u32, u32), b: (u32, u32)) -> usize {
-    ((a.0 as isize - b.0 as isize).abs() + (a.1 as isize - b.1 as isize).abs()) as usize
+fn manhattan_distance(a: (u32, u32), b: (u32, u32)) -> u32 {
+    ((a.0 as isize - b.0 as isize).abs() + (a.1 as isize - b.1 as isize).abs()) as u32
 }

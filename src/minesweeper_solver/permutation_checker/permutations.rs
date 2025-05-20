@@ -28,9 +28,7 @@ where
         let merged_islands = merge_islands(islands, 3, 16);
         
         for island in &merged_islands {
-            let start_time = std::time::Instant::now();
             self.try_permutation_solving(island, max_mines, &mut did_something);
-            println!("This Permutation solving took: {:?}", start_time.elapsed());
         }
 
         if did_something {
@@ -60,7 +58,6 @@ where
         }
 
         sort_by_min_distance(&mut permutation_vector);
-        println!("Running for island with {} cells and {} testable fields with max_mines {}", island.len().to_string().green(), permutation_vector.len().to_string().green(), max_mines.to_string().red());
 
         if permutation_vector.len() >= 15 {
             // This would take way too long, start multiple threads for speed up
@@ -69,9 +66,6 @@ where
             let mut permutations = permutation_vector.clone();
             self.recursively_apply_permutations(&mut permutations, 0, max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
         }
-
-        println!("Possible Permutations: {}", all_possible_permutations.to_string().green());
-        println!("Wrong Permutations: {}", all_wrong_permutations.to_string().red());
 
         if all_possible_permutations != 0 {
             for ((x, y), permutation_mines) in &permutation_field {
@@ -107,8 +101,6 @@ where
             }
 
             if all_possible_permutations != 0 {
-                println!("Edge Case Possible Permutations: {}", all_possible_permutations.to_string().green());
-                println!("Edge Case Wrong Permutations: {}", all_wrong_permutations.to_string().red());
                 for ((x, y), permutation_mines) in permutation_field {
                     if permutation_mines == 0 {
                         // Field is in every possible way empty
@@ -136,7 +128,6 @@ where
         ) {
         // run on gpu ??
         let (thread_count, masks, start_index) = self.generate_start_masks(&permutation_vector);
-        println!("Starting {} threads for 2^{} permutations at start index {}", thread_count.to_string().green(), permutation_vector.len().to_string().green(), start_index.to_string().green());
 
         let mut thread_pool = vec![];
         for bit_mask in 0..thread_count {
@@ -195,7 +186,6 @@ where
             return (numbers.len(), numbers, start_index);
         }
 
-        let start_time = std::time::Instant::now();
         // We have a lot of permutations for masks already, so calulate them also multithreaded
         start_index = permutation_vector.len() - MAXIMUM_PERMUTATIONS_IN_THREAD;
 
@@ -243,7 +233,6 @@ where
             }
         }
 
-        println!("Took {:?} to generate {} masks using {} threads.", start_time.elapsed(), numbers.len(), thread_count);
         return(numbers.len(), numbers, start_index);
     }
 

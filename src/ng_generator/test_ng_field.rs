@@ -1,4 +1,4 @@
-use crate::field_generator::*;
+use crate::field_generator::{MineSweeperCell, MineSweeperField, MineSweeperFieldCreation};
 
 #[derive(Clone)]
 struct TestField {
@@ -10,14 +10,10 @@ struct TestField {
 }
 
 impl MineSweeperField for TestField {
+
     #[track_caller]
     fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self {
-        let percentage = match mines {
-            MineSweeperFieldCreation::FixedCount(mines) => {
-                mines as f32 / (width * height) as f32
-            }
-            MineSweeperFieldCreation::Percentage(percentage) => percentage,
-        };
+        let percentage = mines.get_percentage(width, height);
 
         if percentage >= 0.9 {
             panic!("Too many mines, this won't be solvable!");
@@ -32,7 +28,7 @@ impl MineSweeperField for TestField {
         }
 
         let board = vec![vec![MineSweeperCell::Empty; height as usize]; width as usize];
-        let mines = ((width * height) as f32 * percentage) as u32;
+        let mines = mines.get_fixed_count(width, height);
 
         let field = TestField {
             width,
@@ -90,7 +86,7 @@ impl TestField {
 
 pub fn get_evil_ng_field() -> impl MineSweeperField {
 
-    let mut field = TestField::new(30, 20, MineSweeperFieldCreation::Percentage(0.2));
+    let mut field = TestField::new(30, 20, MineSweeperFieldCreation::FixedCount(130));
     field.set_start_field(4, 6);
     field.set_mine_count(130);
 
@@ -133,7 +129,7 @@ pub fn get_evil_ng_field() -> impl MineSweeperField {
 
 pub fn get_small_test_field() -> impl MineSweeperField {
 
-    let mut field = TestField::new(10, 10, MineSweeperFieldCreation::Percentage(0.2));
+    let mut field = TestField::new(10, 10, MineSweeperFieldCreation::FixedCount(20));
     field.set_start_field(4, 7);
     field.set_mine_count(20);
 

@@ -17,10 +17,7 @@ enum MineSweeperCellState {
 }
 
 #[derive(Clone)]
-struct MineSweeperSolver<M>
-where
-    M: MineSweeperField,
-{
+struct MineSweeperSolver<M: MineSweeperField> {
     field:  M,
     state: Vec<Vec<MineSweeperCellState>>,
     flag_count: u32,
@@ -28,6 +25,6 @@ where
     remaining_mines: u32
 }
 
-pub fn minesweeper_solver(field: impl MineSweeperField) {
+pub fn solve(field: impl MineSweeperField) {
     solver::start(field);
 }

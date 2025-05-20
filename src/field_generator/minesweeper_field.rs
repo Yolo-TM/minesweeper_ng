@@ -4,18 +4,15 @@ use super::{
     SurroundingFieldsIterator,
 };
 
-pub enum MineSweeperFieldCreation {
-    FixedCount(u32),
-    Percentage(f32),
-}
+pub trait MineSweeperField: Send + Clone + 'static {
 
-pub trait MineSweeperField: Send + Clone + 'static{
     #[track_caller]
     fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self;
-    fn get_start_field(&self) -> (u32, u32);
+
     fn get_mines(&self) -> u32;
     fn get_width(&self) -> u32;
     fn get_height(&self) -> u32;
+    fn get_start_field(&self) -> (u32, u32);
 
     fn get_cell(&self, x: u32, y: u32) -> MineSweeperCell;
     fn set_cell(&mut self, x: u32, y: u32, cell: MineSweeperCell);
@@ -83,4 +80,25 @@ pub trait MineSweeperField: Send + Clone + 'static{
         }
     }
     // Serialize / Output ?
+}
+
+pub enum MineSweeperFieldCreation {
+    FixedCount(u32),
+    Percentage(f32),
+}
+
+impl MineSweeperFieldCreation {
+    pub fn get_percentage(&self, w: u32, h: u32) -> f32 {
+        match self {
+            MineSweeperFieldCreation::FixedCount(count) => (*count as f32) / (w * h) as f32,
+            MineSweeperFieldCreation::Percentage(percentage) => *percentage,
+        }
+    }
+
+    pub fn get_fixed_count(&self, w: u32, h: u32) -> u32 {
+        match self {
+            MineSweeperFieldCreation::FixedCount(count) => *count,
+            MineSweeperFieldCreation::Percentage(percentage) => ((w * h) as f32 * percentage) as u32,
+        }
+    }
 }

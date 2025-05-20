@@ -22,12 +22,7 @@ pub struct RandomGenerationField {
 impl MineSweeperField for RandomGenerationField {
     #[track_caller]
     fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self {
-        let percentage = match mines {
-            MineSweeperFieldCreation::FixedCount(mines) => {
-                mines as f32 / (width * height) as f32
-            }
-            MineSweeperFieldCreation::Percentage(percentage) => percentage,
-        };
+        let percentage = mines.get_percentage(width, height);
 
         if percentage >= 0.9 {
             panic!("Too many mines, this won't be solvable!");
@@ -42,7 +37,7 @@ impl MineSweeperField for RandomGenerationField {
         }
 
         let board = vec![vec![MineSweeperCell::Empty; height as usize]; width as usize];
-        let mines = ((width * height) as f32 * percentage) as u32;
+        let mines = mines.get_fixed_count(width, height);
 
         let mut field = RandomGenerationField {
             width,
