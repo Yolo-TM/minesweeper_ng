@@ -3,7 +3,7 @@ use crate::field_generator::MineSweeperField;
 
 impl<M> MineSweeperSolver<M>
 where
-    M: MineSweeperField + Clone,
+    M: MineSweeperField,
 {
     pub fn apply_basic_box_logic(&mut self) -> Option<()> {
         let mut did_something = false;

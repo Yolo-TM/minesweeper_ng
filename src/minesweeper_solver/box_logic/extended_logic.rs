@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 impl<M> MineSweeperSolver<M>
 where
-    M: MineSweeperField + Clone,
+    M: MineSweeperField,
 {
     pub fn apply_extended_box_logic(&mut self) -> Option<()> {
         // Nope, this doesnt work yet.

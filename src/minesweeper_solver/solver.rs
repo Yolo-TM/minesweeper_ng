@@ -8,7 +8,7 @@ use std::thread;
 
 impl<M> MineSweeperSolver<M>
 where
-    M: MineSweeperField + Clone,
+    M: MineSweeperField,
 {
     fn new(field: M) -> Self {
         let state = vec![vec![MineSweeperCellState::Hidden; field.get_height() as usize]; field.get_width() as usize];
@@ -241,17 +241,17 @@ where
     }
 }
 
-pub fn start(field: impl MineSweeperField + Clone) {
-    let mut game = MineSweeperSolver::new(field);
-
-    println!("\nSolving the field...");
-    let (w, h, m) = game.field.get_dimensions();
-    println!("Width: {}, Height: {}, Mines: {}", w.to_string().green(), h.to_string().green(), m.to_string().red());
-
+pub fn start<M: MineSweeperField>(field: M) {
     let start_time = std::time::Instant::now();
+
     let handle = thread::Builder::new()
     .stack_size(32 * 1024 * 1024) // 32 MB
     .spawn(|| {
+        let mut game = MineSweeperSolver::new(field);
+        println!("\nSolving the field...");
+        let (w, h, m) = game.field.get_dimensions();
+        println!("Width: {}, Height: {}, Mines: {}", w.to_string().green(), h.to_string().green(), m.to_string().red());
+
         let mut step_count: u64 = 0;
         game.reveal_field(game.field.get_start_field().0, game.field.get_start_field().1);
 
@@ -271,11 +271,11 @@ pub fn start(field: impl MineSweeperField + Clone) {
     println!("Solver thread finished.");
 }
 
-fn solver<M:  MineSweeperField + Clone>(mut game: MineSweeperSolver<M>, step_count: &mut u64) -> SolverSolution {
+fn solver<M:  MineSweeperField>(mut game: MineSweeperSolver<M>, step_count: &mut u64) -> SolverSolution {
     loop {
         (*step_count) += 1;
-        //println!("Solving Step: {}", step_count.to_string().green());
-        //game.print();
+        println!("Solving Step: {}", step_count.to_string().green());
+        game.print();
         if game.hidden_count == 0 {
             println!("All cells revealed. Game solved!");
             game.print();

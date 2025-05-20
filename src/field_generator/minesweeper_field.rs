@@ -9,7 +9,7 @@ pub enum MineSweeperFieldCreation {
     Percentage(f32),
 }
 
-pub trait MineSweeperField {
+pub trait MineSweeperField: Send + Clone + 'static{
     #[track_caller]
     fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self;
     fn get_start_field(&self) -> (u32, u32);

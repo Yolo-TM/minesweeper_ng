@@ -1,5 +1,6 @@
 use crate::field_generator::*;
 
+#[derive(Clone)]
 struct TestField {
     width: u32,
     height: u32,

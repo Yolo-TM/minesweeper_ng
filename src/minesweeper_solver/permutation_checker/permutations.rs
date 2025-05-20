@@ -9,7 +9,7 @@ const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 18;
 
 impl<M> MineSweeperSolver<M>
 where
-    M: MineSweeperField + Clone,
+    M: MineSweeperField,
 {
     pub fn apply_permutation_checks(&mut self) -> Option<()> {
         let mut did_something = false;
