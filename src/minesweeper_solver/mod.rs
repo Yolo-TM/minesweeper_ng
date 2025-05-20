@@ -1,12 +1,13 @@
 use crate::field_generator::*;
+use colored::Colorize;
 
 mod box_logic;
 mod permutation_checker;
-mod solver;
+pub mod solver;
 
-enum SolverSolution {
-    NoSolution,
-    FoundSolution,
+pub enum SolverSolution {
+    NoSolution(u64),
+    FoundSolution(u64),
 }
 
 #[derive(Clone, PartialEq)]
@@ -26,5 +27,12 @@ struct MineSweeperSolver<M: MineSweeperField> {
 }
 
 pub fn solve(field: impl MineSweeperField) {
-    solver::start(field);
+    match solver::start(field) {
+        SolverSolution::NoSolution(step_count) => {
+            println!("No solution found. Stopped after {} steps.", step_count.to_string().red());
+        }
+        SolverSolution::FoundSolution(step_count) => {
+            println!("Found a solution after {} steps.", step_count.to_string().green());
+        }
+    }
 }

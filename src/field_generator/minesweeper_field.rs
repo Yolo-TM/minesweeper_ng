@@ -82,6 +82,7 @@ pub trait MineSweeperField: Send + Clone + 'static {
     // Serialize / Output ?
 }
 
+#[derive(Clone)]
 pub enum MineSweeperFieldCreation {
     FixedCount(u32),
     Percentage(f32),

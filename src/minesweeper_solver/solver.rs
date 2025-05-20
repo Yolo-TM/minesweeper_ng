@@ -1,10 +1,8 @@
 use crate::field_generator::{MineSweeperCell, MineSweeperField};
 use super::SolverSolution;
 use super::MineSweeperCellState;
-use super::permutation_checker::search_for_islands;
 use super::MineSweeperSolver;
 use colored::Colorize;
-use std::thread;
 
 impl<M> MineSweeperSolver<M>
 where
@@ -241,39 +239,18 @@ where
     }
 }
 
-pub fn start<M: MineSweeperField>(field: M) {
-    let handle = thread::Builder::new()
-    .stack_size(32 * 1024 * 1024) // 32 MB
-    .spawn( || {
-        let mut game = MineSweeperSolver::new(field);
+pub fn start<M: MineSweeperField>(field: M) -> SolverSolution {
+    let mut game = MineSweeperSolver::new(field);
 
-        let mut step_count: u64 = 0;
-        game.reveal_field(game.field.get_start_field().0, game.field.get_start_field().1);
+    let mut step_count: u64 = 0;
+    game.reveal_field(game.field.get_start_field().0, game.field.get_start_field().1);
 
-        match solver(game, &mut step_count) {
-            SolverSolution::NoSolution => {
-                println!("No solution found. Stopped after {} steps.", step_count.to_string().red());
-            }
-            SolverSolution::FoundSolution => {
-                println!("Found a solution after {} steps.", step_count.to_string().green());
-            }
-        }
-    })
-    .expect("Thread spawn failed");
-
-    handle.join().unwrap();
-}
-
-fn solver<M:  MineSweeperField>(mut game: MineSweeperSolver<M>, step_count: &mut u64) -> SolverSolution {
     loop {
-        (*step_count) += 1;
-        //println!("Solving Step: {}", step_count.to_string().green());
-        //game.print();
+        step_count += 1;
 
         if game.hidden_count == 0 || (game.flag_count + game.hidden_count) == game.field.get_mines() {
             game.flag_all_hidden_cells();
-            game.print();
-            return SolverSolution::FoundSolution;
+            return SolverSolution::FoundSolution(step_count);
         }
 
         match game.do_solving_step() {
@@ -281,12 +258,8 @@ fn solver<M:  MineSweeperField>(mut game: MineSweeperSolver<M>, step_count: &mut
                 continue;
             },
             None => {
-                println!("Cant find anything more, Stopping solver.");
-                game.print();
-
-                return SolverSolution::NoSolution;
+                return SolverSolution::NoSolution(step_count);
             }
         }
     }
 }
-

@@ -2,7 +2,6 @@ use crate::minesweeper_solver::{MineSweeperCellState, MineSweeperSolver};
 use crate::field_generator::MineSweeperField;
 use super::{sort::sort_by_min_distance, search_for_islands, merge_islands, collect_bits, get_last_one_bit};
 use std::{thread, collections::HashMap};
-use colored::Colorize;
 use num_cpus;
 
 const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 18;

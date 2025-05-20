@@ -78,6 +78,10 @@ impl MineSweeperField for RandomGenerationField {
 }
 
 impl RandomGenerationField {
+    pub fn get_cells(&self) -> Vec<Vec<MineSweeperCell>> {
+        self.board.clone()
+    }
+
     pub fn initialize(&mut self) {
         self.place_mines();
         self.assign_numbers();
