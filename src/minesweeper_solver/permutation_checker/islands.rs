@@ -1,12 +1,13 @@
 use crate::minesweeper_solver::MineSweeperSolver;
 use crate::minesweeper_solver::MineSweeperCellState;
+use crate::field_generator::MineSweeperField;
 
-pub fn search_for_islands(game: &MineSweeperSolver) -> Vec<Vec<(usize, usize)>> {
-    let mut visited = vec![vec![false; game.field.height]; game.field.width];
+pub fn search_for_islands<M: MineSweeperField + Clone>(game: &MineSweeperSolver<M>) -> Vec<Vec<(u32, u32)>> {
+    let mut visited = vec![vec![false; game.field.get_height() as usize]; game.field.get_width() as usize];
     let mut islands = vec![];
 
     for (x, y) in game.field.sorted_fields() {
-        if visited[x][y] || game.state[x][y] != MineSweeperCellState::Hidden {
+        if visited[x as usize][y as usize] || game.get_state(x, y) != MineSweeperCellState::Hidden {
             continue;
         }
 
@@ -20,19 +21,19 @@ pub fn search_for_islands(game: &MineSweeperSolver) -> Vec<Vec<(usize, usize)>> 
     islands
 }
 
-fn recursive_search(x: usize, y: usize, fields: &mut Vec<(usize,usize)>, visited : &mut Vec<Vec<bool>>, game: &MineSweeperSolver) {
-    visited[x][y] = true;
+fn recursive_search<M: MineSweeperField + Clone>(x: u32, y: u32, fields: &mut Vec<(u32,u32)>, visited : &mut Vec<Vec<bool>>, game: &MineSweeperSolver<M>) {
+    visited[x as usize][y as usize] = true;
     fields.push((x, y));
 
-    for (new_x, new_y) in game.field.surrounding_fields(x, y) {
-        if !visited[new_x][new_y] && game.state[new_x][new_y] == MineSweeperCellState::Hidden {
+    for (new_x, new_y) in game.field.surrounding_fields(x, y, None) {
+        if !visited[new_x as usize][new_y as usize] && game.get_state(new_x, new_y) == MineSweeperCellState::Hidden {
             recursive_search(new_x, new_y, fields, visited, game);
         }
     }
 }
 
-pub fn merge_islands(islands: Vec<Vec<(usize, usize)>>, max_distance: usize, max_size: usize) -> Vec<Vec<(usize, usize)>> {
-    let mut merged_islands: Vec<Vec<(usize, usize)>> = vec![];
+pub fn merge_islands(islands: Vec<Vec<(u32, u32)>>, max_distance: usize, max_size: usize) -> Vec<Vec<(u32, u32)>> {
+    let mut merged_islands: Vec<Vec<(u32, u32)>> = vec![];
     let mut visited = vec![false; islands.len()];
 
     for i in 0..islands.len() {
@@ -65,7 +66,7 @@ pub fn merge_islands(islands: Vec<Vec<(usize, usize)>>, max_distance: usize, max
 }
 
 // Helper function to check if two islands are within the max distance
-fn are_islands_within_reach(island1: &Vec<(usize, usize)>, island2: &Vec<(usize, usize)>, max_distance: usize) -> bool {
+fn are_islands_within_reach(island1: &Vec<(u32, u32)>, island2: &Vec<(u32, u32)>, max_distance: usize) -> bool {
     for &(x1, y1) in island1 {
         for &(x2, y2) in island2 {
             if manhattan_distance((x1, y1), (x2, y2)) <= max_distance {
@@ -77,6 +78,6 @@ fn are_islands_within_reach(island1: &Vec<(usize, usize)>, island2: &Vec<(usize,
 }
 
 // Helper function to calculate Manhattan distance between two points
-fn manhattan_distance(a: (usize, usize), b: (usize, usize)) -> usize {
+fn manhattan_distance(a: (u32, u32), b: (u32, u32)) -> usize {
     ((a.0 as isize - b.0 as isize).abs() + (a.1 as isize - b.1 as isize).abs()) as usize
 }

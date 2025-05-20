@@ -2,9 +2,13 @@
 
 use super::Box;
 use super::super::MineSweeperSolver;
+use crate::field_generator::MineSweeperField;
 use std::collections::HashMap;
 
-impl MineSweeperSolver {
+impl<M> MineSweeperSolver<M>
+where
+    M: MineSweeperField + Clone,
+{
     pub fn apply_extended_box_logic(&mut self) -> Option<()> {
         // Nope, this doesnt work yet.
         return None;
@@ -27,7 +31,7 @@ impl MineSweeperSolver {
         }
 
         // Create a Map of all fields with unrevealed neighbours and the boxes which are in their reach
-        let mut field_map: HashMap<(usize, usize), Vec<Box>> = HashMap::new();
+        let mut field_map: HashMap<(u32, u32), Vec<Box>> = HashMap::new();
         for (x, y) in self.field.sorted_fields() {
             if !self.has_informations(x, y) {
                 continue;
@@ -55,9 +59,9 @@ impl MineSweeperSolver {
             }
             println!("New Boxes in Reach: {}", new_boxes.len());
 
-            let mut field_tuples: Vec<(std::ops::RangeInclusive<u8>, Vec<(usize, usize)>)> = vec![];
-            let mut safe_fields: Vec<(usize, usize)> = vec![];
-            let mut mine_fields: Vec<(usize, usize)> = vec![];
+            let mut field_tuples: Vec<(std::ops::RangeInclusive<u8>, Vec<(u32, u32)>)> = vec![];
+            let mut safe_fields: Vec<(u32, u32)> = vec![];
+            let mut mine_fields: Vec<(u32, u32)> = vec![];
             field_tuples.push((mines..=mines, fields.clone()));
 
             self.recursive_search(&fields, &mut field_tuples, &mut new_boxes, 0, &mut safe_fields, &mut mine_fields);
@@ -81,12 +85,12 @@ impl MineSweeperSolver {
 
     fn recursive_search(
         &mut self,
-        original_fields: &Vec<(usize, usize)>,
-        field_tuples: &mut Vec<(std::ops::RangeInclusive<u8>, Vec<(usize, usize)>)>,
+        original_fields: &Vec<(u32, u32)>,
+        field_tuples: &mut Vec<(std::ops::RangeInclusive<u8>, Vec<(u32, u32)>)>,
         new_boxes: &mut Vec<&Box>,
         current_box_index: usize,
-        safe_fields: &mut Vec<(usize, usize)>,
-        mine_fields: &mut Vec<(usize, usize)>
+        safe_fields: &mut Vec<(u32, u32)>,
+        mine_fields: &mut Vec<(u32, u32)>
     ) {
         if current_box_index == new_boxes.len() {
             return;

@@ -1,4 +1,5 @@
 use crate::minesweeper_solver::{MineSweeperCellState, MineSweeperSolver};
+use crate::field_generator::MineSweeperField;
 use super::{sort::sort_by_min_distance, search_for_islands, merge_islands, collect_bits, get_last_one_bit};
 use std::{thread, collections::HashMap};
 use colored::Colorize;
@@ -6,10 +7,13 @@ use num_cpus;
 
 const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 18;
 
-impl MineSweeperSolver {
+impl<M> MineSweeperSolver<M>
+where
+    M: MineSweeperField + Clone,
+{
     pub fn apply_permutation_checks(&mut self) -> Option<()> {
         let mut did_something = false;
-        let max_mines: u64 = self.field.mines - self.flag_count;
+        let max_mines: u32 = self.field.get_mines() - self.flag_count;
         let islands = search_for_islands(self);
         
         if islands.len() == 0 {
@@ -36,12 +40,12 @@ impl MineSweeperSolver {
         }
     }
 
-    fn try_permutation_solving(&mut self, island: &Vec<(usize, usize)>, max_mines: u64, did_something: &mut bool) {
-        let mut all_possible_permutations: u64 = 0;
-        let mut all_wrong_permutations: u64 = 0;
-        let mut permutation_field: HashMap<(usize, usize), u64> = HashMap::new();
-        let mut permutation_vector: Vec<((usize, usize), bool)> = vec![];
-        let mut no_revealed_neighbours: u64 = 0;
+    fn try_permutation_solving(&mut self, island: &Vec<(u32, u32)>, max_mines: u32, did_something: &mut bool) {
+        let mut all_possible_permutations: u32 = 0;
+        let mut all_wrong_permutations: u32 = 0;
+        let mut permutation_field: HashMap<(u32, u32), u32> = HashMap::new();
+        let mut permutation_vector: Vec<((u32, u32), bool)> = vec![];
+        let mut no_revealed_neighbours: u32 = 0;
 
         for &(x, y) in island {
             if self.has_revealed_neighbours(x, y) {
@@ -85,9 +89,9 @@ impl MineSweeperSolver {
         }
 
         if *did_something == false && max_mines > no_revealed_neighbours {
-            let mut all_possible_permutations: u64 = 0;
-            let mut all_wrong_permutations: u64 = 0;
-            let mut permutation_field: HashMap<(usize, usize), u64> = HashMap::new();
+            let mut all_possible_permutations: u32 = 0;
+            let mut all_wrong_permutations: u32 = 0;
+            let mut permutation_field: HashMap<(u32, u32), u32> = HashMap::new();
 
             for &((x, y), _) in &permutation_vector {
                 permutation_field.insert((x, y), 0);
@@ -124,11 +128,11 @@ impl MineSweeperSolver {
 
     fn start_permutation_threads(
         &mut self,
-        permutation_vector: Vec<((usize, usize), bool)>,
-        max_remaining_mines: u64,
-        permutation_field: &mut HashMap<(usize, usize), u64>,
-        possible_permutations: &mut u64,
-        wrong_permutations: &mut u64
+        permutation_vector: Vec<((u32, u32), bool)>,
+        max_remaining_mines: u32,
+        permutation_field: &mut HashMap<(u32, u32), u32>,
+        possible_permutations: &mut u32,
+        wrong_permutations: &mut u32
         ) {
         // run on gpu ??
         let (thread_count, masks, start_index) = self.generate_start_masks(&permutation_vector);
@@ -138,7 +142,7 @@ impl MineSweeperSolver {
         for bit_mask in 0..thread_count {
             let mut permutation_vector_clone = permutation_vector.clone();
             let mut permutation_field_clone = permutation_field.clone();
-            let new_self: MineSweeperSolver = self.clone(); // Clone the current instance of self
+            let new_self: MineSweeperSolver<M> = self.clone(); // Clone the current instance of self
 
             let mask = collect_bits(masks[bit_mask]);
             for i in 0..permutation_vector_clone.len() {
@@ -150,8 +154,8 @@ impl MineSweeperSolver {
             }
 
             let handle = thread::spawn(move || {
-                let mut local_possible_permutations: u64 = 0;
-                let mut local_wrong_permutations: u64 = 0;
+                let mut local_possible_permutations: u32 = 0;
+                let mut local_wrong_permutations: u32 = 0;
 
                 new_self.recursively_apply_permutations(&mut permutation_vector_clone, start_index, max_remaining_mines, &mut permutation_field_clone, &mut local_possible_permutations, &mut local_wrong_permutations);
 
@@ -178,7 +182,7 @@ impl MineSweeperSolver {
         }
     }
 
-    fn generate_start_masks(&self, permutation_vector: &Vec<((usize, usize), bool)>) -> (usize, Vec<u64>, usize) {
+    fn generate_start_masks(&self, permutation_vector: &Vec<((u32, u32), bool)>) -> (usize, Vec<u64>, usize) {
         // Atleast use as much as we can
         let min_threads = num_cpus::get() * 2;
 
@@ -243,7 +247,7 @@ impl MineSweeperSolver {
         return(numbers.len(), numbers, start_index);
     }
 
-    fn calculate_masks(&self, start_counter: u64, counter_maximum: u64, numbers: &mut Vec<u64>, start_index: &mut usize, permutation_vector: &Vec<((usize, usize), bool)>, min_threads: usize) {
+    fn calculate_masks(&self, start_counter: u64, counter_maximum: u64, numbers: &mut Vec<u64>, start_index: &mut usize, permutation_vector: &Vec<((u32, u32), bool)>, min_threads: usize) {
         let mut counter = start_counter;
         while numbers.len() < min_threads || *start_index >= get_last_one_bit(counter) + 1 {
             let possible_new_start = get_last_one_bit(counter) + 1;
@@ -264,7 +268,7 @@ impl MineSweeperSolver {
         }
     }
 
-    fn is_possible_start(&self, mask: u64, permutation_vector: &Vec<((usize, usize), bool)>, check_until: usize) -> bool {
+    fn is_possible_start(&self, mask: u64, permutation_vector: &Vec<((u32, u32), bool)>, check_until: usize) -> bool {
         let bits = collect_bits(mask);
         let mut permutation_vector_clone = vec![];
         for i in 0..check_until {
@@ -278,7 +282,7 @@ impl MineSweeperSolver {
         for i in 0..check_until {
             let (x, y) = permutation_vector_clone[i].0;
 
-            for (new_x, new_y) in self.field.surrounding_fields(x, y) {
+            for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
                 if self.has_informations(new_x, new_y) {
                     if !self.can_number_be_satisfied(new_x, new_y, &permutation_vector_clone) {
                         return false;
@@ -289,18 +293,18 @@ impl MineSweeperSolver {
         true
     }
 
-    fn can_number_be_satisfied(&self, x: usize, y: usize, permutation_vector: &Vec<((usize, usize), bool)>) -> bool {
-        let mine_count = self.field.board[x][y].get_number();
+    fn can_number_be_satisfied(&self, x: u32, y: u32, permutation_vector: &Vec<((u32, u32), bool)>) -> bool {
+        let mine_count = self.field.get_cell(x, y).get_number();
         let mut flag_count = 0;
         let mut unknown_count = 0;
 
-        for (new_x, new_y) in self.field.surrounding_fields(x, y) {
-            if self.state[new_x][new_y] == MineSweeperCellState::Revealed {
+        for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
+            if self.get_state(new_x, new_y) == MineSweeperCellState::Revealed {
                 // revealed field, ignore
                 continue;
             }
 
-            if self.state[new_x][new_y] == MineSweeperCellState::Flagged {
+            if self.get_state(new_x, new_y) == MineSweeperCellState::Flagged {
                 flag_count += 1;
             } else if let Some(field) = permutation_vector.iter().find(|&&((x, y), _)| x == new_x && y == new_y) {
                 if field.1 {
@@ -327,12 +331,12 @@ impl MineSweeperSolver {
 
     fn recursively_apply_permutations(
         &self,
-        permutation_vector: &mut Vec<((usize, usize), bool)>,
+        permutation_vector: &mut Vec<((u32, u32), bool)>,
         index: usize,
-        max_remaining_mines: u64,
-        permutation_field: &mut HashMap<(usize, usize), u64>,
-        possible_permutations: &mut u64,
-        wrong_permutations: &mut u64
+        max_remaining_mines: u32,
+        permutation_field: &mut HashMap<(u32, u32), u32>,
+        possible_permutations: &mut u32,
+        wrong_permutations: &mut u32
     ) {
         // we have a permutation
         if index == permutation_vector.len() {
@@ -347,7 +351,7 @@ impl MineSweeperSolver {
 
         // Check if we are allowed to place a mine here -> check surrounding numbers and if they are already satisfied
         let mut satisfied = false;
-        for (new_x, new_y) in self.field.surrounding_fields(permutation_vector[index].0.0, permutation_vector[index].0.1) {
+        for (new_x, new_y) in self.field.surrounding_fields(permutation_vector[index].0.0, permutation_vector[index].0.1, None) {
             if self.has_informations(new_x, new_y) && self.is_number_satisfied(new_x, new_y, permutation_vector) {
                 // No more mines allowed here
                 satisfied = true;
@@ -367,12 +371,12 @@ impl MineSweeperSolver {
         self.recursively_apply_permutations(permutation_vector, index + 1, max_remaining_mines - 1, permutation_field, possible_permutations, wrong_permutations);
     }
 
-    fn is_number_satisfied(&self, x: usize, y: usize, permutation_vector: &Vec<((usize, usize), bool)>) -> bool {
+    fn is_number_satisfied(&self, x: u32, y: u32, permutation_vector: &Vec<((u32, u32), bool)>) -> bool {
         let mut flag_count: u8 = 0;
-        let mine_count = self.field.board[x][y].get_number();
+        let mine_count = self.field.get_cell(x, y).get_number();
 
-        for (new_x, new_y) in self.field.surrounding_fields(x, y) {
-            if self.state[new_x][new_y] == MineSweeperCellState::Flagged {
+        for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
+            if self.get_state(new_x, new_y)  == MineSweeperCellState::Flagged {
                 flag_count += 1;
             } else if let Some(field) = permutation_vector.iter().find(|&&((x, y), _)| x == new_x && y == new_y) {
                 if field.1 {
@@ -391,13 +395,13 @@ impl MineSweeperSolver {
 
     fn insert_if_valid(
         &self,
-        permutation_vector: &Vec<((usize, usize), bool)>,
-        permutation_field: &mut HashMap<(usize, usize), u64>,
-        possible_permutations: &mut u64,
-        wrong_permutations: &mut u64
+        permutation_vector: &Vec<((u32, u32), bool)>,
+        permutation_field: &mut HashMap<(u32, u32), u32>,
+        possible_permutations: &mut u32,
+        wrong_permutations: &mut u32
         ) {
         for &((x, y), _mine) in permutation_vector {
-            for (new_x, new_y) in self.field.surrounding_fields(x, y) {
+            for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
                 if self.has_informations(new_x, new_y) {
                     if !self.is_number_satisfied(new_x, new_y, permutation_vector) {
                         *wrong_permutations += 1;

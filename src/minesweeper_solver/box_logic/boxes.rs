@@ -1,12 +1,12 @@
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Box{
-    fields: Vec<(usize, usize)>,
-    owner: (usize, usize),
+    fields: Vec<(u32, u32)>,
+    owner: (u32, u32),
     mines: u8,
 }
 
 impl Box{
-    pub fn new(x: usize, y: usize, mines: u8) -> Self {
+    pub fn new(x: u32, y: u32, mines: u8) -> Self {
         Box {
             fields: vec![],
             owner: (x, y),
@@ -22,15 +22,15 @@ impl Box{
         return self.fields.len();
     }
 
-    pub fn add_field(&mut self, x: usize, y: usize) {
+    pub fn add_field(&mut self, x: u32, y: u32) {
         self.fields.push((x, y));
     }
 
-    fn remove_field(&mut self, x: usize, y: usize) {
+    fn remove_field(&mut self, x: u32, y: u32) {
         self.fields.retain(|&field| field != (x, y));
     }
 
-    fn contains(&self, x: usize, y: usize) -> bool {
+    fn contains(&self, x: u32, y: u32) -> bool {
         for field in &self.fields {
             if field.0 == x && field.1 == y {
                 return true;
@@ -39,11 +39,11 @@ impl Box{
         false
     }
 
-    fn is_owner(&self, x: usize, y: usize) -> bool {
+    fn is_owner(&self, x: u32, y: u32) -> bool {
         return self.owner.0 == x && self.owner.1 == y
     }
 
-    pub fn is_neighbouring(&self, x: usize, y: usize) -> bool {
+    pub fn is_neighbouring(&self, x: u32, y: u32) -> bool {
         for field in &self.fields {
             if (field.0 as isize - x as isize).abs() <= 1 && (field.1 as isize - y as isize).abs() <= 1 {
                 return true;
@@ -52,8 +52,8 @@ impl Box{
         false
     }
 
-    pub fn compare_to(&self, other: &Vec<(usize, usize)>) -> (Vec<(usize, usize)>, Vec<(usize, usize)>, Vec<(usize, usize)>) {
-        let mut shared: Vec<(usize, usize)> = vec![];
+    pub fn compare_to(&self, other: &Vec<(u32, u32)>) -> (Vec<(u32, u32)>, Vec<(u32, u32)>, Vec<(u32, u32)>) {
+        let mut shared: Vec<(u32, u32)> = vec![];
         let mut this_only = vec![];
         let mut other_only = vec![];
 

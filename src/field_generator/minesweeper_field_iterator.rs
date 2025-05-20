@@ -1,25 +1,13 @@
-use super::MineSweeperField;
 
 pub struct MineSweeperFieldIterator {
-    width: usize,
-    height: usize,
-    current_x: usize,
-    current_y: usize,
-}
-
-impl MineSweeperField {
-    pub fn sorted_fields(&self) -> MineSweeperFieldIterator {
-        MineSweeperFieldIterator {
-            width: self.width.clone(),
-            height: self.height.clone(),
-            current_x: 0,
-            current_y: 0,
-        }
-    }
+    pub width: u32,
+    pub height: u32,
+    pub current_x: u32,
+    pub current_y: u32,
 }
 
 impl Iterator for MineSweeperFieldIterator {
-    type Item = (usize, usize);
+    type Item = (u32, u32);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_y >= self.height {

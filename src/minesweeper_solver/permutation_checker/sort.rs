@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-pub fn sort_by_min_distance(permutation_vector: &mut Vec<((usize, usize), bool)>) {
+pub fn sort_by_min_distance(permutation_vector: &mut Vec<((u32, u32), bool)>) {
     if permutation_vector.is_empty() {
         return;
     }
@@ -49,7 +49,7 @@ pub fn sort_by_min_distance(permutation_vector: &mut Vec<((usize, usize), bool)>
 }
 
 // Helper function to calculate the Euclidean distance between two points
-fn distance(a: (usize, usize), b: (usize, usize)) -> f64 {
+fn distance(a: (u32, u32), b: (u32, u32)) -> f64 {
     let dx = a.0 as f64 - b.0 as f64;
     let dy = a.1 as f64 - b.1 as f64;
     (dx * dx + dy * dy).sqrt()

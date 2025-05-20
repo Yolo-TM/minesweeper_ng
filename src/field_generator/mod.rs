@@ -1,15 +1,20 @@
 mod minesweeper_field_iterator;
 mod surrounding_fields_iterator;
 
-mod minesweeper_field;
 mod minesweeper_cell;
-pub use minesweeper_field::MineSweeperField;
+mod minesweeper_field;
+mod random_generation_field;
+
 pub use minesweeper_cell::MineSweeperCell;
+pub use minesweeper_field::{MineSweeperField, MineSweeperFieldCreation};
+pub use random_generation_field::RandomGenerationField;
+pub use minesweeper_field_iterator::MineSweeperFieldIterator;
+pub use surrounding_fields_iterator::SurroundingFieldsIterator;
 
-pub fn minesweeper_field(width: usize, height: usize, percentage: f32) -> MineSweeperField {
-    MineSweeperField::new(width, height, percentage)
-}
-
-pub fn minesweeper_field_fixed_mines(width: usize, height: usize, mines: u64) -> MineSweeperField {
-    MineSweeperField::new_field(width, height, mines)
+pub fn minesweeper_field(
+    width: u32,
+    height: u32,
+    mines: MineSweeperFieldCreation,
+) -> RandomGenerationField {
+    RandomGenerationField::new(width, height, mines)
 }

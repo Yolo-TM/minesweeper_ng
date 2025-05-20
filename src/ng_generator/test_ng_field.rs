@@ -1,20 +1,100 @@
-use crate::field_generator::{MineSweeperField, MineSweeperCell};
+use crate::field_generator::*;
 
-pub fn get_ng_minesweeper_field() -> MineSweeperField {
-    let width = 30;
-    let height = 20;
-    let board = vec![vec![MineSweeperCell::Empty; height]; width];
+struct TestField {
+    width: u32,
+    height: u32,
+    mines: u32,
+    start_field: (u32, u32),
+    board: Vec<Vec<MineSweeperCell>>,
+}
 
-    let mut field = MineSweeperField{
-        width: width,
-        height: height,
-        mines: 130,
-        board,
-        start_field: (0, 0),
-    };
+impl MineSweeperField for TestField {
+    #[track_caller]
+    fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self {
+        let percentage = match mines {
+            MineSweeperFieldCreation::FixedCount(mines) => {
+                mines as f32 / (width * height) as f32
+            }
+            MineSweeperFieldCreation::Percentage(percentage) => percentage,
+        };
+
+        if percentage >= 0.9 {
+            panic!("Too many mines, this won't be solvable!");
+        }
+
+        if percentage <= 0.0 {
+            panic!("Negative or zero percentage of mines!");
+        }
+
+        if percentage > 0.25 {
+            println!("Warning: {}% of the fields are mines!", percentage * 100.0);
+        }
+
+        let board = vec![vec![MineSweeperCell::Empty; height as usize]; width as usize];
+        let mines = ((width * height) as f32 * percentage) as u32;
+
+        let field = TestField {
+            width,
+            height,
+            mines,
+            board,
+            start_field: (0, 0),
+        };
+
+        field
+    }
+
+    fn get_mines(&self) -> u32 {
+        self.mines
+    }
+
+    fn get_width(&self) -> u32 {
+        self.width
+    }
+
+    fn get_height(&self) -> u32 {
+        self.height
+    }
+
+    fn get_start_field(&self) -> (u32, u32) {
+        self.start_field
+    }
+
+    fn get_cell(&self, x: u32, y: u32) -> MineSweeperCell {
+        self.board[x as usize][y as usize].clone()
+    }
+
+    fn set_cell(&mut self, x: u32, y: u32, cell: MineSweeperCell) {
+        self.board[x as usize][y as usize] = cell;
+    }
+}
+
+impl TestField {
+    fn initialize(&mut self, mine_positions: Vec<(u32, u32)>) {
+        for &(x, y) in &mine_positions {
+            self.set_cell(x, y, MineSweeperCell::Mine);
+        }
+
+        self.assign_numbers();
+    }
+
+    fn set_mine_count(&mut self, count: u32) {
+        self.mines = count;
+    }
+
+    fn set_start_field(&mut self, x: u32, y: u32) {
+        self.start_field = (x, y);
+    }
+}
+
+pub fn get_evil_ng_field() -> impl MineSweeperField {
+
+    let mut field = TestField::new(30, 20, MineSweeperFieldCreation::Percentage(0.2));
+    field.set_start_field(4, 6);
+    field.set_mine_count(130);
 
     // This are the mine positions of an evil field from minesweeper.online for testing purposes.
-    let mine_positions: Vec<(usize, usize)> = vec![
+    field.initialize(vec![
         (0,2), (0,3), (0,5), (0,17),
         (1,3), (1,5), (1,7), (1,16), (1,17),
         (2,3), (2,5), (2,7), (2,18),
@@ -45,43 +125,23 @@ pub fn get_ng_minesweeper_field() -> MineSweeperField {
         (27,1), (27,3), (27,5), (27,10), (27,11), (27,17), (27,18),
         (28,2), (28,16), (28,19),
         (29,2), (29,10), (29,11), (29,16)
-    ];
+    ]);
 
-    for &(x, y) in &mine_positions {
-        field.board[x][y] = MineSweeperCell::Mine;
-    }
-
-    field.initialize();
-    field.start_field = (4, 6);
     field
 }
 
-pub fn get_small_test_field() -> MineSweeperField {
-    let width = 10;
-    let height = 10;
-    let board = vec![vec![MineSweeperCell::Empty; height]; width];
+pub fn get_small_test_field() -> impl MineSweeperField {
 
-    let mut field = MineSweeperField{
-        width: width,
-        height: height,
-        mines: 20,
-        board,
-        start_field: (4, 7),
-    };
+    let mut field = TestField::new(10, 10, MineSweeperFieldCreation::Percentage(0.2));
+    field.set_start_field(4, 7);
+    field.set_mine_count(20);
 
-    // This are the mine positions of an evil field from minesweeper.online for testing purposes.
-    let mine_positions: Vec<(usize, usize)> = vec![
+    field.initialize(vec![
         (6, 0), (2, 1), (4, 1), (4, 2), (5, 2),
         (0, 3), (1, 3), (4, 3), (5, 3), (7, 4),
         (0, 5), (1, 5), (5, 5), (7, 5), (0, 7),
         (1, 7), (6, 7), (2, 9), (5, 9), (6, 9),
-    ];
+    ]);
 
-    for &(x, y) in &mine_positions {
-        field.board[x][y] = MineSweeperCell::Mine;
-    }
-
-    field.initialize();
-    field.start_field = (4, 7);
     field
 }

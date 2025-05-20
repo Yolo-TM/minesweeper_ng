@@ -1,4 +1,4 @@
-use crate::field_generator::MineSweeperField;
+use crate::field_generator::*;
 
 mod box_logic;
 mod permutation_checker;
@@ -17,14 +17,17 @@ enum MineSweeperCellState {
 }
 
 #[derive(Clone)]
-struct MineSweeperSolver{
-    field: MineSweeperField,
+pub struct MineSweeperSolver<M>
+where
+    M: MineSweeperField + Clone,
+{
+    field:  M,
     state: Vec<Vec<MineSweeperCellState>>,
-    flag_count: u64,
-    hidden_count: u64,
-    remaining_mines: u64
+    flag_count: u32,
+    hidden_count: u32,
+    remaining_mines: u32
 }
 
-pub fn minesweeper_solver(field: MineSweeperField) {
+pub fn minesweeper_solver(field: impl MineSweeperField + Clone) {
     solver::start(field);
 }

@@ -1,12 +1,17 @@
 use super::super::MineSweeperSolver;
+use crate::field_generator::MineSweeperField;
 
-impl MineSweeperSolver {
+impl<M> MineSweeperSolver<M>
+where
+    M: MineSweeperField + Clone,
+{
     pub fn apply_basic_box_logic(&mut self) -> Option<()> {
         let mut did_something = false;
 
         for (x, y) in self.field.sorted_fields() {
             if self.has_informations(x, y) {
-                for (new_x, new_y) in self.field.extended_surrounding_fields(x, y, 5) {
+                // TODO: Is 5 a good number here or are we doint unnecessary calculations?
+                for (new_x, new_y) in self.field.surrounding_fields(x, y, Some(5)) {
                     if self.has_informations(new_x, new_y) {
                         let reduced_count = self.get_reduced_count(x, y);
                         let reduced_count2 = self.get_reduced_count(new_x, new_y);
