@@ -1,13 +1,13 @@
+use std::collections::HashMap;
+
 use crate::field_generator::{MineSweeperCell, MineSweeperField};
+use super::permutation_checker::search_for_islands;
 use super::SolverSolution;
 use super::MineSweeperCellState;
 use super::MineSweeperSolver;
 use colored::Colorize;
 
-impl<M> MineSweeperSolver<M>
-where
-    M: MineSweeperField,
-{
+impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     fn new(field: M) -> Self {
         let state = vec![vec![MineSweeperCellState::Hidden; field.get_height() as usize]; field.get_width() as usize];
 
@@ -46,35 +46,31 @@ where
         self.state[x as usize][y as usize] = state;
     }
 
-    fn do_solving_step(&mut self) -> Option<()>{
+    fn do_solving_step(&mut self) -> Option<u8>{
         match self.do_basic_neighbour_check(){
             Some(_) => {
-                //println!("Revealed or Flagged Fields based on basic count logic.");
-                return Some(());
+                return Some(1);
             },
             None => {}
         }
 
         match self.apply_basic_box_logic() {
             Some(_) => {
-                //println!("Revealed or Flagged Fields based on box logic.");
-                return Some(());
+                return Some(2);
             },
             None => {}
         }
 
         match self.apply_extended_box_logic() {
             Some(_) => {
-                //println!("Revealed or Flagged Fields based on extended box logic.");
-                return Some(());
+                return Some(3);
             },
             None => {}
         }
 
         match self.apply_permutation_checks() {
             Some(_) => {
-                //println!("Revealed or Flagged Fields based on tested permutations.");
-                return Some(());
+                return Some(4);
             },
             None => {}
         }
@@ -241,24 +237,28 @@ where
 
 pub fn start<M: MineSweeperField>(field: M) -> SolverSolution {
     let mut game = MineSweeperSolver::new(field);
+    let mut logic_levels_used: HashMap<u8, u32> = HashMap::new();
+    let mut step_count = 0;
 
-    let mut step_count: u64 = 0;
     game.reveal_field(game.field.get_start_field().0, game.field.get_start_field().1);
 
     loop {
         step_count += 1;
+        println!("Step: {}", step_count);
+        game.print();
 
         if game.hidden_count == 0 || (game.flag_count + game.hidden_count) == game.field.get_mines() {
             game.flag_all_hidden_cells();
-            return SolverSolution::FoundSolution(step_count);
+            return SolverSolution::FoundSolution(step_count, logic_levels_used);
         }
 
         match game.do_solving_step() {
-            Some(_) => {
+            Some(logic_level) => {
+                *logic_levels_used.entry(logic_level).or_insert(0) += 1;
                 continue;
             },
             None => {
-                return SolverSolution::NoSolution(step_count);
+                return SolverSolution::NoSolution(step_count, game.remaining_mines, game.hidden_count, search_for_islands(&game));
             }
         }
     }

@@ -5,10 +5,7 @@ use super::super::MineSweeperSolver;
 use crate::field_generator::MineSweeperField;
 use std::collections::HashMap;
 
-impl<M> MineSweeperSolver<M>
-where
-    M: MineSweeperField,
-{
+impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     pub fn apply_extended_box_logic(&mut self) -> Option<()> {
         // Nope, this doesnt work yet.
         return None;

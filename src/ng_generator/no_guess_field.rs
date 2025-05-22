@@ -1,5 +1,5 @@
 use crate::field_generator::*;
-use crate::minesweeper_solver::{SolverSolution, solver::start};
+use crate::minesweeper_solver::{SolverSolution, start};
 
 #[derive(Clone)]
 pub struct NoGuessField {
@@ -14,23 +14,36 @@ impl NoGuessField {
     fn initialize(&mut self) {
         loop {
             match start(self.clone()) {
-                SolverSolution::NoSolution(_) => {
+                SolverSolution::NoSolution(_steps, mines, hidden, islands) => {
                     println!("No solution found, trying to move a mine.");
-// Create the NG Minesweeper Field
 
-/*
-if not solvable, check if there are multiple islands
-    if yes, take a random mine from an island border and move it to another island border
-        then try solving again? possible from the current sovler state theoretically
-    if no, check minecount, unrevealed etc if it makes sense to just move the mine somewhere else (from the border away)
-*/
+                    if islands.len() > 1 {
+                        self.multiple_islands(mines, hidden, islands);
+                    } else if islands.len() == 1 {
+                        self.single_island(mines, hidden, islands[0].clone());
+                    } else {
+                        unreachable!("A Game with no islands should be solved!");
+                    }
+
                     continue;
                 }
-                SolverSolution::FoundSolution(_) => {
+                SolverSolution::FoundSolution(_, _) => {
                     break;
                 }
             }
         }
+    }
+
+    fn multiple_islands(&mut self, _mines: u32, hidden: u32, islands: Vec<Vec<(u32, u32)>>) {
+        let mines_at_border: Vec<Vec<(u32, u32)>> = vec![];
+
+        // search every island for cells bordering an open cell
+
+        // take a random mine from an island border and move it to another island border
+    }
+    
+    fn single_island(&mut self, mines: u32, hidden: u32, islands: Vec<(u32, u32)>) {
+        //if no, check minecount, unrevealed etc if it makes sense to just move the mine somewhere else (from the border away)
     }
 }
 

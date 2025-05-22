@@ -6,10 +6,7 @@ use num_cpus;
 
 const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 18;
 
-impl<M> MineSweeperSolver<M>
-where
-    M: MineSweeperField,
-{
+impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     pub fn apply_permutation_checks(&mut self) -> Option<()> {
         let mut did_something = false;
         let max_mines: u32 = self.field.get_mines() - self.flag_count;

@@ -1,10 +1,7 @@
 use super::super::MineSweeperSolver;
 use crate::field_generator::MineSweeperField;
 
-impl<M> MineSweeperSolver<M>
-where
-    M: MineSweeperField,
-{
+impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     pub fn apply_basic_box_logic(&mut self) -> Option<()> {
         let mut did_something = false;
 
