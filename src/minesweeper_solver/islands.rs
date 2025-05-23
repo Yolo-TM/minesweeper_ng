@@ -1,17 +1,22 @@
 use crate::minesweeper_solver::{MineSweeperSolver, MineSweeperCellState};
-use crate::field_generator::MineSweeperField;
+use crate::field_generator::{MineSweeperFieldIterator, SurroundingFieldsIterator, MineSweeperField, MineSweeperCell};
 
-pub fn search_for_islands<M: MineSweeperField>(game: &MineSweeperSolver<M>) -> Vec<Vec<(u32, u32)>> {
-    let mut visited = vec![vec![false; game.field.get_height() as usize]; game.field.get_width() as usize];
+pub fn search_for_islands(width: u32, height: u32, field: &Vec<Vec<MineSweeperCell>>, state: &Vec<Vec<MineSweeperCellState>>) -> Vec<Vec<(u32, u32)>> {
+    let mut visited = vec![vec![false; height as usize]; width as usize];
     let mut islands = vec![];
 
-    for (x, y) in game.field.sorted_fields() {
-        if visited[x as usize][y as usize] || game.get_state(x, y) != MineSweeperCellState::Hidden {
+    for (x, y) in (MineSweeperFieldIterator {
+            width,
+            height,
+            current_x: 0,
+            current_y: 0,
+        }) {
+        if visited[x as usize][y as usize] || state[x as usize][y as usize] != MineSweeperCellState::Hidden {
             continue;
         }
 
         let mut fields = vec![];
-        recursive_search(x, y, &mut fields, &mut visited, game);
+        recursive_search(x, y, &mut fields, &mut visited, width, height, field, state);
         if fields.len() > 0 {
             islands.push(fields);
         }
@@ -20,13 +25,21 @@ pub fn search_for_islands<M: MineSweeperField>(game: &MineSweeperSolver<M>) -> V
     islands
 }
 
-fn recursive_search<M: MineSweeperField>(x: u32, y: u32, fields: &mut Vec<(u32,u32)>, visited : &mut Vec<Vec<bool>>, game: &MineSweeperSolver<M>) {
+fn recursive_search(x: u32, y: u32, fields: &mut Vec<(u32,u32)>, visited : &mut Vec<Vec<bool>>, width: u32, height: u32, field: &Vec<Vec<MineSweeperCell>>, state: &Vec<Vec<MineSweeperCellState>>) {
     visited[x as usize][y as usize] = true;
     fields.push((x, y));
 
-    for (new_x, new_y) in game.field.surrounding_fields(x, y, None) {
-        if !visited[new_x as usize][new_y as usize] && game.get_state(new_x, new_y) == MineSweeperCellState::Hidden {
-            recursive_search(new_x, new_y, fields, visited, game);
+    for (new_x, new_y) in (SurroundingFieldsIterator {
+            x,
+            y,
+            width,
+            height,
+            range: 1,
+            dx: -1,
+            dy: -1,
+        }) {
+        if !visited[new_x as usize][new_y as usize] && state[new_x as usize][new_y as usize] == MineSweeperCellState::Hidden {
+            recursive_search(new_x, new_y, fields, visited, width, height, field, state);
         }
     }
 }

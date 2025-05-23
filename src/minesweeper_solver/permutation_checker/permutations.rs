@@ -1,6 +1,6 @@
 use crate::minesweeper_solver::{MineSweeperCellState, MineSweeperSolver};
 use crate::field_generator::MineSweeperField;
-use super::{sort::sort_by_min_distance, search_for_islands, merge_islands, collect_bits, get_last_one_bit};
+use super::{sort::sort_by_min_distance, super::search_for_islands, super::merge_islands, collect_bits, get_last_one_bit};
 use std::{thread, collections::HashMap};
 use num_cpus;
 
@@ -10,7 +10,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     pub fn apply_permutation_checks(&mut self) -> Option<()> {
         let mut did_something = false;
         let max_mines: u32 = self.field.get_mines() - self.flag_count;
-        let islands = search_for_islands(self);
+        let islands = search_for_islands(self.field.get_width(), self.field.get_height(), &self.field.get_field(), &self.state);
         
         if islands.len() == 0 {
             panic!("No islands found. This should not happen.");

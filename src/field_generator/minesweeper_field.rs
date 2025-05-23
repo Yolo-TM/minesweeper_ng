@@ -13,6 +13,7 @@ pub trait MineSweeperField: Send + Clone + 'static {
     fn get_width(&self) -> u32;
     fn get_height(&self) -> u32;
     fn get_start_field(&self) -> (u32, u32);
+    fn get_field(&self) -> Vec<Vec<MineSweeperCell>>;
 
     fn get_cell(&self, x: u32, y: u32) -> MineSweeperCell;
     fn set_cell(&mut self, x: u32, y: u32, cell: MineSweeperCell);

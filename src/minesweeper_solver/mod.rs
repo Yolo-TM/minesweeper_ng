@@ -5,11 +5,13 @@ use colored::Colorize;
 mod box_logic;
 mod permutation_checker;
 mod solver;
+mod islands;
 
 pub use solver::start;
+pub use islands::{search_for_islands, merge_islands};
 
 pub enum SolverSolution {
-    NoSolution(u32, u32, u32, Vec<Vec<(u32, u32)>>),
+    NoSolution(u32, u32, u32, Vec<Vec<MineSweeperCellState>>),
     FoundSolution(u32, HashMap<u8, u32>),
 }
 
@@ -31,7 +33,7 @@ struct MineSweeperSolver<M: MineSweeperField> {
 
 pub fn solve(field: impl MineSweeperField) {
     match start(field) {
-        SolverSolution::NoSolution(step_count, remaining_mines, hidden_count, _islands) => {
+        SolverSolution::NoSolution(step_count, remaining_mines, hidden_count, _states) => {
             println!("No solution found. Stopped after {} steps. (Remaining Mines: {}, Hidden Fields: {})", step_count.to_string().red(), remaining_mines.to_string().red(), hidden_count.to_string().blue());
         }
         SolverSolution::FoundSolution(step_count, _complexity) => {

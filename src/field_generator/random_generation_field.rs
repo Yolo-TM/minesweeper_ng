@@ -67,6 +67,10 @@ impl MineSweeperField for RandomGenerationField {
         self.start_field
     }
 
+    fn get_field(&self) -> Vec<Vec<MineSweeperCell>> {
+        self.board.clone()
+    }
+
     fn get_cell(&self, x: u32, y: u32) -> MineSweeperCell {
         self.board[x as usize][y as usize].clone()
     }

@@ -1,5 +1,6 @@
 use crate::field_generator::*;
 use crate::minesweeper_solver::{SolverSolution, start};
+use crate::minesweeper_solver::search_for_islands;
 
 #[derive(Clone)]
 pub struct NoGuessField {
@@ -14,7 +15,8 @@ impl NoGuessField {
     fn initialize(&mut self) {
         loop {
             match start(self.clone()) {
-                SolverSolution::NoSolution(_steps, mines, hidden, islands) => {
+                SolverSolution::NoSolution(_steps, mines, hidden, states) => {
+                    let islands = search_for_islands(self.width, self.height, &self.board, &states);
                     println!("No solution found, trying to move a mine.");
 
                     if islands.len() > 1 {
@@ -77,6 +79,10 @@ impl MineSweeperField for NoGuessField {
     }
     fn get_start_field(&self) -> (u32, u32) {
         self.start_field
+    }
+
+    fn get_field(&self) -> Vec<Vec<MineSweeperCell>> {
+        self.board.clone()
     }
 
     fn get_cell(&self, x: u32, y: u32) -> MineSweeperCell {

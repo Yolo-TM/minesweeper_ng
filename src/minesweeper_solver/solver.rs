@@ -1,10 +1,7 @@
 use std::collections::HashMap;
 
 use crate::field_generator::{MineSweeperCell, MineSweeperField};
-use super::permutation_checker::search_for_islands;
-use super::SolverSolution;
-use super::MineSweeperCellState;
-use super::MineSweeperSolver;
+use super::{SolverSolution, MineSweeperCellState, MineSweeperSolver};
 use colored::Colorize;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
@@ -258,7 +255,7 @@ pub fn start<M: MineSweeperField>(field: M) -> SolverSolution {
                 continue;
             },
             None => {
-                return SolverSolution::NoSolution(step_count, game.remaining_mines, game.hidden_count, search_for_islands(&game));
+                return SolverSolution::NoSolution(step_count, game.remaining_mines, game.hidden_count, game.state.clone());
             }
         }
     }
