@@ -1,6 +1,7 @@
 use crate::field_generator::*;
-use crate::minesweeper_solver::{SolverSolution, start};
-use crate::minesweeper_solver::search_for_islands;
+use crate::minesweeper_solver::{SolverSolution, start, MineSweeperCellState, search_for_islands};
+use std::collections::HashMap;
+use rand::{rng, prelude::IndexedRandom};
 
 #[derive(Clone)]
 pub struct NoGuessField {
@@ -16,13 +17,14 @@ impl NoGuessField {
         loop {
             match start(self.clone()) {
                 SolverSolution::NoSolution(_steps, mines, hidden, states) => {
-                    let islands = search_for_islands(self.width, self.height, &self.board, &states);
                     println!("No solution found, trying to move a mine.");
 
+                    let islands = search_for_islands(self.width, self.height, &self.board, &states);
                     if islands.len() > 1 {
-                        self.multiple_islands(mines, hidden, islands);
+                        self.multiple_islands(mines, hidden, islands, &states);
                     } else if islands.len() == 1 {
-                        self.single_island(mines, hidden, islands[0].clone());
+                        self.single_island(mines, hidden, islands[0].clone(), &states);
+                        break;
                     } else {
                         unreachable!("A Game with no islands should be solved!");
                     }
@@ -36,16 +38,145 @@ impl NoGuessField {
         }
     }
 
-    fn multiple_islands(&mut self, _mines: u32, hidden: u32, islands: Vec<Vec<(u32, u32)>>) {
-        let mines_at_border: Vec<Vec<(u32, u32)>> = vec![];
+    fn multiple_islands(&mut self, mines: u32, hidden: u32, islands: Vec<Vec<(u32, u32)>>, states: &Vec<Vec<MineSweeperCellState>>) {
+        // Remember which island we already edited
+        let mut edited_islands = vec![false; islands.len()];
 
-        // search every island for cells bordering an open cell
+        // For each island, collect border fields (fields adjacent to a revealed cell)
+        let mut mines_at_border: HashMap<usize, Vec<(u32, u32)>> = HashMap::new();
 
-        // take a random mine from an island border and move it to another island border
+        // get all mines which are completely encapsulated by flags or map border
+        let mut encapsulated_mines = vec![];
+
+        for (i, island) in islands.iter().enumerate() {
+            let mut border = vec![];
+            let mut encapsulated = true;
+
+            for &(x, y) in island {
+                for (nx, ny) in (SurroundingFieldsIterator{
+                    x,
+                    y,
+                    width: self.width,
+                    height: self.height,
+                    range: 1,
+                    dx: -1,
+                    dy: -1,
+                }) {
+                    match states[nx as usize][ny as usize] {
+                        MineSweeperCellState::Revealed => {
+                            border.push((x, y));
+                            encapsulated = false;
+                            break;
+                        },
+                        _ => {}
+                    }
+                }
+            }
+
+            if encapsulated {
+                edited_islands[i] = true;
+                for &(x, y) in island {
+                    if self.get_cell(x, y) == MineSweeperCell::Mine {
+                        encapsulated_mines.push((x, y));
+                    }
+                }
+            } else {
+                mines_at_border.insert(i, border);
+            }
+        }
+
+        for (x, y) in encapsulated_mines {
+            self.set_cell(x, y, MineSweeperCell::Empty);
+            println!("Encapsulated mine at ({}, {}) removed", x, y);
+
+            // Try move it to another island
+            let mut moved_successfully = false;
+            for (i, island) in islands.iter().enumerate() {
+                if edited_islands[i] {
+                    continue;
+                }
+
+                if let Some(&(bx, by)) = island.iter().find(|&&(bx, by)| self.get_cell(bx, by) != MineSweeperCell::Mine) {
+                    println!("Moving mine to cell ({}, {})", bx, by);
+                    self.set_cell(bx, by, MineSweeperCell::Mine);
+                    moved_successfully = true;
+
+                    if mines_at_border.contains_key(&i) && mines_at_border[&i].contains(&(bx, by)) {
+                        println!("Mine moved to border cell, removing from border");
+                        mines_at_border.remove(&i);
+                        edited_islands[i] = true;
+                    }
+                    break;
+                }
+            }
+
+            if !moved_successfully {
+                // If no border found, just move the mine to a random empty cell
+                let mut empty_cells = vec![];
+                for x in 0..self.width {
+                    for y in 0..self.height {
+                        if self.get_cell(x, y) == MineSweeperCell::Empty {
+                            empty_cells.push((x, y));
+                        }
+                    }
+                }
+                if let Some(&(x, y)) = empty_cells.choose(&mut rng()) {
+                    println!("No place in an island found, moving to random empty cell ({}, {})", x, y);
+                    self.set_cell(x, y, MineSweeperCell::Mine);
+                }
+            }
+        }
+
+        // Move a mine from one island to another one
+        // or to another place at the border
+        let unedited_count = edited_islands.iter().filter(|&&edited| !edited).count();
+        if unedited_count > 0 {
+            let mut moving: Option<(u32, u32, usize)> = None;
+
+            for (i, bordering) in &mines_at_border {
+                if edited_islands[*i] {
+                    continue;
+                }
+
+                match moving {
+                    Some((x, y, _)) => {
+                        for &(dx, dy) in bordering {
+                            if self.get_cell(dx, dy) == MineSweeperCell::Empty {
+                                self.set_cell(dx, dy, MineSweeperCell::Mine);
+                                moving = None;
+                                println!("to border cell ({}, {})", dx, dy);
+                                break;
+                            }
+                        }
+                    }
+                    None => {
+                        for &(x, y) in bordering {
+                            if self.get_cell(x, y) == MineSweeperCell::Mine {
+                                self.set_cell(x, y, MineSweeperCell::Empty);
+                                moving = Some((x, y, *i));
+                                println!("Moving mine from border cell ({}, {})", x, y);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if let Some((x, y, i)) = moving {
+                for (dx, dy) in mines_at_border[&i].clone() {
+                    if self.get_cell(dx, dy) == MineSweeperCell::Empty && !(dx == x && dy == y) {
+                        self.set_cell(dx, dy, MineSweeperCell::Mine);
+                        println!("to border cell ({}, {})", dx, dy);
+                        break;
+                    }
+                }
+            }
+        }
+
+        self.assign_numbers();
     }
     
-    fn single_island(&mut self, mines: u32, hidden: u32, islands: Vec<(u32, u32)>) {
-        //if no, check minecount, unrevealed etc if it makes sense to just move the mine somewhere else (from the border away)
+    fn single_island(&mut self, mines: u32, hidden: u32, islands: Vec<(u32, u32)>, states: &Vec<Vec<MineSweeperCellState>>) {
     }
 }
 
