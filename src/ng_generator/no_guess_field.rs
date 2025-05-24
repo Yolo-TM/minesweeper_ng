@@ -18,6 +18,7 @@ impl NoGuessField {
             match start(self.clone()) {
                 SolverSolution::NoSolution(_steps, mines, hidden, states) => {
                     println!("No solution found, trying to move a mine.");
+                    self.show();
 
                     let islands = search_for_islands(self.width, self.height, &self.board, &states);
                     if islands.len() > 1 {
@@ -141,7 +142,7 @@ impl NoGuessField {
                 match moving {
                     Some((x, y, _)) => {
                         for &(dx, dy) in bordering {
-                            if self.get_cell(dx, dy) == MineSweeperCell::Empty {
+                            if self.get_cell(dx, dy) != MineSweeperCell::Mine {
                                 self.set_cell(dx, dy, MineSweeperCell::Mine);
                                 moving = None;
                                 println!("to border cell ({}, {})", dx, dy);
@@ -154,7 +155,7 @@ impl NoGuessField {
                             if self.get_cell(x, y) == MineSweeperCell::Mine {
                                 self.set_cell(x, y, MineSweeperCell::Empty);
                                 moving = Some((x, y, *i));
-                                println!("Moving mine from border cell ({}, {})", x, y);
+                                println!("Moving mine from border cell ({}, {}) : ", x, y);
                                 break;
                             }
                         }
@@ -164,9 +165,9 @@ impl NoGuessField {
 
             if let Some((x, y, i)) = moving {
                 for (dx, dy) in mines_at_border[&i].clone() {
-                    if self.get_cell(dx, dy) == MineSweeperCell::Empty && !(dx == x && dy == y) {
+                    if self.get_cell(dx, dy) != MineSweeperCell::Mine && !(dx == x && dy == y) {
                         self.set_cell(dx, dy, MineSweeperCell::Mine);
-                        println!("to border cell ({}, {})", dx, dy);
+                        println!("to border cell ({}, {}).", dx, dy);
                         break;
                     }
                 }
@@ -174,6 +175,7 @@ impl NoGuessField {
         }
 
         self.assign_numbers();
+        self.show();
     }
     
     fn single_island(&mut self, mines: u32, hidden: u32, islands: Vec<(u32, u32)>, states: &Vec<Vec<MineSweeperCellState>>) {
