@@ -14,12 +14,12 @@ fn main() {
     field.show();
     minesweeper_solver::solve(field);
 
-    let ng_field = ng_generator::get_evil_ng_field();
-    ng_field.show();
-    minesweeper_solver::solve(ng_field);
+    //let ng_field = ng_generator::get_evil_ng_field();
+    //ng_field.show();
+    //minesweeper_solver::solve(ng_field);
 
-    let small_field = ng_generator::get_small_test_field();
-    small_field.show();
-    minesweeper_solver::solve(small_field);
+    //let small_field = ng_generator::get_small_test_field();
+    //small_field.show();
+    //minesweeper_solver::solve(small_field);
     println!("Time elapsed: {:?}", start.elapsed());
 }

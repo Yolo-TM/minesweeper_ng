@@ -37,6 +37,7 @@ impl NoGuessField {
                 }
             }
         }
+        println!("Solution found!");
     }
 
     fn multiple_islands(&mut self, mines: u32, hidden: u32, islands: Vec<Vec<(u32, u32)>>, states: &Vec<Vec<MineSweeperCellState>>) {
@@ -179,6 +180,7 @@ impl NoGuessField {
     }
     
     fn single_island(&mut self, mines: u32, hidden: u32, islands: Vec<(u32, u32)>, states: &Vec<Vec<MineSweeperCellState>>) {
+        
     }
 }
 
