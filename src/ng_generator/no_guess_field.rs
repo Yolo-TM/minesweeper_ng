@@ -22,7 +22,7 @@ impl NoGuessField {
 
                     let islands = search_for_islands(self.width, self.height, &self.board, &states);
                     if islands.len() > 1 {
-                        self.multiple_islands(mines, hidden, islands, &states);
+                        self.multiple_islands(islands, &states);
                     } else if islands.len() == 1 {
                         self.single_island(mines, hidden, islands[0].clone(), &states);
                         break;
@@ -40,7 +40,7 @@ impl NoGuessField {
         println!("Solution found!");
     }
 
-    fn multiple_islands(&mut self, mines: u32, hidden: u32, islands: Vec<Vec<(u32, u32)>>, states: &Vec<Vec<MineSweeperCellState>>) {
+    fn multiple_islands(&mut self, islands: Vec<Vec<(u32, u32)>>, states: &Vec<Vec<MineSweeperCellState>>) {
         // Remember which island we already edited
         let mut edited_islands = vec![false; islands.len()];
 
@@ -141,7 +141,7 @@ impl NoGuessField {
                 }
 
                 match moving {
-                    Some((x, y, _)) => {
+                    Some((_x, _y, _)) => {
                         for &(dx, dy) in bordering {
                             if self.get_cell(dx, dy) != MineSweeperCell::Mine {
                                 self.set_cell(dx, dy, MineSweeperCell::Mine);
@@ -178,9 +178,36 @@ impl NoGuessField {
         self.assign_numbers();
         self.show();
     }
-    
+
     fn single_island(&mut self, mines: u32, hidden: u32, islands: Vec<(u32, u32)>, states: &Vec<Vec<MineSweeperCellState>>) {
-        
+        // check if there are bordering cells, move a mine to another bordering cell or another hidden cell
+        let mut bordering_cells = vec![];
+
+        for &(x, y) in &islands {
+            for (nx, ny) in (SurroundingFieldsIterator{
+                x,
+                y,
+                width: self.width,
+                height: self.height,
+                range: 1,
+                dx: -1,
+                dy: -1,
+            }) {
+                if states[nx as usize][ny as usize] == MineSweeperCellState::Revealed {
+                    bordering_cells.push((x, y));
+                    break;
+                }
+            }
+        }
+
+        if bordering_cells.is_empty() {
+            // uhm thats bad ...
+            // we need to move a found mine to open up the island
+        } else {
+        }
+
+        self.assign_numbers();
+        self.show();
     }
 }
 
