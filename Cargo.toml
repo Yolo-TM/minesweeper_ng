@@ -7,3 +7,10 @@ edition = "2024"
 rand = "0.9.1"
 colored = "3.0.0"
 num_cpus = "1.13.1"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

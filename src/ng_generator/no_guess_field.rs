@@ -14,10 +14,12 @@ pub struct NoGuessField {
 
 impl NoGuessField {
     fn initialize(&mut self) {
+        let mut iteration: u32 = 0;
         loop {
             match start(self.clone()) {
                 SolverSolution::NoSolution(_steps, mines, hidden, states) => {
-                    println!("No solution found, trying to move a mine.");
+                    eprintln!("No solution found, trying to move a mine. (Iteration: {})", iteration);
+                    iteration += 1;
                     self.show();
 
                     let islands = search_for_islands(self.width, self.height, &self.board, &states);
@@ -30,14 +32,16 @@ impl NoGuessField {
                         unreachable!("A Game with no islands should be solved!");
                     }
 
+                    self.assign_numbers();
+                    self.show();
                     continue;
                 }
                 SolverSolution::FoundSolution(_, _) => {
+                    println!("Solution found after {} iterations", iteration);
                     break;
                 }
             }
         }
-        println!("Solution found!");
     }
 
     fn multiple_islands(&mut self, islands: Vec<Vec<(u32, u32)>>, states: &Vec<Vec<MineSweeperCellState>>) {
@@ -175,8 +179,7 @@ impl NoGuessField {
             }
         }
 
-        self.assign_numbers();
-        self.show();
+
     }
 
     fn single_island(&mut self, mines: u32, hidden: u32, islands: Vec<(u32, u32)>, states: &Vec<Vec<MineSweeperCellState>>) {
@@ -206,8 +209,6 @@ impl NoGuessField {
         } else {
         }
 
-        self.assign_numbers();
-        self.show();
     }
 }
 

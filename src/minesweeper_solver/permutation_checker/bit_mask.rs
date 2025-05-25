@@ -4,6 +4,7 @@ pub fn collect_bits(number: u64) -> Vec<u8> {
         let bit = ((number >> i) & 1) as u8;
         bits.push(bit);
     }
+
     bits
 }
 

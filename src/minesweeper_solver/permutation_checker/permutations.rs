@@ -125,7 +125,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         // run on gpu ??
         let (thread_count, masks, start_index) = self.generate_start_masks(&permutation_vector);
 
-        let mut thread_pool = vec![];
+        let mut thread_pool = Vec::with_capacity(thread_count as usize + 2);
         for bit_mask in 0..thread_count {
             let mut permutation_vector_clone = permutation_vector.clone();
             let mut permutation_field_clone = permutation_field.clone();
@@ -197,7 +197,20 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             thread_count *= 2;
         }
 
-        let mut thread_pool = vec![];
+        match permutation_vector.len() {
+            0..=44 => {}
+            45..=48 => {
+                println!("Warning: More than 2^{} permutations, this will take a long time!", permutation_vector.len());
+            }
+            49..=63 => {
+                println!("Warning: 2^{} permutations, this will take a very long time! (Using {} threads for bit masks)", permutation_vector.len(), thread_count);
+            }
+            _ => {
+                panic!("Too many permutations, this will take forever to calculate! 2^{}", permutation_vector.len());
+            }
+        }
+
+        let mut thread_pool = Vec::with_capacity(thread_count as usize + 2);
         for i in 0..thread_count {
             let count_start = max_number * i / thread_count;
             let count_end = max_number * (i + 1) / thread_count - 1;
