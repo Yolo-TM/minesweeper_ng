@@ -6,3 +6,4 @@
 - dont restart completely when changing a part
 - imlement single island changer
 - add more build optimizations
+- if an island with no connection is completely filled with mines, let the mines be there
