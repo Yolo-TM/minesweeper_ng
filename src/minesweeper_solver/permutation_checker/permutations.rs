@@ -122,15 +122,15 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         possible_permutations: &mut u32,
         wrong_permutations: &mut u32
         ) {
-        // run on gpu ??
         let (thread_count, masks, start_index) = self.generate_start_masks(&permutation_vector);
 
-        let arc_self = Arc::new(self);
+        let arc_self: Arc<MineSweeperSolver<M>> = Arc::new(self.clone());
         let mut thread_pool = Vec::with_capacity(thread_count as usize + 2);
+
         for bit_mask in 0..thread_count {
             let mut permutation_vector_clone = permutation_vector.clone();
             let mut permutation_field_clone = permutation_field.clone();
-            let new_self = arc_self.clone();
+            let arc_self = arc_self.clone();
 
             let mask = collect_bits(masks[bit_mask]);
             for i in 0..permutation_vector_clone.len() {
@@ -140,8 +140,14 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             let handle = thread::spawn(move || {
                 let mut local_possible_permutations: u32 = 0;
                 let mut local_wrong_permutations: u32 = 0;
-                new_self.recursively_apply_permutations(&mut permutation_vector_clone, start_index, max_remaining_mines, &mut permutation_field_clone, &mut local_possible_permutations, &mut local_wrong_permutations);
-
+                arc_self.recursively_apply_permutations(
+                    &mut permutation_vector_clone,
+                    start_index,
+                    max_remaining_mines,
+                    &mut permutation_field_clone,
+                    &mut local_possible_permutations,
+                    &mut local_wrong_permutations,
+                );
                 (permutation_field_clone, local_possible_permutations, local_wrong_permutations)
             });
 
@@ -206,6 +212,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             }
         }
 
+        let arc_self: Arc<MineSweeperSolver<M>> = Arc::new(self.clone());
         let mut thread_pool = Vec::with_capacity(thread_count as usize + 2);
         for i in 0..thread_count {
             let count_start = max_number * i / thread_count;
@@ -213,12 +220,11 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
             let mut sindex = start_index.clone();
             let perm_vec = permutation_vector.clone();
-            let new_self = self.clone();
+            let arc_self = arc_self.clone();
 
             let handle = thread::spawn(move || {
                 let mut valid_masks = vec![];
-                new_self.calculate_masks(count_start, count_end, &mut valid_masks, &mut sindex, &perm_vec, 2);
-
+                arc_self.calculate_masks(count_start, count_end, &mut valid_masks, &mut sindex, &perm_vec, 2);
                 valid_masks
             });
 
