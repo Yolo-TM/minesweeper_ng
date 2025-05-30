@@ -12,7 +12,7 @@ fn main() {
 
     let field = ng_generator::minesweeper_ng_field(45, 26, MineSweeperFieldCreation::Percentage(0.22));
     field.show();
-    //minesweeper_solver::solve(field);
+    minesweeper_solver::solve(field);
 
     //let ng_field = ng_generator::get_evil_ng_field();
     //ng_field.show();

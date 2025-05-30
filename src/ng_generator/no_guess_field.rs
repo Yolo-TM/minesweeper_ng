@@ -182,7 +182,7 @@ impl NoGuessField {
 
     }
 
-    fn single_island(&mut self, mines: u32, hidden: u32, islands: Vec<(u32, u32)>, states: &Vec<Vec<MineSweeperCellState>>) {
+    fn single_island(&mut self, _mines: u32, _hidden: u32, islands: Vec<(u32, u32)>, states: &Vec<Vec<MineSweeperCellState>>) {
         // check if there are bordering cells, move a mine to another bordering cell or another hidden cell
         let mut bordering_cells = vec![];
 

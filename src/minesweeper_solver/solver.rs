@@ -58,12 +58,12 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             None => {}
         }
 
-        match self.apply_extended_box_logic() {
-            Some(_) => {
-                return Some(3);
-            },
-            None => {}
-        }
+//        match self.apply_extended_box_logic() {
+//            Some(_) => {
+//                return Some(3);
+//            },
+//            None => {}
+//        }
 
         match self.apply_permutation_checks() {
             Some(_) => {
