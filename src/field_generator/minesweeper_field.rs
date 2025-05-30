@@ -4,7 +4,7 @@ use super::{
     SurroundingFieldsIterator,
 };
 
-pub trait MineSweeperField: Send + Clone + 'static {
+pub trait MineSweeperField: Sync + Send + Clone + 'static {
 
     #[track_caller]
     fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self;

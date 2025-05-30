@@ -1,7 +1,7 @@
 use crate::minesweeper_solver::{MineSweeperCellState, MineSweeperSolver};
 use crate::field_generator::MineSweeperField;
 use super::{sort::sort_by_min_distance, super::search_for_islands, super::merge_islands, collect_bits, get_last_one_bit};
-use std::{thread, collections::HashMap};
+use std::{thread, collections::HashMap, sync::Arc};
 use num_cpus;
 
 const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 18;
@@ -115,7 +115,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     }
 
     fn start_permutation_threads(
-        &mut self,
+        &self,
         permutation_vector: Vec<((u32, u32), bool)>,
         max_remaining_mines: u32,
         permutation_field: &mut HashMap<(u32, u32), u32>,
@@ -125,25 +125,21 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         // run on gpu ??
         let (thread_count, masks, start_index) = self.generate_start_masks(&permutation_vector);
 
+        let arc_self = Arc::new(self);
         let mut thread_pool = Vec::with_capacity(thread_count as usize + 2);
         for bit_mask in 0..thread_count {
             let mut permutation_vector_clone = permutation_vector.clone();
             let mut permutation_field_clone = permutation_field.clone();
-            let new_self: MineSweeperSolver<M> = self.clone(); // Clone the current instance of self
+            let new_self = arc_self.clone();
 
             let mask = collect_bits(masks[bit_mask]);
             for i in 0..permutation_vector_clone.len() {
-                if mask[i] == 1 {
-                    permutation_vector_clone[i].1 = true;
-                } else {
-                    permutation_vector_clone[i].1 = false;
-                }
+                permutation_vector_clone[i].1 = mask[i] == 1;
             }
 
             let handle = thread::spawn(move || {
                 let mut local_possible_permutations: u32 = 0;
                 let mut local_wrong_permutations: u32 = 0;
-
                 new_self.recursively_apply_permutations(&mut permutation_vector_clone, start_index, max_remaining_mines, &mut permutation_field_clone, &mut local_possible_permutations, &mut local_wrong_permutations);
 
                 (permutation_field_clone, local_possible_permutations, local_wrong_permutations)
