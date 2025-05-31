@@ -2,8 +2,7 @@
 
 ## In Work
 
-- rework clones with const / read only at multi threading
-- dont restart completely when changing a part
+- dont restart completely when changing a part, make a 5x5 matrix around as hidden
 - imlement single island changer
-- add more build optimizations
-- if an island with no connection is completely filled with mines, let the mines be there
+- allow inaccessible parts be completely filled with mines or completely empty, the field just has to be solvable
+- new algorithm which gets all disjunct border fields instead of the islands for the permutation checks
