@@ -16,7 +16,7 @@ impl NoGuessField {
     fn initialize(&mut self) {
         let mut iteration: u32 = 0;
         loop {
-            match start(self.clone()) {
+            match start(self.clone(), true) {
                 SolverSolution::NoSolution(_steps, mines, hidden, states) => {
                     eprintln!("No solution found, trying to move a mine. (Iteration: {})", iteration);
                     iteration += 1;

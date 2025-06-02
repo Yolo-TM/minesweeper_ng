@@ -10,12 +10,13 @@ mod islands;
 pub use solver::start;
 pub use islands::{search_for_islands, merge_islands};
 
+#[derive(PartialEq, Debug)]
 pub enum SolverSolution {
     NoSolution(u32, u32, u32, Vec<Vec<MineSweeperCellState>>),
     FoundSolution(u32, HashMap<u8, u32>),
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum MineSweeperCellState {
     Hidden,
     Revealed,
@@ -31,8 +32,8 @@ struct MineSweeperSolver<M: MineSweeperField> {
     remaining_mines: u32
 }
 
-pub fn solve(field: impl MineSweeperField) {
-    match start(field) {
+pub fn solve(field: impl MineSweeperField, print_steps: bool) {
+    match start(field, print_steps) {
         SolverSolution::NoSolution(step_count, remaining_mines, hidden_count, _states) => {
             println!("No solution found. Stopped after {} steps. (Remaining Mines: {}, Hidden Fields: {})", step_count.to_string().red(), remaining_mines.to_string().red(), hidden_count.to_string().blue());
         }

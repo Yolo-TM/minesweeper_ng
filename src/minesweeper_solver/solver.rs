@@ -58,12 +58,12 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             None => {}
         }
 
-//        match self.apply_extended_box_logic() {
-//            Some(_) => {
-//                return Some(3);
-//            },
-//            None => {}
-//        }
+        match self.apply_extended_box_logic() {
+            Some(_) => {
+                return Some(3);
+            },
+            None => {}
+        }
 
         match self.apply_permutation_checks() {
             Some(_) => {
@@ -232,17 +232,25 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     }
 }
 
-pub fn start<M: MineSweeperField>(field: M) -> SolverSolution {
+pub fn start<M: MineSweeperField>(field: M, enable_output: bool) -> SolverSolution {
     let mut game = MineSweeperSolver::new(field);
-    let mut logic_levels_used: HashMap<u8, u32> = HashMap::new();
-    let mut step_count = 0;
 
     game.reveal_field(game.field.get_start_field().0, game.field.get_start_field().1);
 
+    return continue_solving(game, enable_output);
+}
+
+pub fn continue_solving<M: MineSweeperField>(mut game: MineSweeperSolver<M>, enable_output: bool) -> SolverSolution {
+    let mut logic_levels_used: HashMap<u8, u32> = HashMap::new();
+    let mut step_count = 0;
+
     loop {
         step_count += 1;
-        println!("Step: {}", step_count);
-        game.print();
+
+        if enable_output {
+            println!("{}: {}", "Solver Step".bold(), step_count);
+            game.print();
+        }
 
         if game.hidden_count == 0 || (game.flag_count + game.hidden_count) == game.field.get_mines() {
             game.flag_all_hidden_cells();

@@ -10,7 +10,6 @@ struct TestField {
 }
 
 impl MineSweeperField for TestField {
-
     #[track_caller]
     fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self {
         let percentage = mines.get_percentage(width, height);
@@ -145,4 +144,40 @@ pub fn get_small_test_field() -> impl MineSweeperField {
     ]);
 
     field
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::minesweeper_solver::{start, SolverSolution};
+
+    #[test]
+    fn field_setup_evil() {
+        let field = get_evil_ng_field();
+        assert_eq!(field.get_width(), 30);
+        assert_eq!(field.get_height(), 20);
+        assert_eq!(field.get_mines(), 130);
+        assert_eq!(field.get_start_field(), (4, 6));
+    }
+
+    #[test]
+    fn field_setup_small() {
+        let field = get_small_test_field();
+        assert_eq!(field.get_width(), 10);
+        assert_eq!(field.get_height(), 10);
+        assert_eq!(field.get_mines(), 20);
+        assert_eq!(field.get_start_field(), (4, 7));
+    }
+
+    #[test]
+    fn solve_evil() {
+        let solved = start(get_evil_ng_field(), false);
+        assert!(matches!(solved, SolverSolution::FoundSolution(_, _)));
+    }
+
+    #[test]
+    fn solve_small() {
+        let solved = start(get_small_test_field(), false);
+        assert!(matches!(solved, SolverSolution::FoundSolution(_, _)));
+    }
 }
