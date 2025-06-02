@@ -2,11 +2,11 @@
 pub struct Box{
     fields: Vec<(u32, u32)>,
     owner: (u32, u32),
-    mines: u8,
+    mines: std::ops::RangeInclusive<u8>,
 }
 
 impl Box{
-    pub fn new(x: u32, y: u32, mines: u8) -> Self {
+    pub fn new(x: u32, y: u32, mines: std::ops::RangeInclusive<u8>) -> Self {
         Box {
             fields: vec![],
             owner: (x, y),
@@ -14,7 +14,7 @@ impl Box{
         }
     }
 
-    pub fn get_mines(&self) -> u8 {
+    pub fn get_mines(&self) -> std::ops::RangeInclusive<u8> {
         return self.mines;
     }
 
@@ -26,11 +26,11 @@ impl Box{
         self.fields.push((x, y));
     }
 
-    fn remove_field(&mut self, x: u32, y: u32) {
+    pub fn remove_field(&mut self, x: u32, y: u32) {
         self.fields.retain(|&field| field != (x, y));
     }
 
-    fn contains(&self, x: u32, y: u32) -> bool {
+    pub fn contains(&self, x: u32, y: u32) -> bool {
         for field in &self.fields {
             if field.0 == x && field.1 == y {
                 return true;
@@ -39,7 +39,7 @@ impl Box{
         false
     }
 
-    fn is_owner(&self, x: u32, y: u32) -> bool {
+    pub fn is_owner(&self, x: u32, y: u32) -> bool {
         return self.owner.0 == x && self.owner.1 == y
     }
 
@@ -73,12 +73,18 @@ impl Box{
         (shared, this_only, other_only)
     }
 
-    fn is_inside(&self, other: &Box) -> bool {
-        for field in &self.fields {
-            if !other.fields.contains(field) {
-                return false;
-            }
-        }
-        true
+    pub fn is_inside(&self, other: &Box) -> bool {
+        let (shared, this_only, other_only) = self.compare_to(&other.fields);
+
+        return this_only.is_empty()
+    }
+
+    pub fn covers_same_fields(&self, other: &Box) -> bool {
+        let (shared, this_only, other_only) = self.compare_to(&other.fields);
+        return this_only.is_empty() && other_only.is_empty();
+    }
+
+    pub fn has_same_range(&self, other: &Box) -> bool {
+        return self.mines.start == other.mines.start && self.mines.end == other.mines.end;
     }
 }

@@ -7,8 +7,6 @@ use std::collections::HashMap;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     pub fn apply_extended_box_logic(&mut self) -> Option<()> {
-        // Nope, this doesnt work yet.
-        return None;
 
         let mut did_something = false;
         let mut boxes: Vec<Box> = vec![];
@@ -34,8 +32,11 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                 continue;
             }
 
+            //
+            todo!("Only add significant boxes to the field map")
             for box_ in &boxes {
                 if box_.is_neighbouring(x, y) {
+                    
                     field_map.entry((x, y)).or_insert(vec![]).push(box_.clone());
                 }
             }
