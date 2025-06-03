@@ -8,6 +8,8 @@ use std::collections::HashMap;
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     pub fn apply_extended_box_logic(&mut self) -> Option<()> {
 
+        return None;
+
         let mut did_something = false;
         let mut boxes: Vec<Box> = vec![];
         
@@ -18,7 +20,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             }
 
             let surrounding_hidden_fields = self.get_surrounding_unrevealed(x, y);
-            let mut new_box = Box::new(x, y, self.get_reduced_count(x, y));
+            let mut new_box = Box::new(x, y, self.get_reduced_count(x, y)..=self.get_reduced_count(x, y));
             for cell in &surrounding_hidden_fields {
                 new_box.add_field(cell.0, cell.1);
             }
@@ -33,7 +35,8 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             }
 
             //
-            todo!("Only add significant boxes to the field map")
+            todo!("Only add significant boxes to the field map");
+
             for box_ in &boxes {
                 if box_.is_neighbouring(x, y) {
                     
@@ -50,7 +53,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             for box_ in boxes {
                 // Ignore boxes which dont help us (including the box we created for this field)
                 // Boxes which hold the same mine count AND the same number of fields can be ignored (as some of the fields are shared)
-                if mines == box_.get_mines() && fields.len() == box_.get_field_count() {
+                if box_.is_same_range(mines..=mines) && fields.len() == box_.get_field_count() {
                     continue;
                 }
                 new_boxes.push(box_);
@@ -99,15 +102,15 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             println!("Len of field_tuples: {}", field_tuples.len());
             for i in 0..field_tuples.len() {
                 let (shared, this_only, other_only) = box_.compare_to(&field_tuples[i].1);
-                if shared.len() == 0 || (shared.len() as i8) < (this_only.len() as i8 - box_.get_mines() as i8) {
-                    continue;
-                }
+    //            if shared.len() == 0 || (shared.len() as i8) < (this_only.len() as i8 - box_.get_mines() as i8) {
+    //                continue;
+    //            }
                 println!("Field Tuples bevor: {:?}", field_tuples);
                 let box_mines = box_.get_mines();
 
                 if this_only.len() == 0 && other_only.len() != 0 {
-                    field_tuples.push((*field_tuples[i].0.start() - box_mines..=field_tuples[i].0.end() - box_mines, other_only));
-                    field_tuples.push((box_mines..=box_mines, shared));
+    //                field_tuples.push((*field_tuples[i].0.start() - box_mines..=field_tuples[i].0.end() - box_mines, other_only));
+    //                field_tuples.push((box_mines..=box_mines, shared));
                     field_tuples.remove(i);
                 } else if this_only.len() != 0 && other_only.len() != 0 {
                     let mut this_only_len = this_only.len();
@@ -123,17 +126,17 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                         }
                     }
 
-                    let lower_bound;
-                    if this_only_len <= box_mines as usize {
-                        lower_bound = box_mines - this_only_len as u8;
-                    } else {
-                        lower_bound = 0;
-                    }
+                    let lower_bound = 0;
+        //            if this_only_len <= box_mines as usize {
+        //                lower_bound = box_mines - this_only_len as u8;
+        //            } else {
+        //                lower_bound = 0;
+        //            }
 
                     let mut upper_bound = shared.len() as u8;
-                    if upper_bound > box_mines {
-                        upper_bound = box_mines;
-                    }
+        //            if upper_bound > box_mines {
+        //                upper_bound = box_mines;
+        //            }
                     field_tuples.push((lower_bound..=upper_bound, shared));
 
                     let new_lower_bound;
@@ -145,12 +148,12 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                         println!("New Lower Bound: {}", new_lower_bound);
                     }
 
-                    let mut new_upper_bound;
-                    if *field_tuples[i].0.end() < lower_bound as u8 {
-                        new_upper_bound = 0;
-                    } else {
-                        new_upper_bound = field_tuples[i].0.end() - lower_bound;
-                    }
+                    let mut new_upper_bound = 0;
+        //            if *field_tuples[i].0.end() < lower_bound.end() {
+        //                new_upper_bound = 0;
+        //            } else {
+        //                new_upper_bound = field_tuples[i].0.end() - lower_bound;
+        //            }
 
                     if new_upper_bound > other_only.len() as u8 {
                         new_upper_bound = other_only.len() as u8;

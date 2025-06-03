@@ -15,7 +15,7 @@ impl Box{
     }
 
     pub fn get_mines(&self) -> std::ops::RangeInclusive<u8> {
-        return self.mines;
+        return self.mines.clone();
     }
 
     pub fn get_field_count(&self) -> usize {
@@ -85,6 +85,10 @@ impl Box{
     }
 
     pub fn has_same_range(&self, other: &Box) -> bool {
-        return self.mines.start == other.mines.start && self.mines.end == other.mines.end;
+        return self.mines.start() == other.mines.start() && self.mines.end() == other.mines.end();
+    }
+
+    pub fn is_same_range(&self, range: std::ops::RangeInclusive<u8>) -> bool {
+        return self.mines.start() == range.start() && self.mines.end() == range.end();
     }
 }
