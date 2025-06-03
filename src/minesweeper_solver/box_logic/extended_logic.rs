@@ -1,11 +1,11 @@
-#![cfg_attr(debug_assertions, allow(unreachable_code))]
-
 use super::Box;
 use super::super::MineSweeperSolver;
 use crate::field_generator::MineSweeperField;
 use std::collections::HashMap;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
+
+    #[allow(unreachable_code)]
     pub fn apply_extended_box_logic(&mut self) -> Option<()> {
 
         return None;
@@ -126,17 +126,17 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                         }
                     }
 
-                    let lower_bound = 0;
-        //            if this_only_len <= box_mines as usize {
-        //                lower_bound = box_mines - this_only_len as u8;
-        //            } else {
-        //                lower_bound = 0;
-        //            }
+                    let lower_bound;
+                    if this_only_len <= box_mines.start().clone() as usize {
+                        lower_bound = box_mines.start() - this_only_len as u8;
+                    } else {
+                        lower_bound = 0;
+                    }
 
                     let mut upper_bound = shared.len() as u8;
-        //            if upper_bound > box_mines {
-        //                upper_bound = box_mines;
-        //            }
+                    if &upper_bound > box_mines.end() {
+                        upper_bound = box_mines.end().clone();
+                    }
                     field_tuples.push((lower_bound..=upper_bound, shared));
 
                     let new_lower_bound;

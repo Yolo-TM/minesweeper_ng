@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 use crate::field_generator::{MineSweeperCell, MineSweeperField, MineSweeperFieldCreation};
 
 #[derive(Clone)]

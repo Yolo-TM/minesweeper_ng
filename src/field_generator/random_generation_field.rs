@@ -126,3 +126,175 @@ impl RandomGenerationField {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_field_creation_basic() {
+        let field = RandomGenerationField::new(10, 10, MineSweeperFieldCreation::FixedCount(10));
+
+        assert_eq!(field.get_width(), 10);
+        assert_eq!(field.get_height(), 10);
+        assert_eq!(field.get_mines(), 10);
+    }
+
+    #[test]
+    fn test_field_creation_percentage() {
+        let field = RandomGenerationField::new(10, 10, MineSweeperFieldCreation::Percentage(0.2));
+
+        assert_eq!(field.get_width(), 10);
+        assert_eq!(field.get_height(), 10);
+        assert_eq!(field.get_mines(), 20); // 100 * 0.2 = 20
+    }
+
+    #[test]
+    fn test_mine_placement_count() {
+        let field = RandomGenerationField::new(10, 10, MineSweeperFieldCreation::FixedCount(15));
+
+        let mut mine_count = 0;
+        for (x, y) in field.sorted_fields() {
+            if field.get_cell(x, y) == MineSweeperCell::Mine {
+                mine_count += 1;
+            }
+        }
+
+        assert_eq!(mine_count, 15);
+    }
+
+    #[test]
+    fn test_number_assignment() {
+        let field = RandomGenerationField::new(20, 18, MineSweeperFieldCreation::Percentage(0.25));
+
+        // Check that non-mine cells have appropriate numbers
+        for (x, y) in field.sorted_fields() {
+            let cell = field.get_cell(x, y);
+            match cell {
+                MineSweeperCell::Empty => {
+                    // Should be surrounded by 0 mines
+                    assert_eq!(field.get_sourrounding_mine_count(x, y), 0);
+                },
+                MineSweeperCell::Number(n) => {
+                    // Number should match surrounding mine count
+                    assert_eq!(field.get_sourrounding_mine_count(x, y), n);
+                    assert!(n >= 1 && n <= 8);
+                },
+                MineSweeperCell::Mine => {
+                    // Mine cells are valid
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_start_field_not_mine() {
+        let field = RandomGenerationField::new(5, 5, MineSweeperFieldCreation::FixedCount(10));
+        let (start_x, start_y) = field.get_start_field();
+
+        // Start field should not be a mine
+        assert_ne!(field.get_cell(start_x, start_y), MineSweeperCell::Mine);
+    }
+
+    #[test]
+    fn test_field_bounds() {
+        let field = RandomGenerationField::new(3, 4, MineSweeperFieldCreation::FixedCount(2));
+
+        // Test that all coordinates are within bounds
+        for (x, y) in field.sorted_fields() {
+            assert!(x < 3);
+            assert!(y < 4);
+
+            // Should be able to get cell without panic
+            let _cell = field.get_cell(x, y);
+        }
+    }
+
+    #[test]
+    fn test_cell_modification() {
+        let mut field = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+
+        // Test setting and getting cells
+        field.set_cell(1, 1, MineSweeperCell::Number(5));
+        assert_eq!(field.get_cell(1, 1), MineSweeperCell::Number(5));
+
+        field.set_cell(2, 2, MineSweeperCell::Mine);
+        assert_eq!(field.get_cell(2, 2), MineSweeperCell::Mine);
+    }
+
+    #[test]
+    fn test_get_field_clone() {
+        let field = RandomGenerationField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let board_clone = field.get_field();
+        
+        // Should be same dimensions
+        assert_eq!(board_clone.len(), 2);
+        assert_eq!(board_clone[0].len(), 2);
+        
+        // Should contain same data
+        for x in 0..2 {
+            for y in 0..2 {
+                assert_eq!(field.get_cell(x, y), board_clone[x as usize][y as usize]);
+            }
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "Too many mines")]
+    fn test_too_many_mines_panic() {
+        RandomGenerationField::new(2, 2, MineSweeperFieldCreation::Percentage(0.95));
+    }
+
+    #[test]
+    #[should_panic(expected = "Negative or zero percentage")]
+    fn test_zero_mines_panic() {
+        RandomGenerationField::new(5, 5, MineSweeperFieldCreation::Percentage(0.0));
+    }
+
+    #[test]
+    #[should_panic(expected = "Negative or zero percentage")]
+    fn test_negative_mines_panic() {
+        RandomGenerationField::new(5, 5, MineSweeperFieldCreation::Percentage(-0.1));
+    }
+
+    #[test]
+    fn test_clone() {
+        let field1 = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let field2 = field1.clone();
+
+        assert_eq!(field1.get_width(), field2.get_width());
+        assert_eq!(field1.get_height(), field2.get_height());
+        assert_eq!(field1.get_mines(), field2.get_mines());
+        assert_eq!(field1.get_start_field(), field2.get_start_field());
+
+        // Check that all cells are the same
+        for (x, y) in field1.sorted_fields() {
+            assert_eq!(field1.get_cell(x, y), field2.get_cell(x, y));
+        }
+    }
+
+    #[test]
+    fn test_surrounding_mine_count() {
+        let mut field = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        
+        // Clear all mines first
+        for x in 0..3 {
+            for y in 0..3 {
+                field.set_cell(x, y, MineSweeperCell::Empty);
+            }
+        }
+        
+        // Place mines manually for testing
+        field.set_cell(0, 0, MineSweeperCell::Mine);
+        field.set_cell(2, 2, MineSweeperCell::Mine);
+        
+        // Test center cell - should see both mines
+        assert_eq!(field.get_sourrounding_mine_count(1, 1), 2);
+        
+        // Test corner - should see one mine
+        assert_eq!(field.get_sourrounding_mine_count(0, 1), 1);
+        
+        // Test far corner - should see one mine
+        assert_eq!(field.get_sourrounding_mine_count(2, 1), 1);
+    }
+}

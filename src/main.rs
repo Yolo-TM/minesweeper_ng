@@ -9,7 +9,6 @@ use field_generator::*;
 
 fn main() {
     let start = std::time::Instant::now();
-
     //let field = ng_generator::minesweeper_ng_field(45, 26, MineSweeperFieldCreation::Percentage(0.22));
     let field = minesweeper_field(45, 26, MineSweeperFieldCreation::Percentage(0.22));
     field.show();

@@ -7,7 +7,7 @@ mod permutation_checker;
 mod solver;
 mod islands;
 
-pub use solver::start;
+pub use solver::{start, continue_solving};
 pub use islands::{search_for_islands, merge_islands};
 
 #[derive(PartialEq, Debug)]
@@ -24,7 +24,7 @@ pub enum MineSweeperCellState {
 }
 
 #[derive(Clone)]
-struct MineSweeperSolver<M: MineSweeperField> {
+pub struct MineSweeperSolver<M: MineSweeperField> {
     field:  M,
     state: Vec<Vec<MineSweeperCellState>>,
     flag_count: u32,
