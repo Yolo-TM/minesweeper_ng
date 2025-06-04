@@ -1,8 +1,9 @@
-#![allow(unused_imports)]
+#![allow(dead_code)]
+
 use crate::field_generator::{MineSweeperCell, MineSweeperField, MineSweeperFieldCreation};
 
 #[derive(Clone)]
-struct TestField {
+pub struct TestField {
     width: u32,
     height: u32,
     mines: u32,
@@ -71,7 +72,7 @@ impl MineSweeperField for TestField {
 }
 
 impl TestField {
-    fn initialize(&mut self, mine_positions: Vec<(u32, u32)>) {
+    pub fn initialize(&mut self, mine_positions: Vec<(u32, u32)>) {
         for &(x, y) in &mine_positions {
             self.set_cell(x, y, MineSweeperCell::Mine);
         }
@@ -79,11 +80,7 @@ impl TestField {
         self.assign_numbers();
     }
 
-    fn set_mine_count(&mut self, count: u32) {
-        self.mines = count;
-    }
-
-    fn set_start_field(&mut self, x: u32, y: u32) {
+    pub fn set_start_field(&mut self, x: u32, y: u32) {
         self.start_field = (x, y);
     }
 }
@@ -92,7 +89,6 @@ pub fn get_evil_ng_field() -> impl MineSweeperField {
 
     let mut field = TestField::new(30, 20, MineSweeperFieldCreation::FixedCount(130));
     field.set_start_field(4, 6);
-    field.set_mine_count(130);
 
     // This are the mine positions of an evil field from minesweeper.online for testing purposes.
     field.initialize(vec![
@@ -135,7 +131,6 @@ pub fn get_small_test_field() -> impl MineSweeperField {
 
     let mut field = TestField::new(10, 10, MineSweeperFieldCreation::FixedCount(20));
     field.set_start_field(4, 7);
-    field.set_mine_count(20);
 
     field.initialize(vec![
         (6, 0), (2, 1), (4, 1), (4, 2), (5, 2),
@@ -150,7 +145,7 @@ pub fn get_small_test_field() -> impl MineSweeperField {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::minesweeper_solver::{start, SolverSolution};
+    use crate::minesweeper_solver::{MineSweeperSolver, SolverSolution};
 
     #[test]
     fn field_setup_evil() {
@@ -172,13 +167,13 @@ mod tests {
 
     #[test]
     fn solve_evil() {
-        let solved = start(get_evil_ng_field(), false);
+        let solved = MineSweeperSolver::new(get_evil_ng_field()).start(false);
         assert!(matches!(solved, SolverSolution::FoundSolution(_, _)));
     }
 
     #[test]
     fn solve_small() {
-        let solved = start(get_small_test_field(), false);
+        let solved = MineSweeperSolver::new(get_small_test_field()).start(false);
         assert!(matches!(solved, SolverSolution::FoundSolution(_, _)));
     }
 }

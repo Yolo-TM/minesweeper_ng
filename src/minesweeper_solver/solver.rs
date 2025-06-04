@@ -1,10 +1,11 @@
+use colored::Colorize;
 use std::collections::HashMap;
+use crate::ng_generator::TestField;
 use crate::field_generator::{MineSweeperCell, MineSweeperField};
 use super::{SolverSolution, MineSweeperCellState, MineSweeperSolver};
-use colored::Colorize;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
-    fn new(field: M) -> Self {
+    pub fn new(field: M) -> Self {
         let state = vec![vec![MineSweeperCellState::Hidden; field.get_height() as usize]; field.get_width() as usize];
 
         MineSweeperSolver {
@@ -13,7 +14,61 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             hidden_count: (field.get_width() * field.get_height()),
             remaining_mines: field.get_mines(),
             field,
+            solution: SolverSolution::NeverStarted,
+            step_count: 0,
+            logic_levels: HashMap::new(),
         }
+    }
+
+    pub fn start(&mut self, enable_output: bool) -> SolverSolution {
+        if enable_output {
+            println!("Starting at field: ({}, {})", self.field.get_start_field().0, self.field.get_start_field().1);
+        }
+
+        self.reveal_field(self.field.get_start_field().0, self.field.get_start_field().1);
+
+        return self.continue_solving(enable_output);
+    }
+
+    pub fn continue_solving(&mut self, enable_output: bool) -> SolverSolution {
+        loop {
+            if self.is_solved() {
+                if enable_output {
+                    println!("{}: Took {} steps.", "Solver finished".bold(), self.step_count);
+                }
+
+                self.flag_all_hidden_cells();
+                self.solution = SolverSolution::FoundSolution(self.step_count, self.logic_levels.clone());
+                return self.solution.clone();
+
+            } else if enable_output {
+                println!("{}: {}", "Solver Step".bold(), self.step_count);
+                self.print();
+            }
+
+            match self.do_solving_step() {
+                Some(logic_level) => {
+                    if enable_output {
+                        println!("{}: Applied logic level {}", "Solver Step".bold(), logic_level);
+                    }
+                    *self.logic_levels.entry(logic_level).or_insert(0) += 1;
+                },
+                None => {
+                    if enable_output {
+                        println!("{}: No further logic could be applied.", "Solver Step".bold());
+                    }
+
+                    self.solution = SolverSolution::NoSolution(self.step_count, self.remaining_mines, self.hidden_count, self.state.clone());
+                    return self.solution.clone();
+                }
+            }
+
+            self.step_count += 1;
+        }
+    }
+
+    fn is_solved(&self) -> bool {
+        self.hidden_count == 0 || (self.flag_count + self.hidden_count) == self.field.get_mines()
     }
 
     fn print(&self) {
@@ -64,12 +119,12 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             None => {}
         }
 
-        match self.apply_permutation_checks() {
-            Some(_) => {
-                return Some(4);
-            },
-            None => {}
-        }
+        //match self.apply_permutation_checks() {
+        //    Some(_) => {
+        //        return Some(4);
+        //    },
+        //    None => {}
+        //}
         None
     }
 
@@ -231,55 +286,16 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     }
 }
 
-pub fn start<M: MineSweeperField>(field: M, enable_output: bool) -> SolverSolution {
-    let mut game = MineSweeperSolver::new(field);
-
-    if enable_output {
-        println!("Starting at field: ({}, {})", game.field.get_start_field().0, game.field.get_start_field().1);
-    }
-
-    game.reveal_field(game.field.get_start_field().0, game.field.get_start_field().1);
-
-    return continue_solving(game, enable_output);
-}
-
-pub fn continue_solving<M: MineSweeperField>(mut game: MineSweeperSolver<M>, enable_output: bool) -> SolverSolution {
-    let mut logic_levels_used: HashMap<u8, u32> = HashMap::new();
-    let mut step_count = 0;
-
-    loop {
-        step_count += 1;
-
-        if enable_output {
-            println!("{}: {}", "Solver Step".bold(), step_count);
-            game.print();
-        }
-
-        if game.hidden_count == 0 || (game.flag_count + game.hidden_count) == game.field.get_mines() {
-            game.flag_all_hidden_cells();
-            return SolverSolution::FoundSolution(step_count, logic_levels_used);
-        }
-
-        match game.do_solving_step() {
-            Some(logic_level) => {
-                *logic_levels_used.entry(logic_level).or_insert(0) += 1;
-                continue;
-            },
-            None => {
-                return SolverSolution::NoSolution(step_count, game.remaining_mines, game.hidden_count, game.state.clone());
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use std::vec;
+
     use super::*;
-    use crate::field_generator::*;
+    use crate::field_generator::MineSweeperFieldCreation;
 
     #[test]
     fn test_solver_creation() {
-        let field = RandomGenerationField::new(5, 5, MineSweeperFieldCreation::FixedCount(3));
+        let field = TestField::new(5, 5, MineSweeperFieldCreation::FixedCount(3));
         let solver = MineSweeperSolver::new(field.clone());
 
         assert_eq!(solver.field.get_width(), 5);
@@ -291,7 +307,7 @@ mod tests {
 
     #[test]
     fn test_flag_cell() {
-        let field = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
         let mut solver = MineSweeperSolver::new(field);
 
         let initial_flag_count = solver.flag_count;
@@ -308,12 +324,7 @@ mod tests {
 
     #[test]
     fn test_revealing_safe_cells() {
-        let mut field = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
-        // Make sure there are no mines in the area we're testing
-        for (x, y) in field.sorted_fields() {
-            field.set_cell(x, y, MineSweeperCell::Empty);
-        }
-
+        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         solver.reveal_field(1, 1);
@@ -325,12 +336,8 @@ mod tests {
     #[test]
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_reveal_mine_panics() {
-        let mut field = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
-        // Clear all and place one mine where we want it
-        for (x, y) in field.sorted_fields() {
-            field.set_cell(x, y, MineSweeperCell::Empty);
-        }
-        field.set_cell(1, 1, MineSweeperCell::Mine);
+        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        field.initialize(vec![(1, 1)]);
 
         let mut solver = MineSweeperSolver::new(field);
         solver.reveal_field(1, 1); // Should panic
@@ -338,7 +345,7 @@ mod tests {
 
     #[test]
     fn test_get_surrounding_unrevealed_count() {
-        let field = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // All cells around (1,1) should be unrevealed initially
@@ -353,7 +360,7 @@ mod tests {
 
     #[test]
     fn test_get_surrounding_flag_count() {
-        let field = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
         let mut solver = MineSweeperSolver::new(field);
 
         // No flags initially
@@ -370,32 +377,23 @@ mod tests {
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_solver_hits_mine_at_start_field() {
         // Create a malformed field where the start field contains a mine
-        let mut field = RandomGenerationField::new(5, 5, MineSweeperFieldCreation::FixedCount(1));
-
-        // Clear all cells and place a mine at the start position
-        for (x, y) in field.sorted_fields() {
-            field.set_cell(x, y, MineSweeperCell::Empty);
-        }
-        let (start_x, start_y) = field.get_start_field();
-        field.set_cell(start_x, start_y, MineSweeperCell::Mine);
+        let mut field = TestField::new(5, 5, MineSweeperFieldCreation::FixedCount(1));
+        let start_field = (0, 0);
+        field.set_start_field(start_field.0, start_field.1);
+        field.initialize(vec![start_field]);
 
         let mut solver = MineSweeperSolver::new(field);
-        solver.reveal_field(start_x, start_y); // Should panic - mine at start
+        solver.start(true);
     }
 
     #[test]
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_solver_hits_mine_during_reveal_surrounding() {
         // Create a field where revealing surrounding cells hits a mine
-        let mut field = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
 
-        // Clear all cells
-        for (x, y) in field.sorted_fields() {
-            field.set_cell(x, y, MineSweeperCell::Empty);
-        }
-
-        // Set up: empty cell at (1,1) with a mine adjacent at (0,0)
-        field.set_cell(0, 0, MineSweeperCell::Mine);
+        field.initialize(vec![(0, 0)]);
+        field.set_cell(1, 1, MineSweeperCell::Empty);
 
         let mut solver = MineSweeperSolver::new(field);
         solver.reveal_field(1, 1); // Should trigger reveal_surrounding_cells and hit the mine
@@ -405,13 +403,10 @@ mod tests {
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_solver_hits_mine_corner_field() {
         // Test hitting a mine in a corner position
-        let mut field = RandomGenerationField::new(4, 4, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = TestField::new(4, 4, MineSweeperFieldCreation::FixedCount(1));
 
-        // Clear all and place mine in corner
-        for (x, y) in field.sorted_fields() {
-            field.set_cell(x, y, MineSweeperCell::Empty);
-        }
-        field.set_cell(0, 0, MineSweeperCell::Mine); // Top-left corner
+        field.initialize(vec![(0, 0)]);
+        field.set_cell(1, 1, MineSweeperCell::Empty);
 
         let mut solver = MineSweeperSolver::new(field);
         solver.reveal_field(3, 3); // Should panic
@@ -421,24 +416,16 @@ mod tests {
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_solver_hits_mine_with_incorrect_numbers() {
         // Test a malformed field where numbers don't match mine placement
-        let mut field = RandomGenerationField::new(5, 5, MineSweeperFieldCreation::FixedCount(2));
+        let mut field = TestField::new(5, 5, MineSweeperFieldCreation::FixedCount(2));
+        field.set_start_field(4, 4);
 
-        // Clear all cells first
-        for (x, y) in field.sorted_fields() {
-            field.set_cell(x, y, MineSweeperCell::Empty);
-        }
+        field.initialize(vec![
+            (0, 0), (1, 0), (0, 1), (3, 2)
+        ]);
 
-        // Create malformed field: number says 1 mine nearby, but there's actually multiple mine there
-        field.set_cell(0, 0, MineSweeperCell::Mine);
-        field.set_cell(1, 0, MineSweeperCell::Mine);
-        field.set_cell(0, 1, MineSweeperCell::Mine);
-        field.set_cell(2, 2, MineSweeperCell::Mine);
-        field.assign_numbers();
-        // Cell 1 1 should be a 4, make it a 1
+        // Cell 1 1 is a 4, make it a 1
         field.set_cell(1, 1, MineSweeperCell::Number(1));
 
-        let mut solver = MineSweeperSolver::new(field);
-        solver.reveal_field(4, 4);
-        continue_solving(solver, true);
+        MineSweeperSolver::new(field).start(true);
     }
 }

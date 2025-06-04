@@ -1,5 +1,5 @@
 use crate::field_generator::*;
-use crate::minesweeper_solver::{SolverSolution, start, MineSweeperCellState, search_for_islands};
+use crate::minesweeper_solver::{SolverSolution, MineSweeperSolver, MineSweeperCellState, search_for_islands};
 use std::collections::HashMap;
 use rand::{rng, prelude::IndexedRandom};
 
@@ -14,9 +14,11 @@ pub struct NoGuessField {
 
 impl NoGuessField {
     fn initialize(&mut self) {
+        let mut solver = MineSweeperSolver::new(self.clone());
         let mut iteration: u32 = 0;
+
         loop {
-            match start(self.clone(), true) {
+            match solver.start(true) {
                 SolverSolution::NoSolution(_steps, mines, hidden, states) => {
                     eprintln!("No solution found, trying to move a mine. (Iteration: {})", iteration);
                     iteration += 1;
@@ -39,6 +41,9 @@ impl NoGuessField {
                 SolverSolution::FoundSolution(_, _) => {
                     println!("Solution found after {} iterations", iteration);
                     break;
+                }
+                SolverSolution::NeverStarted => {
+                    unreachable!("Solver never started, this should not happen!");
                 }
             }
         }

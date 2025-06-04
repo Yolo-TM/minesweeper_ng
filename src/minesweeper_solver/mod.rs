@@ -7,11 +7,11 @@ mod permutation_checker;
 mod solver;
 mod islands;
 
-pub use solver::{start, continue_solving};
 pub use islands::{search_for_islands, merge_islands};
 
-#[derive(PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum SolverSolution {
+    NeverStarted,
     NoSolution(u32, u32, u32, Vec<Vec<MineSweeperCellState>>),
     FoundSolution(u32, HashMap<u8, u32>),
 }
@@ -29,11 +29,16 @@ pub struct MineSweeperSolver<M: MineSweeperField> {
     state: Vec<Vec<MineSweeperCellState>>,
     flag_count: u32,
     hidden_count: u32,
-    remaining_mines: u32
+    remaining_mines: u32,
+    solution: SolverSolution,
+    step_count: u32,
+    logic_levels: HashMap<u8, u32>
 }
 
 pub fn solve(field: impl MineSweeperField, print_steps: bool) {
-    match start(field, print_steps) {
+    let mut solver = MineSweeperSolver::new(field);
+
+    match solver.start(print_steps) {
         SolverSolution::NoSolution(step_count, remaining_mines, hidden_count, _states) => {
             println!("No solution found. Stopped after {} steps. (Remaining Mines: {}, Hidden Fields: {})", step_count.to_string().red(), remaining_mines.to_string().red(), hidden_count.to_string().blue());
         }
@@ -47,5 +52,6 @@ pub fn solve(field: impl MineSweeperField, print_steps: bool) {
 
             println!("Complexity: {}", complexity_str);
         }
+        SolverSolution::NeverStarted => unreachable!(),
     }
 }
