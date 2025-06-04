@@ -89,7 +89,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         }
     }
 
-    pub fn get_state(&self, x: u32, y: u32) -> MineSweeperCellState {
+    pub(super) fn get_state(&self, x: u32, y: u32) -> MineSweeperCellState {
         self.state[x as usize][y as usize].clone()
     }
 
@@ -137,7 +137,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     }
 
     #[track_caller]
-    pub fn reveal_field(&mut self, x: u32, y: u32) {
+    pub(super) fn reveal_field(&mut self, x: u32, y: u32) {
         if self.get_state(x, y) == MineSweeperCellState::Revealed {
             return;
         }
@@ -160,7 +160,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         }
     }
 
-    pub fn flag_cell(&mut self, x: u32, y: u32) {
+    pub(super) fn flag_cell(&mut self, x: u32, y: u32) {
         if self.get_state(x, y) == MineSweeperCellState::Revealed || self.get_state(x, y) == MineSweeperCellState::Flagged {
             return;
         }
@@ -172,7 +172,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     }
 
     #[track_caller]
-    pub fn reveal_surrounding_cells(&mut self, x: u32, y: u32) {
+    pub(super) fn reveal_surrounding_cells(&mut self, x: u32, y: u32) {
         for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
             if self.get_state(new_x, new_y) == MineSweeperCellState::Hidden {
                 self.reveal_field(new_x, new_y);
@@ -180,7 +180,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         }
     }
 
-    pub fn flag_surrounding_cells(&mut self, x: u32, y: u32) {
+    pub(super) fn flag_surrounding_cells(&mut self, x: u32, y: u32) {
         for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
             if self.get_state(new_x, new_y) == MineSweeperCellState::Hidden {
                 self.flag_cell(new_x, new_y);
@@ -188,7 +188,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         }
     }
 
-    pub fn has_unrevealed_neighbours(&self, x: u32, y: u32) -> bool {
+    pub(super) fn has_unrevealed_neighbours(&self, x: u32, y: u32) -> bool {
         for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
             if self.get_state(new_x, new_y) == MineSweeperCellState::Hidden {
                 return true;
@@ -198,7 +198,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         false
     }
 
-    pub fn has_revealed_neighbours(&self, x: u32, y: u32) -> bool {
+    pub(super) fn has_revealed_neighbours(&self, x: u32, y: u32) -> bool {
         for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
             if self.get_state(new_x, new_y) == MineSweeperCellState::Revealed {
                 return true;
@@ -208,7 +208,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         false
     }
 
-    pub fn get_surrounding_flag_count(&self, x: u32, y: u32) -> u8 {
+    pub(super) fn get_surrounding_flag_count(&self, x: u32, y: u32) -> u8 {
         let mut count = 0;
 
         for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
@@ -220,7 +220,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         count
     }
 
-    pub fn get_surrounding_unrevealed_count(&self, x: u32, y: u32) -> u8 {
+    pub(super) fn get_surrounding_unrevealed_count(&self, x: u32, y: u32) -> u8 {
         let mut count = 0;
 
         for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
@@ -232,7 +232,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         count
     }
 
-    pub fn get_surrounding_unrevealed(&self, x: u32, y: u32) -> Vec<(u32, u32)> {
+    pub(super) fn get_surrounding_unrevealed(&self, x: u32, y: u32) -> Vec<(u32, u32)> {
         let mut hidden = vec![];
 
         for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
@@ -244,7 +244,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         hidden
     }
 
-    pub fn get_reduced_count(&self, x: u32, y: u32) -> u8 {
+    pub(super) fn get_reduced_count(&self, x: u32, y: u32) -> u8 {
         let flag_count = self.get_surrounding_flag_count(x, y);
         let number = self.field.get_cell(x as u32, y as u32).get_number();
 
@@ -255,7 +255,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         number - flag_count
     }
 
-    pub fn has_informations(&self, x: u32, y: u32) -> bool {
+    pub(super) fn has_informations(&self, x: u32, y: u32) -> bool {
         self.get_state(x, y) == MineSweeperCellState::Revealed
         && matches!(self.field.get_cell(x, y), MineSweeperCell::Number(_))
         && self.has_unrevealed_neighbours(x, y)

@@ -7,7 +7,7 @@ use num_cpus;
 const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 18;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
-    pub fn apply_permutation_checks(&mut self) -> Option<()> {
+    pub(in crate::minesweeper_solver) fn apply_permutation_checks(&mut self) -> Option<()> {
         let mut did_something = false;
         let max_mines: u32 = self.field.get_mines() - self.flag_count;
         let islands = search_for_islands(self.field.get_width(), self.field.get_height(), &self.field.get_field(), &self.state);

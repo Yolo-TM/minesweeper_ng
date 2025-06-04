@@ -6,7 +6,7 @@ use std::collections::HashMap;
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
     #[allow(unreachable_code)]
-    pub fn apply_extended_box_logic(&mut self) -> Option<()> {
+    pub(in crate::minesweeper_solver) fn apply_extended_box_logic(&mut self) -> Option<()> {
 
         return None;
 

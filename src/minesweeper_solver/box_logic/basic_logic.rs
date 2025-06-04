@@ -2,7 +2,7 @@ use super::super::MineSweeperSolver;
 use crate::field_generator::MineSweeperField;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
-    pub fn apply_basic_box_logic(&mut self) -> Option<()> {
+    pub(in crate::minesweeper_solver) fn apply_basic_box_logic(&mut self) -> Option<()> {
         let mut did_something = false;
 
         for (x, y) in self.field.sorted_fields() {
