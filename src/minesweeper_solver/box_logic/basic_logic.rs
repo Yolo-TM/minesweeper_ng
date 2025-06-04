@@ -7,8 +7,10 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
         for (x, y) in self.field.sorted_fields() {
             if self.has_informations(x, y) {
-                // TODO: Is 5 a good number here or are we doint unnecessary calculations?
-                for (new_x, new_y) in self.field.surrounding_fields(x, y, Some(5)) {
+
+                // TODO: Is 3 a good number here or are we doint unnecessary calculations?
+
+                for (new_x, new_y) in self.field.surrounding_fields(x, y, Some(3)) {
                     if self.has_informations(new_x, new_y) {
                         let reduced_count = self.get_reduced_count(x, y);
                         let reduced_count2 = self.get_reduced_count(new_x, new_y);

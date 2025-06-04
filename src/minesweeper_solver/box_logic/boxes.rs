@@ -2,11 +2,11 @@
 pub struct Box{
     fields: Vec<(u32, u32)>,
     owner: (u32, u32),
-    mines: std::ops::RangeInclusive<u8>,
+    mines: std::ops::RangeInclusive<usize>,
 }
 
 impl Box{
-    pub fn new(x: u32, y: u32, mines: std::ops::RangeInclusive<u8>) -> Self {
+    pub fn new(x: u32, y: u32, mines: std::ops::RangeInclusive<usize>) -> Self {
         Box {
             fields: vec![],
             owner: (x, y),
@@ -14,12 +14,16 @@ impl Box{
         }
     }
 
-    pub fn get_mines(&self) -> std::ops::RangeInclusive<u8> {
+    pub fn get_mines(&self) -> std::ops::RangeInclusive<usize> {
         return self.mines.clone();
     }
 
     pub fn get_field_count(&self) -> usize {
         return self.fields.len();
+    }
+
+    pub fn get_fields(&self) -> &Vec<(u32, u32)> {
+        return &self.fields;
     }
 
     pub fn add_field(&mut self, x: u32, y: u32) {
@@ -37,10 +41,6 @@ impl Box{
             }
         }
         false
-    }
-
-    pub fn is_owner(&self, x: u32, y: u32) -> bool {
-        return self.owner.0 == x && self.owner.1 == y
     }
 
     pub fn is_neighbouring(&self, x: u32, y: u32) -> bool {
@@ -88,7 +88,7 @@ impl Box{
         return self.mines.start() == other.mines.start() && self.mines.end() == other.mines.end();
     }
 
-    pub fn is_same_range(&self, range: std::ops::RangeInclusive<u8>) -> bool {
+    pub fn is_same_range(&self, range: std::ops::RangeInclusive<usize>) -> bool {
         return self.mines.start() == range.start() && self.mines.end() == range.end();
     }
 }
@@ -125,15 +125,6 @@ mod tests {
         assert_eq!(box_obj.get_field_count(), 1);
         assert!(!box_obj.contains(1, 1));
         assert!(box_obj.contains(2, 2));
-    }
-
-    #[test]
-    fn test_is_owner() {
-        let box_obj = Box::new(5, 7, 1..=2);
-
-        assert!(box_obj.is_owner(5, 7));
-        assert!(!box_obj.is_owner(5, 6));
-        assert!(!box_obj.is_owner(4, 7));
     }
 
     #[test]
