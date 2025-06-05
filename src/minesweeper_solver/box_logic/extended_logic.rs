@@ -40,6 +40,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                 let (shared, _this, other) = box_.compare_to(&other_box.get_fields());
 
                 // If this box could hold important informations
+                // it shares more fields than fields it doesnt share
                 if shared.len() > 0 && shared.len() >= other.len() && !(box_.covers_same_fields(other_box) && box_.has_same_range(other_box)) {
 
                     // check if we dont already have it
@@ -79,25 +80,28 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
             self.recursive_search(original.get_fields(), &mut field_tuples, &adjacent, 0, &mut safe, &mut mines);
 
-            // Nothing found, continue
+            // Nothing found, lets try all permutations
+            if safe.is_empty() && mines.is_empty() {
+                let mut all_boxes = adjacent.iter().map(|b| b.clone()).collect::<Vec<Box>>();
+                all_boxes.append(vec![original.clone()].as_mut());
+                self.deep_search(&mut field_tuples, &all_boxes, &mut safe, &mut mines);
+            }
+
+            // Still nothing :(
             if safe.is_empty() && mines.is_empty() {
                 continue;
             }
-            println!("Tuples: {:?}", field_tuples);
 
-            println!("Safe fields: {:?}", safe);
             for &(x, y) in &safe {
                 self.reveal_field(x, y);
                 did_something = true;
             }
 
-            println!("Mine fields: {:?}", mines);
             for &(x, y) in &mines {
                 self.flag_cell(x, y);
                 did_something = true;
             }
         }
-
 
         if did_something {
             return Some(());
@@ -240,6 +244,133 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                         safe_fields.push(*field);
                     }
                 }
+            }
+        }
+    }
+
+    fn deep_search(
+        &mut self,
+        field_tuples: &mut Vec<(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)>,
+        boxes: &Vec<Box>,
+        safe_fields: &mut Vec<(u32, u32)>,
+        mine_fields: &mut Vec<(u32, u32)>
+    ) {
+        let mut all_fields: HashMap<(u32, u32), u32> = HashMap::new();
+        for i in 0 .. boxes.len() {
+            for field in boxes[i].get_fields() {
+                all_fields.insert(*field, 0);
+            }
+        }
+
+        let valid_permutations = self.generate_all_permutations(&mut all_fields, &boxes, field_tuples);
+
+        for ((x, y), count) in all_fields.iter() {
+            if *count == 0 {
+                // This field is never a mine, so we can reveal it
+                if !safe_fields.contains(&(*x, *y)) {
+                    safe_fields.push((*x, *y));
+                }
+            } else if *count == valid_permutations {
+                // This field is always a mine, so we can flag it
+                if !mine_fields.contains(&(*x, *y)) {
+                    mine_fields.push((*x, *y));
+                }
+            }
+        }
+    }
+
+    fn generate_all_permutations(
+        &mut self,
+        all_fields: &mut HashMap<(u32, u32), u32>,
+        boxes: &Vec<Box>,
+        field_tuples: &Vec<(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)>
+    ) -> u32 {
+        let mut field_vec: Vec<((u32, u32), bool) > = all_fields.iter().map(|(&k, &v)| (k, v == 1)).collect();
+        let mut permutations = 0;
+
+        self.recursively_generate_permutations(all_fields, &mut field_vec, 0, boxes, field_tuples, &mut permutations);
+        return permutations;
+    }
+
+    fn recursively_generate_permutations(
+        &mut self,
+        field_map: &mut HashMap<(u32, u32), u32>,
+        field_vec: &mut Vec<((u32, u32), bool)>,
+        index: usize,
+        boxes: &Vec<Box>,
+        field_tuples: &Vec<(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)>,
+        permutations: &mut u32
+    ) {
+        if index == field_vec.len() {
+            self.check_permutation(field_map, permutations, field_vec, boxes, field_tuples);
+            return;
+        }
+
+        // always reset all following fields
+        for i in index..field_vec.len() {
+            field_vec[i].1 = false;
+        }
+
+        self.recursively_generate_permutations(field_map, field_vec, index + 1, boxes, field_tuples, permutations);
+
+        field_vec[index].1 = true; // Mine
+        self.recursively_generate_permutations(field_map, field_vec, index + 1, boxes, field_tuples, permutations);
+    }
+
+    fn check_permutation(
+        &mut self,
+        field_map: &mut HashMap<(u32, u32), u32>,
+        permutations: &mut u32,
+        field_vec: &Vec<((u32, u32), bool)>,
+        boxes: &Vec<Box>,
+        field_tuples: &Vec<(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)>
+    ) {
+        let lookup_map: HashMap<(u32, u32), bool> = field_vec.iter()
+            .map(|(field, is_mine)| (*field, if *is_mine { true } else { false }))
+            .collect();
+
+        // go through all boxes and check if the minecount at those fields is in range of the needed minecount
+        for box_ in boxes {
+            let mut mine_count = 0;
+            for field in box_.get_fields() {
+                if let Some(&is_mine) = lookup_map.get(field) {
+                    if is_mine {
+                        mine_count += 1;
+                    }
+                }
+            }
+
+            if !box_.get_mines().contains(&mine_count) {
+                // This box is invalid, stop checking
+                return;
+            }
+        }
+        // now go through all tuples and check if the minecount at those fields is in range of the needed minecount
+        for (range, fields) in field_tuples {
+            let mut mine_count = 0;
+            for field in fields {
+                if let Some(&is_mine) = lookup_map.get(field) {
+                    if is_mine {
+                        mine_count += 1;
+                    }
+                }
+            }
+
+            if !range.contains(&mine_count) {
+                // This tuple is invalid, stop checking
+                return;
+            }
+        }
+
+        *permutations += 1;
+        // Update the field_map with the current permutation
+        for (field, is_mine) in field_vec {
+            if !is_mine {
+                continue;
+            }
+
+            if let Some(count) = field_map.get_mut(field) {
+                *count += 1;
             }
         }
     }

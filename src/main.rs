@@ -11,9 +11,10 @@ fn main() {
     let start = std::time::Instant::now();
     //let field = ng_generator::minesweeper_ng_field(45, 26, MineSweeperFieldCreation::Percentage(0.22));
     //let field = minesweeper_field(45, 26, MineSweeperFieldCreation::Percentage(0.22));
-    //let field = ng_generator::get_evil_ng_field();
+    let field = ng_generator::get_evil_ng_field();
+    minesweeper_solver::solve(field, false);
     let field = ng_generator::get_small_test_field();
-    minesweeper_solver::solve(field, true);
+    minesweeper_solver::solve(field, false);
 
     println!("Time elapsed: {:?}", start.elapsed());
 }

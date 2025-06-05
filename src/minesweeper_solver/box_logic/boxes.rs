@@ -14,10 +14,6 @@ impl Box{
         }
     }
 
-    pub fn get_owner(&self) -> (u32, u32) {
-        return self.owner;
-    }
-
     pub fn get_mines(&self) -> std::ops::RangeInclusive<usize> {
         return self.mines.clone();
     }

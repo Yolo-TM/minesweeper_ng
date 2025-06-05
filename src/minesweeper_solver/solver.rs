@@ -1,6 +1,5 @@
 use colored::Colorize;
 use std::collections::HashMap;
-use crate::ng_generator::TestField;
 use crate::field_generator::{MineSweeperCell, MineSweeperField};
 use super::{SolverSolution, MineSweeperCellState, MineSweeperSolver};
 
@@ -22,7 +21,9 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
     pub fn start(&mut self, enable_output: bool) -> SolverSolution {
         if enable_output {
-            println!("Starting at field: ({}, {})", self.field.get_start_field().0, self.field.get_start_field().1);
+            println!("{}: Starting solver with field size {}x{} and {} mines.", "Solver started".bold(), self.field.get_width(), self.field.get_height(), self.field.get_mines());
+            self.field.show();
+            println!("Revealing Start field: ({}, {})", self.field.get_start_field().0, self.field.get_start_field().1);
         }
 
         self.reveal_field(self.field.get_start_field().0, self.field.get_start_field().1);
@@ -119,12 +120,12 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             None => {}
         }
 
-        //match self.apply_permutation_checks() {
-        //    Some(_) => {
-        //        return Some(4);
-        //    },
-        //    None => {}
-        //}
+        match self.apply_permutation_checks() {
+            Some(_) => {
+                return Some(4);
+            },
+            None => {}
+        }
         None
     }
 
@@ -292,6 +293,7 @@ mod tests {
 
     use super::*;
     use crate::field_generator::MineSweeperFieldCreation;
+    use crate::ng_generator::TestField;
 
     #[test]
     fn test_solver_creation() {
