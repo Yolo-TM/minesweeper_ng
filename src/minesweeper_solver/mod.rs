@@ -45,12 +45,21 @@ pub fn solve(field: impl MineSweeperField, print_steps: bool) {
         SolverSolution::FoundSolution(step_count, complexity) => {
             println!("Found a solution after {} steps.", step_count.to_string().green());
 
+            // concatenate complexity levels into a string
             let complexity_str: String = complexity.iter()
                 .map(|(k, v)| format!("{}: {}", k.to_string().blue(), v.to_string().green()))
                 .collect::<Vec<String>>()
                 .join(", ");
 
+            // Calculate average
+            let mut average: f64 = 0.0;
+            for (level, count) in &complexity {
+                average += *count as f64 * *level as f64;
+            }
+            average /= step_count as f64;
+
             println!("Complexity: {}", complexity_str);
+            println!("Average: {:.6}", average.to_string().yellow());
         }
         SolverSolution::NeverStarted => unreachable!(),
     }

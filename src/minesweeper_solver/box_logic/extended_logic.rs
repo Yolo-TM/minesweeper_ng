@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::vec;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
-    #[allow(unreachable_code)]
+
     pub(in crate::minesweeper_solver) fn apply_extended_box_logic(&mut self) -> Option<()> {
         let mut did_something = false;
         let mut boxes: Vec<Box> = vec![];
@@ -84,7 +84,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             if safe.is_empty() && mines.is_empty() {
                 let mut all_boxes = adjacent.iter().map(|b| b.clone()).collect::<Vec<Box>>();
                 all_boxes.append(vec![original.clone()].as_mut());
-                self.deep_search(&mut field_tuples, &all_boxes, &mut safe, &mut mines);
+                self.deep_search(&all_boxes, &mut safe, &mut mines);
             }
 
             // Still nothing :(
@@ -250,7 +250,6 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
     fn deep_search(
         &mut self,
-        field_tuples: &mut Vec<(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)>,
         boxes: &Vec<Box>,
         safe_fields: &mut Vec<(u32, u32)>,
         mine_fields: &mut Vec<(u32, u32)>
@@ -262,7 +261,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             }
         }
 
-        let valid_permutations = self.generate_all_permutations(&mut all_fields, &boxes, field_tuples);
+        let valid_permutations = self.generate_all_permutations(&mut all_fields, &boxes);
 
         for ((x, y), count) in all_fields.iter() {
             if *count == 0 {
@@ -282,13 +281,12 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     fn generate_all_permutations(
         &mut self,
         all_fields: &mut HashMap<(u32, u32), u32>,
-        boxes: &Vec<Box>,
-        field_tuples: &Vec<(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)>
+        boxes: &Vec<Box>
     ) -> u32 {
         let mut field_vec: Vec<((u32, u32), bool) > = all_fields.iter().map(|(&k, &v)| (k, v == 1)).collect();
         let mut permutations = 0;
 
-        self.recursively_generate_permutations(all_fields, &mut field_vec, 0, boxes, field_tuples, &mut permutations);
+        self.recursively_generate_permutations(all_fields, &mut field_vec, 0, boxes, &mut permutations);
         return permutations;
     }
 
@@ -298,11 +296,10 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         field_vec: &mut Vec<((u32, u32), bool)>,
         index: usize,
         boxes: &Vec<Box>,
-        field_tuples: &Vec<(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)>,
         permutations: &mut u32
     ) {
         if index == field_vec.len() {
-            self.check_permutation(field_map, permutations, field_vec, boxes, field_tuples);
+            self.check_permutation(field_map, permutations, field_vec, boxes);
             return;
         }
 
@@ -311,10 +308,10 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             field_vec[i].1 = false;
         }
 
-        self.recursively_generate_permutations(field_map, field_vec, index + 1, boxes, field_tuples, permutations);
+        self.recursively_generate_permutations(field_map, field_vec, index + 1, boxes, permutations);
 
         field_vec[index].1 = true; // Mine
-        self.recursively_generate_permutations(field_map, field_vec, index + 1, boxes, field_tuples, permutations);
+        self.recursively_generate_permutations(field_map, field_vec, index + 1, boxes, permutations);
     }
 
     fn check_permutation(
@@ -322,8 +319,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         field_map: &mut HashMap<(u32, u32), u32>,
         permutations: &mut u32,
         field_vec: &Vec<((u32, u32), bool)>,
-        boxes: &Vec<Box>,
-        field_tuples: &Vec<(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)>
+        boxes: &Vec<Box>
     ) {
         let lookup_map: HashMap<(u32, u32), bool> = field_vec.iter()
             .map(|(field, is_mine)| (*field, if *is_mine { true } else { false }))
@@ -342,22 +338,6 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
             if !box_.get_mines().contains(&mine_count) {
                 // This box is invalid, stop checking
-                return;
-            }
-        }
-        // now go through all tuples and check if the minecount at those fields is in range of the needed minecount
-        for (range, fields) in field_tuples {
-            let mut mine_count = 0;
-            for field in fields {
-                if let Some(&is_mine) = lookup_map.get(field) {
-                    if is_mine {
-                        mine_count += 1;
-                    }
-                }
-            }
-
-            if !range.contains(&mine_count) {
-                // This tuple is invalid, stop checking
                 return;
             }
         }
