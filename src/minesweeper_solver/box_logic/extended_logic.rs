@@ -73,12 +73,29 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         }
 
         for (original, adjacent) in possible_cases {
-            println!("\n\nBox ({}, {}) with range {:?} and fields: {:?}\n", original.get_owner().0, original.get_owner().1, original.get_mines(), original.get_fields());
             let mut field_tuples: Vec<(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)> = vec![(original.get_mines(), original.get_fields().clone())];
             let mut safe = vec![];
             let mut mines = vec![];
 
             self.recursive_search(original.get_fields(), &mut field_tuples, &adjacent, 0, &mut safe, &mut mines);
+
+            // Nothing found, continue
+            if safe.is_empty() && mines.is_empty() {
+                continue;
+            }
+            println!("Tuples: {:?}", field_tuples);
+
+            println!("Safe fields: {:?}", safe);
+            for &(x, y) in &safe {
+                self.reveal_field(x, y);
+                did_something = true;
+            }
+
+            println!("Mine fields: {:?}", mines);
+            for &(x, y) in &mines {
+                self.flag_cell(x, y);
+                did_something = true;
+            }
         }
 
 
@@ -103,9 +120,6 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         }
         let box_ = boxes[current_box_index].clone();
         {
-            println!("Entry Box ({}, {}) with range {:?} and fields: {:?}", box_.get_owner().0, box_.get_owner().1, box_.get_mines(), box_.get_fields());
-            println!("Tuples: {:?}", field_tuples);
-
             // Overlay the field tuples with our current information in the current box
             let mut new_tuples = Vec::new();
             let mut processed_indices = Vec::new();
@@ -198,12 +212,35 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                 field_tuples.remove(index);
             }
             field_tuples.append(&mut new_tuples);
-
-            println!("Tuples: {:?}", field_tuples);
         }
         self.recursive_search(original_fields, field_tuples, boxes, current_box_index + 1, safe_fields, mine_fields);
         {
-            println!("Past Box ({}, {}) with id: {}", box_.get_owner().0, box_.get_owner().1, current_box_index);
+            // Cross check if we can get informations based on the field tuples and the current box
+            for i in 0..field_tuples.len() {
+                let (tuple_range, fields) = &field_tuples[i];
+
+                // if the range is the same as the amount of fields, we can assume that all fields are mines
+                if *tuple_range.start() == *tuple_range.end() && *tuple_range.start() == fields.len() {
+                    for field in fields {
+                        if !mine_fields.contains(field) {
+                            mine_fields.push(*field);
+                        }
+                    }
+                }
+
+                let (_shared, this_only, other_only) = box_.compare_to(&fields);
+                // no overlap
+                if other_only.len() != 0 {
+                    continue;
+                }
+
+                // were overlapping, check if we can get safe fields
+                if box_.is_same_range(tuple_range.clone()) {
+                    for field in &this_only {
+                        safe_fields.push(*field);
+                    }
+                }
+            }
         }
     }
 }

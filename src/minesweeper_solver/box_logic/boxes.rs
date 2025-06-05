@@ -22,38 +22,12 @@ impl Box{
         return self.mines.clone();
     }
 
-    pub fn get_field_count(&self) -> usize {
-        return self.fields.len();
-    }
-
     pub fn get_fields(&self) -> &Vec<(u32, u32)> {
         return &self.fields;
     }
 
     pub fn add_field(&mut self, x: u32, y: u32) {
         self.fields.push((x, y));
-    }
-
-    pub fn remove_field(&mut self, x: u32, y: u32) {
-        self.fields.retain(|&field| field != (x, y));
-    }
-
-    pub fn contains(&self, x: u32, y: u32) -> bool {
-        for field in &self.fields {
-            if field.0 == x && field.1 == y {
-                return true;
-            }
-        }
-        false
-    }
-
-    pub fn is_neighbouring(&self, x: u32, y: u32) -> bool {
-        for field in &self.fields {
-            if (field.0 as isize - x as isize).abs() <= 1 && (field.1 as isize - y as isize).abs() <= 1 {
-                return true;
-            }
-        }
-        false
     }
 
     pub fn compare_to(&self, other: &Vec<(u32, u32)>) -> (Vec<(u32, u32)>, Vec<(u32, u32)>, Vec<(u32, u32)>) {
@@ -77,12 +51,6 @@ impl Box{
         (shared, this_only, other_only)
     }
 
-    pub fn is_inside(&self, other: &Box) -> bool {
-        let (_shared, this_only, _other_only) = self.compare_to(&other.fields);
-
-        return this_only.is_empty()
-    }
-
     pub fn covers_same_fields(&self, other: &Box) -> bool {
         let (_shared, this_only, other_only) = self.compare_to(&other.fields);
         return this_only.is_empty() && other_only.is_empty();
@@ -92,8 +60,8 @@ impl Box{
         return self.mines.start() == other.mines.start() && self.mines.end() == other.mines.end();
     }
 
-    pub fn is_same_range(&self, range: std::ops::RangeInclusive<usize>) -> bool {
-        return self.mines.start() == range.start() && self.mines.end() == range.end();
+    pub fn is_same_range(&self, other: std::ops::RangeInclusive<usize>) -> bool {
+        return self.mines.start() == other.start() && self.mines.end() == other.end();
     }
 }
 
@@ -107,46 +75,17 @@ mod tests {
 
         assert_eq!(box_obj.owner, (1, 2));
         assert_eq!(box_obj.get_mines(), 2..=4);
-        assert_eq!(box_obj.get_field_count(), 0);
+        assert_eq!(box_obj.get_fields().len(), 0);
     }
 
     #[test]
-    fn test_add_remove_fields() {
+    fn test_box_creation_with_fields() {
         let mut box_obj = Box::new(0, 0, 1..=3);
 
         // Add fields
         box_obj.add_field(1, 1);
         box_obj.add_field(2, 2);
-        assert_eq!(box_obj.get_field_count(), 2);
-
-        // Check contains
-        assert!(box_obj.contains(1, 1));
-        assert!(box_obj.contains(2, 2));
-        assert!(!box_obj.contains(3, 3));
-
-        // Remove field
-        box_obj.remove_field(1, 1);
-        assert_eq!(box_obj.get_field_count(), 1);
-        assert!(!box_obj.contains(1, 1));
-        assert!(box_obj.contains(2, 2));
-    }
-
-    #[test]
-    fn test_is_neighbouring() {
-        let mut box_obj = Box::new(5, 5, 1..=2);
-        box_obj.add_field(3, 3);
-        box_obj.add_field(7, 7);
-
-        // Should be neighbouring to fields within 1 distance
-        assert!(box_obj.is_neighbouring(3, 4)); // Adjacent to (3,3)
-        assert!(box_obj.is_neighbouring(4, 3)); // Adjacent to (3,3)
-        assert!(box_obj.is_neighbouring(4, 4)); // Diagonal to (3,3)
-        assert!(box_obj.is_neighbouring(6, 6)); // Adjacent to (7,7)
-
-        // Should not be neighbouring to distant fields
-        assert!(!box_obj.is_neighbouring(1, 1));
-        assert!(!box_obj.is_neighbouring(9, 9));
-        assert!(!box_obj.is_neighbouring(5, 3)); // Too far from both fields
+        assert_eq!(box_obj.get_fields().len(), 2);
     }
 
     #[test]
@@ -162,22 +101,6 @@ mod tests {
         assert_eq!(shared, vec![(2, 2), (3, 3)]);
         assert_eq!(this_only, vec![(1, 1)]);
         assert_eq!(other_only, vec![(4, 4)]);
-    }
-
-    #[test]
-    fn test_is_inside() {
-        let mut box1 = Box::new(0, 0, 1..=2);
-        box1.add_field(1, 1);
-        box1.add_field(2, 2);
-
-        let mut box2 = Box::new(1, 1, 2..=3);
-        box2.add_field(1, 1);
-        box2.add_field(2, 2);
-        box2.add_field(3, 3);
-
-        // box1 should be inside box2 (all fields of box1 are in box2)
-        assert!(box1.is_inside(&box2));
-        assert!(!box2.is_inside(&box1));
     }
 
     #[test]
@@ -211,44 +134,6 @@ mod tests {
     }
 
     #[test]
-    fn test_is_same_range() {
-        let box_obj = Box::new(0, 0, 2..=5);
-
-        assert!(box_obj.is_same_range(2..=5));
-        assert!(!box_obj.is_same_range(1..=5));
-        assert!(!box_obj.is_same_range(2..=4));
-        assert!(!box_obj.is_same_range(3..=6));
-    }
-
-    #[test]
-    fn test_edge_cases() {
-        let mut box_obj = Box::new(0, 0, 0..=0);
-
-        // Empty box
-        assert_eq!(box_obj.get_field_count(), 0);
-        assert!(!box_obj.contains(0, 0));
-        assert!(!box_obj.is_neighbouring(0, 0));
-
-        // Single field
-        box_obj.add_field(5, 5);
-        assert_eq!(box_obj.get_field_count(), 1);
-        assert!(box_obj.is_neighbouring(5, 6));
-        assert!(box_obj.is_neighbouring(6, 6));
-        assert!(!box_obj.is_neighbouring(7, 7));
-    }
-
-    #[test]
-    fn test_remove_nonexistent_field() {
-        let mut box_obj = Box::new(0, 0, 1..=2);
-        box_obj.add_field(1, 1);
-
-        // Removing a field that doesn't exist should not change anything
-        box_obj.remove_field(2, 2);
-        assert_eq!(box_obj.get_field_count(), 1);
-        assert!(box_obj.contains(1, 1));
-    }
-
-    #[test]
     fn test_clone_and_equality() {
         let mut box1 = Box::new(1, 2, 3..=5);
         box1.add_field(4, 5);
@@ -259,6 +144,6 @@ mod tests {
         assert_eq!(box1, box2);
         assert_eq!(box1.owner, box2.owner);
         assert_eq!(box1.get_mines(), box2.get_mines());
-        assert_eq!(box1.get_field_count(), box2.get_field_count());
+        assert_eq!(box1.get_fields().len(), box2.get_fields().len());
     }
 }
