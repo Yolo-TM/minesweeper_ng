@@ -104,12 +104,14 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         let box_ = boxes[current_box_index].clone();
         {
             println!("Entry Box ({}, {}) with range {:?} and fields: {:?}", box_.get_owner().0, box_.get_owner().1, box_.get_mines(), box_.get_fields());
-            println!("Tuples: {:?}", field_tuples);            // Overlay the field tuples with our current information in the current box
+            println!("Tuples: {:?}", field_tuples);
+
+            // Overlay the field tuples with our current information in the current box
             let mut new_tuples = Vec::new();
             let mut processed_indices = Vec::new();
             
             for i in 0..field_tuples.len() {
-                let (range, fields) = &field_tuples[i];
+                let (range, fields) = &field_tuples[i].clone();
                 let (shared, this_only, other_only) = box_.compare_to(fields);
                 let second_range = box_.get_mines().clone();
 
@@ -118,37 +120,78 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                     continue;
                 }
 
-                let new_shared_range = second_range.start().saturating_sub(this_only.len())..=*second_range.end().min(&shared.len());
-                let new_other_range = range.start().saturating_sub(*new_shared_range.end())..=range.end().saturating_sub(*new_shared_range.start()).min(other_only.len() as usize);
+                let mut new_shared_range = second_range.start().saturating_sub(this_only.len())..=*second_range.end().min(&shared.len());
+                let mut new_other_range = range.start().saturating_sub(*new_shared_range.end())..=range.end().saturating_sub(*new_shared_range.start());
 
-                if new_shared_range.end() > new_other_range.end() {
+                if (new_shared_range.end() > new_other_range.end())
+                || (shared.len() == 1 && new_shared_range.start() != new_shared_range.end())
+                || (other_only.len() == 1 && *new_other_range.start() == 0 && *new_other_range.end() == 1)
+                {
                     // If the new shared range is larger than the new other range, we cannot split
+                    // or 
+                    // If the shared range is only one field, we cannot split it
+                    // or
+                    // we are creating a 0..1 range for a single field in other_only
+
+                    // stop
                     continue;
-                }
+                } else if other_only.len() == 1 && new_other_range.start() != new_other_range.end() {
+                    // we have a range mismatch, go through all existing tuples and check if we can increase the range start until our range end in this case fits
+                    let mut split_diff = new_other_range.end() - new_other_range.start();
+                    new_other_range = *new_other_range.start()..=other_only.len();
 
-                if shared.len() == 1 && new_shared_range.start() != new_shared_range.end() {
-                    continue; // If the shared range is only one field, we cannot split it
-                }
+                    // check if a part of the split diff fits into the new_shared_range
+                    let mut ii = split_diff;
+                    while new_shared_range.start() + ii > *new_shared_range.end() {
+                        ii -= 1;
+                    }
+                    if ii > 0 {
+                        split_diff -= ii;
+                        new_shared_range = new_shared_range.start() + ii ..=*new_shared_range.end();
+                    }
 
-                if other_only.len() == 1 && new_other_range.start() != new_other_range.end() {
-                    continue; // If the other range is only one field, we cannot split it
+                    if split_diff > 0 {
+                        // we still have a split diff, check if it can fit into anything else inside the field_tuples
+                        for j in 0..field_tuples.len() {
+                            if j == i {
+                                continue;
+                            }
+
+                            let range = &field_tuples[j].0;
+                            while range.start() + split_diff > *range.end() {
+                                split_diff -= 1;
+                            }
+                        }
+
+                        if split_diff > 0 {
+                            for j in 0..field_tuples.len() {
+                                if j == i {
+                                    continue;
+                                }
+                                let range = &field_tuples[j].0.clone();
+                                field_tuples[j].0 = *range.end() ..=*range.end();
+                            }
+                        }
+                    }
+                } else if *new_other_range.end() > other_only.len() {
+                    // If the new other range is larger than the shared range, we cannot split
+                    let diff = *new_other_range.end() - other_only.len();
+                    new_other_range = *new_other_range.start()..=other_only.len();
+                    new_shared_range = *new_shared_range.start() + diff..=*new_shared_range.end();
                 }
 
                 // Mark this tuple for removal since it will be split
                 processed_indices.push(i);
 
-                println!("New Shared Range: {:?}\nNew Other Range: {:?}", new_shared_range, new_other_range);
-
                 new_tuples.push((
                     new_other_range,
                     other_only.clone()
                 ));
-                
+
                 new_tuples.push((
                     new_shared_range,
                     shared.clone()
                 ));
-                
             }
 
             for &index in processed_indices.iter().rev() {
@@ -157,7 +200,6 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             field_tuples.append(&mut new_tuples);
 
             println!("Tuples: {:?}", field_tuples);
-
         }
         self.recursive_search(original_fields, field_tuples, boxes, current_box_index + 1, safe_fields, mine_fields);
         {
