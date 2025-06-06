@@ -18,6 +18,10 @@ impl Box{
         return self.mines.clone();
     }
 
+    pub fn get_owner(&self) -> (u32, u32) {
+        return self.owner;
+    }
+
     pub fn get_fields(&self) -> &Vec<(u32, u32)> {
         return &self.fields;
     }
@@ -50,6 +54,12 @@ impl Box{
     pub fn covers_same_fields(&self, other: &Box) -> bool {
         let (_shared, this_only, other_only) = self.compare_to(&other.fields);
         return this_only.is_empty() && other_only.is_empty();
+    }
+
+    pub fn is_inside_of(&self, other: &Box) -> bool {
+        let (_shared, this_only, _other_only) = self.compare_to(&other.fields);
+
+        return this_only.is_empty()
     }
 
     pub fn has_same_range(&self, other: &Box) -> bool {

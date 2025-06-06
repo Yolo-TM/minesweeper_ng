@@ -52,6 +52,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                     if enable_output {
                         println!("{}: Applied logic level {}", "Solver Step".bold(), logic_level);
                     }
+
                     *self.logic_levels.entry(logic_level).or_insert(0) += 1;
                 },
                 None => {
@@ -120,12 +121,12 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             None => {}
         }
 
-        match self.apply_permutation_checks() {
-            Some(_) => {
-                return Some(4);
-            },
-            None => {}
-        }
+        //match self.apply_permutation_checks() {
+        //    Some(_) => {
+        //        return Some(4);
+        //    },
+        //    None => {}
+        //}
         None
     }
 

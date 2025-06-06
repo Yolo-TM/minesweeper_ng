@@ -29,6 +29,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         let mut possible_cases: Vec<(Box, Vec<Box>)> = vec![];
         for i in 0..boxes.len() {
             // Search through all boxes to find possible important adjacent boxes
+
             let box_ = &boxes[i];
             let mut possible_fields: Vec<Box> = vec![];
 
@@ -55,6 +56,26 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                     if allow_insert {
                         possible_fields.push(other_box.clone());
                     }
+                }
+            }
+
+            // also collect all boxes which are completely inside of boxes in the vector bc their information might be important
+            for j in 0..boxes.len() {
+                if i == j {
+                    continue;
+                }
+                // if the box is already inside of possible_fields, we dont need to check it
+                if possible_fields.iter().any(|b| b.get_owner() == boxes[j].get_owner()) {
+                    continue;
+                }
+
+                // if it would be a duplicate, we dont need to check it
+                if possible_fields.iter().any(|b| b.covers_same_fields(&boxes[j]) && b.has_same_range(&boxes[j])) {
+                    continue;
+                }
+
+                if possible_fields.iter().any(|b| boxes[j].is_inside_of(b)) {
+                    possible_fields.push(boxes[j].clone());
                 }
             }
 
