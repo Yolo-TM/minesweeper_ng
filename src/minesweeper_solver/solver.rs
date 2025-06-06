@@ -121,12 +121,12 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             None => {}
         }
 
-        //match self.apply_permutation_checks() {
-        //    Some(_) => {
-        //        return Some(4);
-        //    },
-        //    None => {}
-        //}
+        match self.apply_permutation_checks() {
+            Some(_) => {
+                return Some(4);
+            },
+            None => {}
+        }
         None
     }
 
