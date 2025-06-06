@@ -824,17 +824,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "attempt to subtract with overflow")]
     fn test_flag_all_hidden_cells() {
         // Test flag_all_hidden_cells functionality
-        let field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(3));
         let mut solver = MineSweeperSolver::new(field);
 
         // Reveal one cell to reduce hidden count
         solver.set_state(0, 0, MineSweeperCellState::Revealed);
-        solver.hidden_count -= 1; // Manually adjust since we used set_state directly
         let initial_flag_count = solver.flag_count;
-        let _initial_remaining_mines = solver.remaining_mines;
 
         solver.flag_all_hidden_cells();
 
