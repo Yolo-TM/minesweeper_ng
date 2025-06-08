@@ -79,7 +79,7 @@ mod tests {
     fn test_box_creation() {
         let box_obj = Box::new(1, 2, 2..=4);
 
-        assert_eq!(box_obj.owner, (1, 2));
+        assert_eq!(box_obj.get_owner(), (1, 2));
         assert_eq!(box_obj.get_mines(), 2..=4);
         assert_eq!(box_obj.get_fields().len(), 0);
     }
