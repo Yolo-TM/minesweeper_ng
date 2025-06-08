@@ -1,5 +1,6 @@
-use crate::field_generator::*;
-use crate::minesweeper_solver::{SolverSolution, MineSweeperSolver, MineSweeperCellState, search_for_islands};
+use crate::*;
+use crate::field_generator::SurroundingFieldsIterator;
+use crate::minesweeper_solver::search_for_islands;
 use std::collections::HashMap;
 use rand::{rng, prelude::IndexedRandom};
 

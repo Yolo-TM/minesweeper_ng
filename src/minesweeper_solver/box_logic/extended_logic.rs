@@ -1,6 +1,5 @@
 use super::Box;
-use super::super::MineSweeperSolver;
-use crate::field_generator::MineSweeperField;
+use crate::*;
 use std::collections::HashMap;
 use std::vec;
 

@@ -1,13 +1,12 @@
 use minesweeper_ng_gen::*;
-use minesweeper_ng_gen::field_generator::MineField;
 
 fn main() {
     let start = std::time::Instant::now();
 
-    let field = field_generator::get_evil_ng_field();
+    let field = get_evil_ng_field();
     let _ = field.to_file("evil_ng_field.minesweeper");
     let field = MineField::from_file("evil_ng_field.minesweeper").unwrap();
-    minesweeper_solver::solve(field, true);
+    solve(field, true);
 
     //let field = field_generator::get_small_test_field();
     //let json = field.as_json();

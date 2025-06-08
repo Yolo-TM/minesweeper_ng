@@ -1,5 +1,4 @@
-use super::super::MineSweeperSolver;
-use crate::field_generator::MineSweeperField;
+use crate::*;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     pub(in crate::minesweeper_solver) fn apply_basic_box_logic(&mut self) -> Option<()> {

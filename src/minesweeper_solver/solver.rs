@@ -1,5 +1,5 @@
 use super::{MineSweeperCellState, MineSweeperSolver, SolverSolution};
-use crate::field_generator::{MineSweeperCell, MineSweeperField};
+use crate::*;
 use colored::Colorize;
 use std::collections::HashMap;
 

@@ -1,5 +1,4 @@
-use crate::minesweeper_solver::{MineSweeperCellState, MineSweeperSolver};
-use crate::field_generator::MineSweeperField;
+use crate::*;
 use super::{sort::sort_by_min_distance, super::search_for_islands, super::merge_islands, collect_bits, get_last_one_bit};
 use std::{thread, collections::HashMap, sync::Arc};
 use num_cpus;

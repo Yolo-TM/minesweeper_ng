@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::field_generator::*;
+use crate::MineSweeperField;
 use colored::Colorize;
 
 mod box_logic;

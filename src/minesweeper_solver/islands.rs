@@ -1,5 +1,5 @@
-use crate::minesweeper_solver::MineSweeperCellState;
-use crate::field_generator::{MineSweeperFieldIterator, SurroundingFieldsIterator, MineSweeperCell};
+use crate::*;
+use crate::field_generator::{MineSweeperFieldIterator, SurroundingFieldsIterator};
 
 pub fn search_for_islands(width: u32, height: u32, field: &Vec<Vec<MineSweeperCell>>, state: &Vec<Vec<MineSweeperCellState>>) -> Vec<Vec<(u32, u32)>> {
     let mut visited = vec![vec![false; height as usize]; width as usize];
