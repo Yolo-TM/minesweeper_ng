@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{Read, Write};
 use serde_json::Value;
 use super::{
-    TestField,
+    MineField,
     MineSweeperCell,
     MineSweeperFieldCreation,
     MineSweeperFieldIterator,
@@ -160,7 +160,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
             }
         }
 
-        let mut field = TestField::new(width, height, MineSweeperFieldCreation::FixedCount(mines));
+        let mut field = MineField::new(width, height, MineSweeperFieldCreation::FixedCount(mines));
         field.initialize(mine_array);
         field.set_start_field(start_x, start_y);
 
@@ -186,7 +186,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
             ));
         }
         
-        let mut field = TestField::new(width, height, MineSweeperFieldCreation::FixedCount(mines));
+        let mut field = MineField::new(width, height, MineSweeperFieldCreation::FixedCount(mines));
         field.set_start_field(start_x, start_y);
 
         let mut bits = vec![];

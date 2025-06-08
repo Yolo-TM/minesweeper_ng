@@ -334,11 +334,11 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::field_generator::{MineSweeperFieldCreation, TestField};
+    use crate::field_generator::{MineSweeperFieldCreation, MineField};
 
     #[test]
     fn test_solver_creation() {
-        let field = TestField::new(5, 5, MineSweeperFieldCreation::FixedCount(3));
+        let field = MineField::new(5, 5, MineSweeperFieldCreation::FixedCount(3));
         let solver = MineSweeperSolver::new(field.clone());
 
         assert_eq!(solver.field.get_width(), 5);
@@ -350,7 +350,7 @@ mod tests {
 
     #[test]
     fn test_flag_cell() {
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
         let mut solver = MineSweeperSolver::new(field);
 
         let initial_flag_count = solver.flag_count;
@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn test_revealing_safe_cells() {
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         solver.reveal_field(1, 1);
@@ -379,7 +379,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_reveal_mine_panics() {
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         field.initialize(vec![(1, 1)]);
 
         let mut solver = MineSweeperSolver::new(field);
@@ -388,7 +388,7 @@ mod tests {
 
     #[test]
     fn test_get_surrounding_unrevealed_count() {
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // All cells around (1,1) should be unrevealed initially
@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn test_get_surrounding_flag_count() {
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
         let mut solver = MineSweeperSolver::new(field);
 
         // No flags initially
@@ -420,7 +420,7 @@ mod tests {
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_solver_hits_mine_at_start_field() {
         // Create a malformed field where the start field contains a mine
-        let mut field = TestField::new(5, 5, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(5, 5, MineSweeperFieldCreation::FixedCount(1));
         let start_field = (0, 0);
         field.set_start_field(start_field.0, start_field.1);
         field.initialize(vec![start_field]);
@@ -433,7 +433,7 @@ mod tests {
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_solver_hits_mine_during_reveal_surrounding() {
         // Create a field where revealing surrounding cells hits a mine
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
 
         field.initialize(vec![(0, 0)]);
         field.set_cell(1, 1, MineSweeperCell::Empty);
@@ -446,7 +446,7 @@ mod tests {
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_solver_hits_mine_corner_field() {
         // Test hitting a mine in a corner position
-        let mut field = TestField::new(4, 4, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(4, 4, MineSweeperFieldCreation::FixedCount(1));
 
         field.initialize(vec![(0, 0)]);
         field.set_cell(1, 1, MineSweeperCell::Empty);
@@ -459,7 +459,7 @@ mod tests {
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_solver_hits_mine_with_incorrect_numbers() {
         // Test a malformed field where numbers don't match mine placement
-        let mut field = TestField::new(5, 5, MineSweeperFieldCreation::FixedCount(2));
+        let mut field = MineField::new(5, 5, MineSweeperFieldCreation::FixedCount(2));
         field.set_start_field(4, 4);
 
         field.initialize(vec![(0, 0), (1, 0), (0, 1), (3, 2)]);
@@ -475,7 +475,7 @@ mod tests {
     #[test]
     fn test_do_basic_neighbour_check_flag_all_remaining() {
         // Test scenario where all remaining unrevealed neighbors should be flagged
-        let mut field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
 
         field.initialize(vec![(0, 0)]);
 
@@ -499,7 +499,7 @@ mod tests {
     #[test]
     fn test_do_basic_neighbour_check_reveal_all_safe() {
         // Test scenario where do_basic_neighbour_check reveals all safe cells around a number
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
 
         // Place a mine at corner (0,0)
         field.initialize(vec![(0, 0)]);
@@ -530,7 +530,7 @@ mod tests {
     #[test]
     fn test_do_basic_neighbour_check_no_action_needed() {
         // Test scenario where do_basic_neighbour_check finds nothing to do
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
 
         field.initialize(vec![(0, 0), (2, 2)]);
 
@@ -549,7 +549,7 @@ mod tests {
     #[test]
     fn test_do_basic_neighbour_check_multiple_cells() {
         // Test scenario with multiple revealed numbers that can trigger logic
-        let mut field = TestField::new(4, 4, MineSweeperFieldCreation::FixedCount(4));
+        let mut field = MineField::new(4, 4, MineSweeperFieldCreation::FixedCount(4));
 
         // Create a pattern with mines at corners
         field.initialize(vec![(0, 0), (0, 3), (3, 0), (3, 3)]);
@@ -573,7 +573,7 @@ mod tests {
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_do_basic_neighbour_check_reveals_mine_malformed_field() {
         // Create a malformed field where the logic will reveal a mine
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
 
         // Place mines at (0,1) and (2,2)
         field.initialize(vec![(0, 1), (2, 2)]);
@@ -597,7 +597,7 @@ mod tests {
     #[should_panic(expected = "Flag count is greater than number")]
     fn test_do_basic_neighbour_check_too_many_flags() {
         // Test scenario that triggers the panic in get_reduced_count
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(8));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(8));
 
         // Place many mines to avoid remaining_mines underflow
         field.initialize(vec![
@@ -637,7 +637,7 @@ mod tests {
     #[test]
     fn test_do_basic_neighbour_check_already_solved_area() {
         // Test area where all neighbors are already revealed or flagged
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
 
         field.initialize(vec![(0, 0)]);
 
@@ -666,7 +666,7 @@ mod tests {
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
     fn test_do_basic_neighbour_check_chain_reaction_hits_mine() {
         // Test where basic neighbor check reveals a mine due to malformed field
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
 
         // Place mine at (2, 2)
         field.initialize(vec![(2, 2)]);
@@ -685,7 +685,7 @@ mod tests {
     #[test]
     fn test_continue_solving_found_solution() {
         // Test continue_solving when a solution is found
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         field.initialize(vec![(0, 0)]);
 
         let mut solver = MineSweeperSolver::new(field);
@@ -704,7 +704,7 @@ mod tests {
     #[test]
     fn test_continue_solving_no_solution() {
         // Test continue_solving when no solution can be found
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(4));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(4));
         field.initialize(vec![(0, 0), (1, 1), (2, 2), (0, 2)]);
 
         let mut solver = MineSweeperSolver::new(field);
@@ -720,7 +720,7 @@ mod tests {
     #[test]
     fn test_continue_solving_with_output() {
         // Test continue_solving with output enabled (checking it doesn't panic)
-        let mut field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
         field.initialize(vec![(0, 0)]);
 
         let mut solver = MineSweeperSolver::new(field);
@@ -738,7 +738,7 @@ mod tests {
     #[test]
     fn test_is_solved_all_revealed() {
         // Test is_solved when all non-mine cells are revealed
-        let mut field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
         field.initialize(vec![(0, 0)]);
 
         let mut solver = MineSweeperSolver::new(field);
@@ -758,7 +758,7 @@ mod tests {
     #[test]
     fn test_is_solved_all_flagged() {
         // Test is_solved when all mines are flagged and remaining cells revealed
-        let mut field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
         field.initialize(vec![(0, 0)]);
 
         let mut solver = MineSweeperSolver::new(field);
@@ -776,7 +776,7 @@ mod tests {
     #[test]
     fn test_is_solved_partial_progress() {
         // Test is_solved with partial progress
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
         field.initialize(vec![(0, 0), (2, 2)]);
 
         let mut solver = MineSweeperSolver::new(field);
@@ -791,7 +791,7 @@ mod tests {
     #[test]
     fn test_do_solving_step_basic_logic() {
         // Test do_solving_step when basic neighbor check succeeds
-        let mut field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = MineField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
         field.initialize(vec![(0, 0)]);
 
         let mut solver = MineSweeperSolver::new(field);
@@ -809,7 +809,7 @@ mod tests {
     #[test]
     fn test_do_solving_step_no_logic_applicable() {
         // Test do_solving_step when no logic can be applied
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(3));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(3));
         field.initialize(vec![(0, 0), (1, 1), (2, 2)]);
 
         let mut solver = MineSweeperSolver::new(field);
@@ -825,7 +825,7 @@ mod tests {
     #[test]
     fn test_flag_all_hidden_cells() {
         // Test flag_all_hidden_cells functionality
-        let field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(3));
+        let field = MineField::new(2, 2, MineSweeperFieldCreation::FixedCount(3));
         let mut solver = MineSweeperSolver::new(field);
 
         // Reveal one cell to reduce hidden count
@@ -846,7 +846,7 @@ mod tests {
     #[test]
     fn test_flag_surrounding_cells() {
         // Test flag_surrounding_cells functionality
-        let field = TestField::new(5, 5, MineSweeperFieldCreation::FixedCount(12));
+        let field = MineField::new(5, 5, MineSweeperFieldCreation::FixedCount(12));
         let mut solver = MineSweeperSolver::new(field);
 
         // Flag some cells already to test it doesn't double-flag
@@ -874,7 +874,7 @@ mod tests {
     #[test]
     fn test_has_unrevealed_neighbours_true() {
         // Test has_unrevealed_neighbours when there are unrevealed neighbors
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // All neighbors are initially hidden
@@ -890,7 +890,7 @@ mod tests {
     #[test]
     fn test_has_unrevealed_neighbours_false() {
         // Test has_unrevealed_neighbours when all neighbors are revealed/flagged
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // Reveal or flag all neighbors of (1,1)
@@ -909,7 +909,7 @@ mod tests {
     #[test]
     fn test_has_unrevealed_neighbours_corner_cell() {
         // Test has_unrevealed_neighbours for a corner cell
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // Corner cell (0,0) has only 3 neighbors
@@ -926,7 +926,7 @@ mod tests {
     #[test]
     fn test_has_revealed_neighbours_true() {
         // Test has_revealed_neighbours when there are revealed neighbors
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // Initially no revealed neighbors
@@ -941,7 +941,7 @@ mod tests {
     #[test]
     fn test_has_revealed_neighbours_false() {
         // Test has_revealed_neighbours when no neighbors are revealed
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // Flag some neighbors but don't reveal any
@@ -954,7 +954,7 @@ mod tests {
     #[test]
     fn test_get_surrounding_unrevealed() {
         // Test get_surrounding_unrevealed returns correct coordinates
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // Initially all 8 neighbors of (1,1) should be unrevealed
@@ -990,7 +990,7 @@ mod tests {
     #[test]
     fn test_get_surrounding_unrevealed_corner() {
         // Test get_surrounding_unrevealed for corner cell
-        let field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
         let solver = MineSweeperSolver::new(field);
 
         // Corner cell (0,0) should have 3 unrevealed neighbors
@@ -1007,7 +1007,7 @@ mod tests {
     #[test]
     fn test_set_state() {
         // Test set_state functionality directly
-        let field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // Initially all cells are hidden
@@ -1029,7 +1029,7 @@ mod tests {
     #[test]
     fn test_flag_cell_already_flagged() {
         // Test flag_cell when cell is already flagged (should do nothing)
-        let field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // Flag the cell once
@@ -1051,7 +1051,7 @@ mod tests {
     #[test]
     fn test_flag_cell_already_revealed() {
         // Test flag_cell when cell is already revealed (should do nothing)
-        let field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // Reveal the cell first
@@ -1075,7 +1075,7 @@ mod tests {
     #[test]
     fn test_reveal_field_already_revealed() {
         // Test reveal_field when cell is already revealed (should do nothing)
-        let field = TestField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let field = MineField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
         let mut solver = MineSweeperSolver::new(field);
 
         // Reveal the cell once
@@ -1093,7 +1093,7 @@ mod tests {
     #[test]
     fn test_reveal_field_number_with_correct_flags() {
         // Test reveal_field on a number cell when correct number of flags are around it
-        let mut field = TestField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let mut field = MineField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
         field.initialize(vec![(0, 0), (2, 2)]);
 
         let mut solver = MineSweeperSolver::new(field);

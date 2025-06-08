@@ -1,7 +1,7 @@
 use crate::field_generator::{MineSweeperCell, MineSweeperField, MineSweeperFieldCreation};
 
 #[derive(Clone)]
-pub struct TestField {
+pub struct MineField {
     width: u32,
     height: u32,
     mines: u32,
@@ -9,7 +9,7 @@ pub struct TestField {
     board: Vec<Vec<MineSweeperCell>>,
 }
 
-impl MineSweeperField for TestField {
+impl MineSweeperField for MineField {
     #[track_caller]
     fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self {
         let percentage = mines.get_percentage(width, height);
@@ -29,7 +29,7 @@ impl MineSweeperField for TestField {
         let board = vec![vec![MineSweeperCell::Empty; height as usize]; width as usize];
         let mines = mines.get_fixed_count(width, height);
 
-        let field = TestField {
+        let field = MineField {
             width,
             height,
             mines,
@@ -69,7 +69,7 @@ impl MineSweeperField for TestField {
     }
 }
 
-impl TestField {
+impl MineField {
     pub fn initialize(&mut self, mine_positions: Vec<(u32, u32)>) {
         for &(x, y) in &mine_positions {
             self.set_cell(x, y, MineSweeperCell::Mine);
@@ -85,7 +85,7 @@ impl TestField {
 
 pub fn get_evil_ng_field() -> impl MineSweeperField {
 
-    let mut field = TestField::new(30, 20, MineSweeperFieldCreation::FixedCount(130));
+    let mut field = MineField::new(30, 20, MineSweeperFieldCreation::FixedCount(130));
     field.set_start_field(4, 6);
 
     // This are the mine positions of an evil field from minesweeper.online for testing purposes.
@@ -127,7 +127,7 @@ pub fn get_evil_ng_field() -> impl MineSweeperField {
 
 pub fn get_small_test_field() -> impl MineSweeperField {
 
-    let mut field = TestField::new(10, 10, MineSweeperFieldCreation::FixedCount(20));
+    let mut field = MineField::new(10, 10, MineSweeperFieldCreation::FixedCount(20));
     field.set_start_field(4, 7);
 
     field.initialize(vec![

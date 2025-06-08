@@ -11,7 +11,7 @@ use rand::{
 };
 
 #[derive(Clone)]
-pub struct RandomGenerationField {
+pub struct RandomField {
     width: u32,
     height: u32,
     mines: u32,
@@ -19,7 +19,7 @@ pub struct RandomGenerationField {
     board: Vec<Vec<MineSweeperCell>>,
 }
 
-impl MineSweeperField for RandomGenerationField {
+impl MineSweeperField for RandomField {
     #[track_caller]
     fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self {
         let percentage = mines.get_percentage(width, height);
@@ -39,7 +39,7 @@ impl MineSweeperField for RandomGenerationField {
         let board = vec![vec![MineSweeperCell::Empty; height as usize]; width as usize];
         let mines = mines.get_fixed_count(width, height);
 
-        let mut field = RandomGenerationField {
+        let mut field = RandomField {
             width,
             height,
             mines,
@@ -81,7 +81,7 @@ impl MineSweeperField for RandomGenerationField {
 
 }
 
-impl RandomGenerationField {
+impl RandomField {
     pub fn get_cells(&self) -> Vec<Vec<MineSweeperCell>> {
         self.board.clone()
     }
@@ -133,7 +133,7 @@ mod tests {
 
     #[test]
     fn test_field_creation_basic() {
-        let field = RandomGenerationField::new(10, 10, MineSweeperFieldCreation::FixedCount(10));
+        let field = RandomField::new(10, 10, MineSweeperFieldCreation::FixedCount(10));
 
         assert_eq!(field.get_width(), 10);
         assert_eq!(field.get_height(), 10);
@@ -142,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_field_creation_percentage() {
-        let field = RandomGenerationField::new(10, 10, MineSweeperFieldCreation::Percentage(0.2));
+        let field = RandomField::new(10, 10, MineSweeperFieldCreation::Percentage(0.2));
 
         assert_eq!(field.get_width(), 10);
         assert_eq!(field.get_height(), 10);
@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn test_mine_placement_count() {
-        let field = RandomGenerationField::new(10, 10, MineSweeperFieldCreation::FixedCount(15));
+        let field = RandomField::new(10, 10, MineSweeperFieldCreation::FixedCount(15));
 
         let mut mine_count = 0;
         for (x, y) in field.sorted_fields() {
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn test_number_assignment() {
-        let field = RandomGenerationField::new(20, 18, MineSweeperFieldCreation::Percentage(0.25));
+        let field = RandomField::new(20, 18, MineSweeperFieldCreation::Percentage(0.25));
 
         // Check that non-mine cells have appropriate numbers
         for (x, y) in field.sorted_fields() {
@@ -189,7 +189,7 @@ mod tests {
 
     #[test]
     fn test_start_field_not_mine() {
-        let field = RandomGenerationField::new(5, 5, MineSweeperFieldCreation::FixedCount(10));
+        let field = RandomField::new(5, 5, MineSweeperFieldCreation::FixedCount(10));
         let (start_x, start_y) = field.get_start_field();
 
         // Start field should not be a mine
@@ -198,7 +198,7 @@ mod tests {
 
     #[test]
     fn test_field_bounds() {
-        let field = RandomGenerationField::new(3, 4, MineSweeperFieldCreation::FixedCount(2));
+        let field = RandomField::new(3, 4, MineSweeperFieldCreation::FixedCount(2));
 
         // Test that all coordinates are within bounds
         for (x, y) in field.sorted_fields() {
@@ -212,7 +212,7 @@ mod tests {
 
     #[test]
     fn test_cell_modification() {
-        let mut field = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
+        let mut field = RandomField::new(3, 3, MineSweeperFieldCreation::FixedCount(1));
 
         // Test setting and getting cells
         field.set_cell(1, 1, MineSweeperCell::Number(5));
@@ -224,7 +224,7 @@ mod tests {
 
     #[test]
     fn test_get_field_clone() {
-        let field = RandomGenerationField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
+        let field = RandomField::new(2, 2, MineSweeperFieldCreation::FixedCount(1));
         let board_clone = field.get_field();
         
         // Should be same dimensions
@@ -242,24 +242,24 @@ mod tests {
     #[test]
     #[should_panic(expected = "Too many mines")]
     fn test_too_many_mines_panic() {
-        RandomGenerationField::new(2, 2, MineSweeperFieldCreation::Percentage(0.95));
+        RandomField::new(2, 2, MineSweeperFieldCreation::Percentage(0.95));
     }
 
     #[test]
     #[should_panic(expected = "Negative or zero percentage")]
     fn test_zero_mines_panic() {
-        RandomGenerationField::new(5, 5, MineSweeperFieldCreation::Percentage(0.0));
+        RandomField::new(5, 5, MineSweeperFieldCreation::Percentage(0.0));
     }
 
     #[test]
     #[should_panic(expected = "Negative or zero percentage")]
     fn test_negative_mines_panic() {
-        RandomGenerationField::new(5, 5, MineSweeperFieldCreation::Percentage(-0.1));
+        RandomField::new(5, 5, MineSweeperFieldCreation::Percentage(-0.1));
     }
 
     #[test]
     fn test_clone() {
-        let field1 = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let field1 = RandomField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
         let field2 = field1.clone();
 
         assert_eq!(field1.get_width(), field2.get_width());
@@ -275,7 +275,7 @@ mod tests {
 
     #[test]
     fn test_surrounding_mine_count() {
-        let mut field = RandomGenerationField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
+        let mut field = RandomField::new(3, 3, MineSweeperFieldCreation::FixedCount(2));
         
         // Clear all mines first
         for x in 0..3 {
