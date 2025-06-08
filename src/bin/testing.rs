@@ -4,9 +4,9 @@ fn main() {
     let start = std::time::Instant::now();
 
     let field = get_evil_ng_field();
-    let _ = field.to_file("evil_ng_field.minesweeper");
-    let field = MineField::from_file("evil_ng_field.minesweeper").unwrap();
-    solve(field, true);
+    //let _ = field.to_file("evil_ng_field.minesweeper");
+    //let field = MineField::from_file("evil_ng_field.minesweeper").unwrap();
+    solve(field, false);
 
     //let field = field_generator::get_small_test_field();
     //let json = field.as_json();

@@ -334,7 +334,6 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::*;
 
     #[test]
     fn test_solver_creation() {
