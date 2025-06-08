@@ -107,7 +107,7 @@ where
         self.hidden_count == 0 || (self.flag_count + self.hidden_count) == self.field.get_mines()
     }
 
-    fn print(&self) {
+    pub(super) fn print(&self) {
         for (x, y) in self.field.sorted_fields() {
             match self.get_state(x, y) {
                 MineSweeperCellState::Hidden => print!("? "),
@@ -304,7 +304,7 @@ where
             && self.has_unrevealed_neighbours(x, y)
     }
 
-    fn do_basic_neighbour_check(&mut self) -> Option<()> {
+    pub(super) fn do_basic_neighbour_check(&mut self) -> Option<()> {
         let mut did_something = false;
 
         for (x, y) in self.field.sorted_fields() {

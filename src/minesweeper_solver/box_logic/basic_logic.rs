@@ -6,9 +6,6 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
         for (x, y) in self.field.sorted_fields() {
             if self.has_informations(x, y) {
-
-                // TODO: Is 3 a good number here or are we doint unnecessary calculations?
-
                 for (new_x, new_y) in self.field.surrounding_fields(x, y, Some(3)) {
                     if self.has_informations(new_x, new_y) {
                         let reduced_count = self.get_reduced_count(x, y);
@@ -67,5 +64,59 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         } else {
             return None;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+    use crate::MineSweeperFieldCreation::FixedCount;
+
+    #[test]
+    fn test_one_one_pattern() {
+        let mut field = MineField::new(5, 5, FixedCount(4));
+        /*
+        0001M
+        00011
+        00011
+        1112M
+        1M12M
+        */
+        field.initialize(vec![(4, 0), (4, 3), (1, 4), (4, 4)]);
+
+        let mut solver = MineSweeperSolver::new(field);
+        solver.reveal_field(0, 0);
+
+        assert_eq!(solver.do_basic_neighbour_check(), None);
+        
+        assert_eq!(solver.apply_basic_box_logic(), Some(()));
+
+        assert_eq!(solver.get_state(4, 2), MineSweeperCellState::Revealed);
+        assert_eq!(solver.get_state(2, 4), MineSweeperCellState::Revealed);
+    }
+
+    #[test]
+    fn test_one_two_one_pattern() {
+        let mut field = MineField::new(3, 3, FixedCount(2));
+        /*
+        01M
+        022
+        01M
+        */
+        field.initialize(vec![(2, 0), (2, 2)]);
+
+        let mut solver = MineSweeperSolver::new(field);
+        solver.reveal_field(0, 0);
+
+        assert_eq!(solver.do_basic_neighbour_check(), None);
+        assert_ne!(solver.get_state(2, 1), MineSweeperCellState::Revealed);
+
+        assert_eq!(solver.apply_basic_box_logic(), Some(()));
+
+        assert_eq!(solver.get_state(2, 0), MineSweeperCellState::Flagged);
+        assert_eq!(solver.get_state(2, 2), MineSweeperCellState::Flagged);
+
+        assert_eq!(solver.do_basic_neighbour_check(), Some(()));
+        assert_eq!(solver.get_state(2, 1), MineSweeperCellState::Revealed);
     }
 }
