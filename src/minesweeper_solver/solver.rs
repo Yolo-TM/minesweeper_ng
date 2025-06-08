@@ -334,8 +334,7 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::field_generator::MineSweeperFieldCreation;
-    use crate::ng_generator::TestField;
+    use crate::field_generator::{MineSweeperFieldCreation, TestField};
 
     #[test]
     fn test_solver_creation() {

@@ -41,14 +41,14 @@ mod tests {
     fn test_empty_cell() {
         let cell = MineSweeperCell::Empty;
         assert_eq!(cell.get_number(), 0);
-        assert!(cell == MineSweeperCell::Empty);
+        assert_eq!(cell, MineSweeperCell::Empty);
     }
 
     #[test]
     fn test_mine_cell() {
         let cell = MineSweeperCell::Mine;
         assert_eq!(cell.get_number(), 9);
-        assert!(cell == MineSweeperCell::Mine);
+        assert_eq!(cell, MineSweeperCell::Mine);
     }
 
     #[test]
@@ -56,7 +56,7 @@ mod tests {
         for i in 1..=8 {
             let cell = MineSweeperCell::Number(i);
             assert_eq!(cell.get_number(), i);
-            assert!(cell == MineSweeperCell::Number(i));
+            assert_eq!(cell, MineSweeperCell::Number(i));
         }
     }
 
@@ -91,16 +91,6 @@ mod tests {
     }
 
     #[test]
-    fn test_number_bounds() {
-        // Test edge cases for numbers
-        let cell_min = MineSweeperCell::Number(1);
-        let cell_max = MineSweeperCell::Number(8);
-
-        assert_eq!(cell_min.get_number(), 1);
-        assert_eq!(cell_max.get_number(), 8);
-    }
-
-    #[test]
     #[should_panic]
     fn test_invalid_number_cell_colored_panic() {
         // Create a Number cell with an invalid value (> 9)
@@ -114,14 +104,6 @@ mod tests {
     fn test_extremely_large_number_cell_panic() {
         // Test with an extremely large number to ensure it panics
         let invalid_cell = MineSweeperCell::Number(255);
-        invalid_cell.get_colored(); // Should panic
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_edge_invalid_number_cell_panic() {
-        // Test with number 11 (just above the valid range)
-        let invalid_cell = MineSweeperCell::Number(11);
         invalid_cell.get_colored(); // Should panic
     }
 }

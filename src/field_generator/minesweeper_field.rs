@@ -1,4 +1,8 @@
+use std::fs::File;
+use std::io::{Read, Write};
+use serde_json::Value;
 use super::{
+    TestField,
     MineSweeperCell,
     MineSweeperFieldCreation,
     MineSweeperFieldIterator,
@@ -80,5 +84,141 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
             dy: -(range as i8),
         }
     }
-    // Serialize / Output ?
+
+    fn as_json(&self) -> String {
+        let mine_positions: Vec<(u32, u32)> = self.sorted_fields()
+            .filter(|&(x, y)| self.get_cell(x, y) == MineSweeperCell::Mine)
+            .collect();
+
+        let json = serde_json::json!({
+            "width": self.get_width(),
+            "height": self.get_height(),
+            "mines": self.get_mines(),
+            "start_x": self.get_start_field().0,
+            "start_y": self.get_start_field().1,
+            "mine_positions": mine_positions
+        });
+
+        serde_json::to_string_pretty(&json).unwrap()
+    }
+
+    fn to_file(&self, file_path: &str) -> std::io::Result<()> {
+        let mut file = File::create(file_path)?;
+
+        let (w, h, m) = self.get_dimensions();
+        file.write_all(&w.to_le_bytes())?;
+        file.write_all(&h.to_le_bytes())?;
+        file.write_all(&m.to_le_bytes())?;
+        file.write_all(&self.get_start_field().0.to_le_bytes())?;
+        file.write_all(&self.get_start_field().1.to_le_bytes())?;
+
+        let mut bits: Vec<u8> = Vec::new();
+        let mut current_byte: u8 = 0u8;
+        let mut bit_count: u8  = 0;
+
+        for (x, y) in self.sorted_fields() {
+            let is_mine = if self.get_cell(x, y) == MineSweeperCell::Mine { 1 } else { 0 };
+
+            current_byte |= is_mine << (7 - bit_count);
+            bit_count += 1;
+
+            if bit_count == 8 {
+                bits.push(current_byte);
+                current_byte = 0;
+                bit_count = 0;
+            }
+        }
+
+        // byte not full, push remaining
+        if bit_count > 0 {
+            bits.push(current_byte);
+        }
+
+        file.write_all(&bits)?;
+
+        Ok(())
+    }
+
+    fn from_json(json: &str) -> Option<impl MineSweeperField> {
+        let parsed: Value = serde_json::from_str(json).ok()?;
+
+        let width = parsed["width"].as_u64()? as u32;
+        let height = parsed["height"].as_u64()? as u32;
+        let mines = parsed["mines"].as_u64()? as u32;
+        let start_x = parsed["start_x"].as_u64()? as u32;
+        let start_y = parsed["start_y"].as_u64()? as u32;
+
+
+        let mut mine_array = vec![];
+        if let Some(mine_positions) = parsed["mine_positions"].as_array() {
+            for position in mine_positions {
+                if let Some((x, y)) = position.as_array()
+                    .and_then(|arr| Some((arr[0].as_u64()? as u32, arr[1].as_u64()? as u32)))
+                {
+                    mine_array.push((x, y));
+                }
+            }
+        }
+
+        let mut field = TestField::new(width, height, MineSweeperFieldCreation::FixedCount(mines));
+        field.initialize(mine_array);
+        field.set_start_field(start_x, start_y);
+
+        Some(field)
+    }
+    
+    fn from_file(file_path: &str) -> std::io::Result<impl MineSweeperField> {
+        let mut file = File::open(file_path)?;
+        let mut buffer = [0u8; 20]; // buffer for 5 u32 integers
+
+        file.read_exact(&mut buffer)?;
+
+        let width = u32::from_le_bytes(buffer[0..4].try_into().unwrap());
+        let height = u32::from_le_bytes(buffer[4..8].try_into().unwrap());
+        let mines = u32::from_le_bytes(buffer[8..12].try_into().unwrap());
+        let start_x = u32::from_le_bytes(buffer[12..16].try_into().unwrap());
+        let start_y = u32::from_le_bytes(buffer[16..20].try_into().unwrap());
+
+        if start_x >= width || start_y >= height {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Start field out of bounds.",
+            ));
+        }
+        
+        let mut field = TestField::new(width, height, MineSweeperFieldCreation::FixedCount(mines));
+        field.set_start_field(start_x, start_y);
+
+        let mut bits = vec![];
+        file.read_to_end(&mut bits)?;
+
+        let mut mine_positions = vec![];
+        for (i, byte) in bits.iter().enumerate() {
+            for bit in 0..8 {
+                if (byte >> (7 - bit)) & 1 == 1 {
+                    let x = (i * 8 + bit) as u32 % width;
+                    let y = (i * 8 + bit) as u32 / width;
+                    
+                    if x >= width || y >= height {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Mine position out of bounds.",
+                        ));
+                    }
+                    mine_positions.push((x, y));
+                }
+            }
+        }
+
+        if mine_positions.len() != mines as usize {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Number of mines does not match the expected count.",
+            ));
+        }
+
+        field.initialize(mine_positions);
+        field.assign_numbers();
+        Ok(field)
+    }
 }

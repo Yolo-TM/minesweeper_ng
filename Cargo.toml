@@ -6,7 +6,8 @@ edition = "2024"
 [dependencies]
 rand = "0.9.1"
 colored = "3.0.0"
-num_cpus = "1.13.1"
+num_cpus = "1.17.0"
+serde_json = { version = "1.0.140", features = [] }
 
 [profile.release]
 opt-level = 3
