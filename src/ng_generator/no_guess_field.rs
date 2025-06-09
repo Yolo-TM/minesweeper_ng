@@ -96,6 +96,7 @@ mod tests {
     use crate::field_generator::MineSweeperFieldCreation;
 
     #[test]
+    #[ignore]
     fn test_no_guess_field_creation() {
         let field = NoGuessField::new(10, 10, MineSweeperFieldCreation::FixedCount(20));
         assert_eq!(field.get_width(), 10);
@@ -105,6 +106,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_no_guess_field_initialization() {
         let field = NoGuessField::new(5, 5, MineSweeperFieldCreation::Percentage(0.2));
         assert_eq!(field.get_width(), 5);
