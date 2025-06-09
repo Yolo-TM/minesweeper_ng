@@ -135,6 +135,18 @@ where
         self.state[x as usize][y as usize] = state;
     }
 
+    pub(crate) fn update_field(&mut self, changes: Vec<(u32, u32, MineSweeperCell)>) {
+        for (x, y, state) in changes {
+            self.field.set_cell(x, y, state);
+        }
+    }
+
+    pub(crate) fn update_states(&mut self, changes: Vec<(u32, u32, MineSweeperCellState)>) {
+        for (x, y, state) in changes {
+            self.set_state(x, y, state);
+        }
+    }
+
     fn do_solving_step(&mut self) -> Option<u8> {
         match self.do_basic_neighbour_check() {
             Some(_) => {
@@ -175,7 +187,7 @@ where
     }
 
     #[track_caller]
-    pub(super) fn reveal_field(&mut self, x: u32, y: u32) {
+    pub(crate) fn reveal_field(&mut self, x: u32, y: u32) {
         if self.get_state(x, y) == MineSweeperCellState::Revealed {
             return;
         }
