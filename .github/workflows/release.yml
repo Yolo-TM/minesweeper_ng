@@ -29,7 +29,7 @@ jobs:
       - name: Stage Linux binaries
         run: |
           mkdir -p staging-linux-${{ matrix.arch }}
-          find target/${{ matrix.target }}/release -maxdepth 1 -type f -executable -exec cp {} staging-linux-${{ matrix.arch }}/ \\;
+          find target/${{ matrix.target }}/release -maxdepth 1 -type f -executable -exec cp {} staging-linux-${{ matrix.arch }}/ \;
       - name: Upload Linux binaries artifact
         uses: actions/upload-artifact@v4
         with:
