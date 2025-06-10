@@ -1,7 +1,6 @@
-use super::{MineSweeperCellState, MineSweeperSolver, SolverSolution};
+use super::{MineSweeperCellState, SolverSolution, SolverStepCounter};
 use crate::{*, minesweeper_solver::SolverStep};
 use colored::Colorize;
-use std::collections::HashMap;
 
 impl<M> MineSweeperSolver<M>
 where
@@ -20,8 +19,7 @@ where
             remaining_mines: field.get_mines(),
             field,
             solution: SolverSolution::NeverStarted,
-            step_count: 0,
-            logic_levels: HashMap::new(),
+            steps: SolverStepCounter::new(),
         }
     }
 
@@ -57,15 +55,15 @@ where
                     println!(
                         "{}: Took {} steps.",
                         "Solver finished".bold(),
-                        self.step_count.to_string().blue()
+                        self.steps.get_pretty_steps()
                     );
                 }
 
                 self.flag_all_hidden_cells();
-                self.solution = SolverSolution::FoundSolution(self.step_count, self.logic_levels.clone());
+                self.solution = SolverSolution::FoundSolution(self.steps.clone());
                 return self.solution.clone();
             } else if enable_output {
-                println!("{}: {}", "Solver Step", self.step_count.to_string().blue());
+                println!("{}: {}", "Solver Step", self.steps.get_pretty_steps());
                 self.print();
             }
 
@@ -79,7 +77,7 @@ where
                         );
                     }
 
-                    *self.logic_levels.entry(logic_level).or_insert(0) += 1;
+                    self.steps.increment(logic_level);
                 }
                 None => {
                     if enable_output {
@@ -90,7 +88,7 @@ where
                     }
 
                     self.solution = SolverSolution::NoSolution(
-                        self.step_count,
+                        self.steps.get_steps(),
                         self.remaining_mines,
                         self.hidden_count,
                         self.state.clone(),
@@ -99,7 +97,7 @@ where
                 }
             }
 
-            self.step_count += 1;
+            self.steps.increase_steps();
         }
     }
 
@@ -707,11 +705,7 @@ mod tests {
         solver.reveal_field(2, 2); // This should reveal multiple cells and make progress toward solution
 
         let result = solver.continue_solving(false);
-        assert!(matches!(result, SolverSolution::FoundSolution(_, _)));
-        if let SolverSolution::FoundSolution(steps, _) = result {
-            // Steps is u32, so always >= 0, just verify it's a valid number
-            let _ = steps; // Use the variable to prevent warning
-        }
+        assert!(matches!(result, SolverSolution::FoundSolution(_)));
     }
 
     #[test]
@@ -743,7 +737,7 @@ mod tests {
 
         // Either solution found or no solution, but should not panic
         assert!(
-            matches!(result, SolverSolution::FoundSolution(_, _))
+            matches!(result, SolverSolution::FoundSolution(_))
                 || matches!(result, SolverSolution::NoSolution(_, _, _, _))
         );
     }

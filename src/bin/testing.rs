@@ -13,10 +13,10 @@ fn main() {
     //let new_field = TestField::from_json(&json).unwrap();
     //solve(new_field, true);
 
-    //let field = minesweeper_ng_field(45, 26, MineSweeperFieldCreation::Percentage(0.22));
-    //field.to_file("ng_field.minesweeper").unwrap();
-    let field = minesweeper_field(45, 26, MineSweeperFieldCreation::Percentage(0.22));
-    solve(field, true);
+    let field = minesweeper_ng_field(45, 26, MineSweeperFieldCreation::Percentage(0.22));
+    field.to_file("ng_field.minesweeper").unwrap();
+    //let field = minesweeper_field(45, 26, MineSweeperFieldCreation::Percentage(0.22));
+    //solve(field, true);
 
     println!("Time elapsed: {:?}", start.elapsed());
 }

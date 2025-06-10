@@ -1,7 +1,6 @@
-use std::vec;
-
 use crate::*;
 use crate::minesweeper_solver::search_for_islands;
+use std::vec;
 use colored::Colorize;
 
 #[derive(Clone)]
@@ -23,7 +22,7 @@ impl NoGuessField {
             iteration += 1;
             match solver.continue_solving(true) {
                 SolverSolution::NoSolution(_steps, mines, hidden, states) => {
-                    eprintln!("No solution found, trying to move a mine. (Iteration: {}, Status: {}% solved)", iteration, format!("{:.3}", (100_f64 - hidden as f64 / (self.width * self.height) as f64 * 100_f64)).blue());
+                    eprintln!("No solution found, trying to move a mine. (Iteration: {}, Status: {}% solved)", iteration.to_string().cyan(), format!("{:.3}", (100_f64 - hidden as f64 / (self.width * self.height) as f64 * 100_f64)).blue());
 
                     self.show();
                     self.make_solvable(&mut solver, mines, hidden, states);
@@ -31,21 +30,11 @@ impl NoGuessField {
 
                     continue;
                 }
-                SolverSolution::FoundSolution(step_count, complexity) => {
-                    // concatenate complexity levels into a string
-                    let complexity_str: String = complexity.iter()
-                        .map(|(k, v)| format!("{}: {}", k.to_string().blue(), v.to_string().green()))
-                        .collect::<Vec<String>>()
-                        .join(", ");
-
-                    // Calculate average
-                    let mut average: f64 = 0.0;
-                    for (level, count) in &complexity {
-                        average += *count as f64 * level.to_number() as f64;
-                    }
-                    average /= step_count as f64;
-                    println!("Complexity: {}", complexity_str);
-                    println!("Average: {}", format!("{:.4}", average).yellow());
+                SolverSolution::FoundSolution(steps) => {
+                    println!("Found a solution after {} steps and {} iterations", steps.get_steps().to_string().green(), iteration.to_string().cyan());
+                    println!("Complexity: {}", steps.get_complexity().blue());
+                    println!("Average: {}", format!("{:.4}", steps.get_average()).yellow());
+                    self.show();
                 }
                 SolverSolution::NeverStarted => {
                     unreachable!("Solver never started, this shouldn't happen!");
@@ -140,7 +129,7 @@ mod tests {
 
         let solution = MineSweeperSolver::new(field).start(true);
 
-        assert!(matches!(solution, SolverSolution::FoundSolution(_, _)));
+        assert!(matches!(solution, SolverSolution::FoundSolution(_)));
     }
 
 }
