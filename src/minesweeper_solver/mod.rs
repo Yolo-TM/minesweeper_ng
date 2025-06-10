@@ -36,11 +36,12 @@ pub struct MineSweeperSolver<M: MineSweeperField> {
 }
 
 pub fn solve(field: impl MineSweeperField, print_steps: bool) {
+    let (width, height, mines) = field.get_dimensions();
     let mut solver = MineSweeperSolver::new(field);
 
     match solver.start(print_steps) {
         SolverSolution::NoSolution(step_count, remaining_mines, hidden_count, _states) => {
-            println!("No solution found. Stopped after {} steps. (Remaining Mines: {}, Hidden Fields: {})", step_count.to_string().red(), remaining_mines.to_string().red(), hidden_count.to_string().blue());
+            println!("No solution found. Stopped after {} steps.\nRemaining Mines: {} ({:.3} %)\nPercentage Solved: {:.3} %", step_count.to_string().red(), remaining_mines.to_string().red(), (remaining_mines as f64 / mines as f64 * 100.0).to_string().blue(), (100_f64 - hidden_count as f64 / (width * height) as f64 * 100.0).to_string().blue());
         }
         SolverSolution::FoundSolution(step_count, complexity) => {
             println!("Found a solution after {} steps.", step_count.to_string().green());

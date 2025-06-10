@@ -85,7 +85,7 @@ where
                     if enable_output {
                         println!(
                             "{}: No further logic could be applied.",
-                            "Solver Step".bold()
+                            "Solver".bold()
                         );
                     }
 
