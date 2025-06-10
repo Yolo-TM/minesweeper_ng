@@ -1,4 +1,8 @@
+use std::vec;
+
 use crate::*;
+use crate::minesweeper_solver::search_for_islands;
+use colored::Colorize;
 
 #[derive(Clone)]
 pub struct NoGuessField {
@@ -16,20 +20,32 @@ impl NoGuessField {
         solver.reveal_field(self.get_start_field().0, self.get_start_field().1);
 
         loop {
+            iteration += 1;
             match solver.continue_solving(true) {
                 SolverSolution::NoSolution(_steps, mines, hidden, states) => {
-                    eprintln!("No solution found, trying to move a mine. (Iteration: {}, Status: {:.3}% solved)", iteration, 100_f64 - hidden as f64 / (self.width * self.height) as f64 * 100.0);
-                    iteration += 1;
-                    self.show();
+                    eprintln!("No solution found, trying to move a mine. (Iteration: {}, Status: {}% solved)", iteration, format!("{:.3}", (100_f64 - hidden as f64 / (self.width * self.height) as f64 * 100_f64)).blue());
 
+                    self.show();
                     self.make_solvable(&mut solver, mines, hidden, states);
-
                     self.show();
+
                     continue;
                 }
-                SolverSolution::FoundSolution(_, _) => {
-                    println!("Solution found after {} iterations", iteration);
-                    break;
+                SolverSolution::FoundSolution(step_count, complexity) => {
+                    // concatenate complexity levels into a string
+                    let complexity_str: String = complexity.iter()
+                        .map(|(k, v)| format!("{}: {}", k.to_string().blue(), v.to_string().green()))
+                        .collect::<Vec<String>>()
+                        .join(", ");
+
+                    // Calculate average
+                    let mut average: f64 = 0.0;
+                    for (level, count) in &complexity {
+                        average += *count as f64 * level.to_number() as f64;
+                    }
+                    average /= step_count as f64;
+                    println!("Complexity: {}", complexity_str);
+                    println!("Average: {}", format!("{:.4}", average).yellow());
                 }
                 SolverSolution::NeverStarted => {
                     unreachable!("Solver never started, this shouldn't happen!");
@@ -39,7 +55,10 @@ impl NoGuessField {
     }
 
     fn make_solvable(&mut self, solver: &mut MineSweeperSolver<NoGuessField>, mines: u32, hidden: u32, states: Vec<Vec<MineSweeperCellState>>) {
-        
+        let islands = search_for_islands(self.width, self.height, &self.board, &states);
+
+        solver.update_field(vec![]);
+        solver.update_states(vec![]);
     }
 }
 

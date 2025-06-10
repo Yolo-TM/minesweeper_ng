@@ -1,5 +1,5 @@
 use super::{MineSweeperCellState, MineSweeperSolver, SolverSolution};
-use crate::*;
+use crate::{*, minesweeper_solver::SolverStep};
 use colored::Colorize;
 use std::collections::HashMap;
 
@@ -57,7 +57,7 @@ where
                     println!(
                         "{}: Took {} steps.",
                         "Solver finished".bold(),
-                        self.step_count
+                        self.step_count.to_string().blue()
                     );
                 }
 
@@ -65,7 +65,7 @@ where
                 self.solution = SolverSolution::FoundSolution(self.step_count, self.logic_levels.clone());
                 return self.solution.clone();
             } else if enable_output {
-                println!("{}: {}", "Solver Step".bold(), self.step_count);
+                println!("{}: {}", "Solver Step", self.step_count.to_string().blue());
                 self.print();
             }
 
@@ -73,9 +73,9 @@ where
                 Some(logic_level) => {
                     if enable_output {
                         println!(
-                            "{}: Applied logic level {}",
-                            "Solver Step".bold(),
-                            logic_level
+                            "{}: Applied insights from {}",
+                            "Solver".bold(),
+                            logic_level.to_string()
                         );
                     }
 
@@ -135,43 +135,45 @@ where
         self.state[x as usize][y as usize] = state;
     }
 
+    // Method for changing cells at NoGuess Generation
     pub(crate) fn update_field(&mut self, changes: Vec<(u32, u32, MineSweeperCell)>) {
         for (x, y, state) in changes {
             self.field.set_cell(x, y, state);
         }
     }
 
+    // Method for changing states at NoGuess Generation
     pub(crate) fn update_states(&mut self, changes: Vec<(u32, u32, MineSweeperCellState)>) {
         for (x, y, state) in changes {
             self.set_state(x, y, state);
         }
     }
 
-    fn do_solving_step(&mut self) -> Option<u8> {
+    fn do_solving_step(&mut self) -> Option<SolverStep> {
         match self.do_basic_neighbour_check() {
             Some(_) => {
-                return Some(1);
+                return Some(SolverStep::Basic);
             }
             None => {}
         }
 
         match self.apply_basic_box_logic() {
             Some(_) => {
-                return Some(2);
+                return Some(SolverStep::Reduction);
             }
             None => {}
         }
 
         match self.apply_extended_box_logic() {
             Some(_) => {
-                return Some(3);
+                return Some(SolverStep::Complex);
             }
             None => {}
         }
 
         match self.apply_permutation_checks() {
             Some(_) => {
-                return Some(4);
+                return Some(SolverStep::Permutations);
             }
             None => {}
         }
@@ -814,7 +816,7 @@ mod tests {
 
         let result = solver.do_solving_step();
 
-        assert_eq!(result, Some(1)); // Basic neighbor check level
+        assert_eq!(result, Some(SolverStep::Basic)); // Basic neighbor check level
     }
 
     #[test]

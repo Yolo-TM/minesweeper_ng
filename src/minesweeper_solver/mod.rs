@@ -13,7 +13,35 @@ pub use islands::{search_for_islands, merge_islands};
 pub enum SolverSolution {
     NeverStarted,
     NoSolution(u32, u32, u32, Vec<Vec<MineSweeperCellState>>),
-    FoundSolution(u32, HashMap<u8, u32>),
+    FoundSolution(u32, HashMap<SolverStep, u32>),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum SolverStep{
+    Basic,
+    Reduction,
+    Complex,
+    Permutations
+}
+
+impl SolverStep {
+    pub fn to_string(&self) -> String {
+        match self {
+            SolverStep::Basic => "Basic Count".to_string(),
+            SolverStep::Reduction => "Basic Reduction".to_string(),
+            SolverStep::Complex => "Extended Reduction".to_string(),
+            SolverStep::Permutations => "Permutations".to_string(),
+        }
+    }
+
+    pub fn to_number(&self) -> u8 {
+        match self {
+            SolverStep::Basic => 1,
+            SolverStep::Reduction => 2,
+            SolverStep::Complex => 3,
+            SolverStep::Permutations => 4,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -32,7 +60,7 @@ pub struct MineSweeperSolver<M: MineSweeperField> {
     remaining_mines: u32,
     solution: SolverSolution,
     step_count: u32,
-    logic_levels: HashMap<u8, u32>
+    logic_levels: HashMap<SolverStep, u32>
 }
 
 pub fn solve(field: impl MineSweeperField, print_steps: bool) {
@@ -41,7 +69,7 @@ pub fn solve(field: impl MineSweeperField, print_steps: bool) {
 
     match solver.start(print_steps) {
         SolverSolution::NoSolution(step_count, remaining_mines, hidden_count, _states) => {
-            println!("No solution found. Stopped after {} steps.\nRemaining Mines: {} ({:.3} %)\nPercentage Solved: {:.3} %", step_count.to_string().red(), remaining_mines.to_string().red(), (remaining_mines as f64 / mines as f64 * 100.0).to_string().blue(), (100_f64 - hidden_count as f64 / (width * height) as f64 * 100.0).to_string().blue());
+            println!("No solution found. Stopped after {} steps.\nRemaining Mines: {} ({} %)\nPercentage Solved: {} %", step_count.to_string().red(), remaining_mines.to_string().red(), format!("{:.3}", (remaining_mines as f64 / mines as f64 * 100_f64)).blue(), format!("{:.3}", (100_f64 - hidden_count as f64 / (width * height) as f64 * 100_f64)).blue());
         }
         SolverSolution::FoundSolution(step_count, complexity) => {
             println!("Found a solution after {} steps.", step_count.to_string().green());
@@ -55,13 +83,15 @@ pub fn solve(field: impl MineSweeperField, print_steps: bool) {
             // Calculate average
             let mut average: f64 = 0.0;
             for (level, count) in &complexity {
-                average += *count as f64 * *level as f64;
+                average += *count as f64 * level.to_number() as f64;
             }
             average /= step_count as f64;
 
             println!("Complexity: {}", complexity_str);
-            println!("Average: {:.6}", average.to_string().yellow());
+            println!("Average: {:.4}", average.to_string().yellow());
         }
-        SolverSolution::NeverStarted => unreachable!(),
+        SolverSolution::NeverStarted => {
+            unreachable!("Solver never started, this shouldn't happen!");
+        }
     }
 }
