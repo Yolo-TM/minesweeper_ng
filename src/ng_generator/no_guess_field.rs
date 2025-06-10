@@ -8,7 +8,7 @@ pub struct NoGuessField {
     width: u32,
     height: u32,
     mines: u32,
-    start_field: (u32, u32),
+    start_cell: (u32, u32),
     board: Vec<Vec<MineSweeperCell>>,
 }
 
@@ -16,7 +16,8 @@ impl NoGuessField {
     fn initialize(&mut self) {
         let mut solver = MineSweeperSolver::new(self.clone());
         let mut iteration: u32 = 0;
-        solver.reveal_field(self.get_start_field().0, self.get_start_field().1);
+
+        solver.reveal_field(self.get_start_cell().0, self.get_start_cell().1);
 
         loop {
             iteration += 1;
@@ -60,7 +61,7 @@ impl MineSweeperField for NoGuessField {
             width,
             height,
             mines: mines.get_fixed_count(width, height),
-            start_field: random_field.get_start_field(),
+            start_cell: random_field.get_start_cell(),
             board: random_field.get_field(),
         };
 
@@ -81,8 +82,8 @@ impl MineSweeperField for NoGuessField {
         self.height
     }
 
-    fn get_start_field(&self) -> (u32, u32) {
-        self.start_field
+    fn get_start_cell(&self) -> (u32, u32) {
+        self.start_cell
     }
 
     fn get_field(&self) -> Vec<Vec<MineSweeperCell>> {
@@ -110,7 +111,7 @@ mod tests {
         assert_eq!(field.get_width(), 10);
         assert_eq!(field.get_height(), 10);
         assert_eq!(field.get_mines(), 20);
-        assert_eq!(field.get_start_field(), (0, 0)); // Assuming the start field is always (0, 0)
+        assert_eq!(field.get_start_cell(), (0, 0)); // Assuming the start field is always (0, 0)
     }
 
     #[test]

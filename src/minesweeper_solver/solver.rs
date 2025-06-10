@@ -35,14 +35,14 @@ where
             self.field.show();
             println!(
                 "Revealing Start field: ({}, {})",
-                self.field.get_start_field().0,
-                self.field.get_start_field().1
+                self.field.get_start_cell().0,
+                self.field.get_start_cell().1
             );
         }
 
         self.reveal_field(
-            self.field.get_start_field().0,
-            self.field.get_start_field().1,
+            self.field.get_start_cell().0,
+            self.field.get_start_cell().1,
         );
 
         return self.continue_solving(enable_output);
@@ -429,12 +429,12 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Game Over! The Solver hit a mine")]
-    fn test_solver_hits_mine_at_start_field() {
+    fn test_solver_hits_mine_at_start_cell() {
         // Create a malformed field where the start field contains a mine
         let mut field = MineField::new(5, 5, MineSweeperFieldCreation::FixedCount(1));
-        let start_field = (0, 0);
-        field.set_start_field(start_field.0, start_field.1);
-        field.initialize(vec![start_field]);
+        let start_cell = (0, 0);
+        field.set_start_cell(start_cell.0, start_cell.1);
+        field.initialize(vec![start_cell]);
 
         let mut solver = MineSweeperSolver::new(field);
         solver.start(true);
@@ -471,7 +471,7 @@ mod tests {
     fn test_solver_hits_mine_with_incorrect_numbers() {
         // Test a malformed field where numbers don't match mine placement
         let mut field = MineField::new(5, 5, MineSweeperFieldCreation::FixedCount(2));
-        field.set_start_field(4, 4);
+        field.set_start_cell(4, 4);
 
         field.initialize(vec![(0, 0), (1, 0), (0, 1), (3, 2)]);
 

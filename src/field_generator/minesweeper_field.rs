@@ -16,7 +16,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
     fn get_mines(&self) -> u32;
     fn get_width(&self) -> u32;
     fn get_height(&self) -> u32;
-    fn get_start_field(&self) -> (u32, u32);
+    fn get_start_cell(&self) -> (u32, u32);
     fn get_field(&self) -> Vec<Vec<MineSweeperCell>>;
 
     fn get_cell(&self, x: u32, y: u32) -> MineSweeperCell;
@@ -25,7 +25,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
     fn show(&self) {
         let (w, h, m) = self.get_dimensions();
         println!("Width: {}, Height: {}, Mines: {}", w, h, m);
-        println!("Start field: {:?}", self.get_start_field());
+        println!("Start field: {:?}", self.get_start_cell());
         for (x, y) in self.sorted_fields() {
             print!("{} ", &self.get_cell(x, y).get_colored());
 
@@ -94,8 +94,8 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
             "width": self.get_width(),
             "height": self.get_height(),
             "mines": self.get_mines(),
-            "start_x": self.get_start_field().0,
-            "start_y": self.get_start_field().1,
+            "start_x": self.get_start_cell().0,
+            "start_y": self.get_start_cell().1,
             "mine_positions": mine_positions
         });
 
@@ -109,8 +109,8 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
         file.write_all(&w.to_le_bytes())?;
         file.write_all(&h.to_le_bytes())?;
         file.write_all(&m.to_le_bytes())?;
-        file.write_all(&self.get_start_field().0.to_le_bytes())?;
-        file.write_all(&self.get_start_field().1.to_le_bytes())?;
+        file.write_all(&self.get_start_cell().0.to_le_bytes())?;
+        file.write_all(&self.get_start_cell().1.to_le_bytes())?;
 
         let mut bits: Vec<u8> = Vec::new();
         let mut current_byte: u8 = 0u8;
@@ -162,7 +162,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
 
         let mut field = MineField::new(width, height, MineSweeperFieldCreation::FixedCount(mines));
         field.initialize(mine_array);
-        field.set_start_field(start_x, start_y);
+        field.set_start_cell(start_x, start_y);
 
         Some(field)
     }
@@ -187,7 +187,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
         }
         
         let mut field = MineField::new(width, height, MineSweeperFieldCreation::FixedCount(mines));
-        field.set_start_field(start_x, start_y);
+        field.set_start_cell(start_x, start_y);
 
         let mut bits = vec![];
         file.read_to_end(&mut bits)?;

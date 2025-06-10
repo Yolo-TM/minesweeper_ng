@@ -5,7 +5,7 @@ pub struct MineField {
     width: u32,
     height: u32,
     mines: u32,
-    start_field: (u32, u32),
+    start_cell: (u32, u32),
     board: Vec<Vec<MineSweeperCell>>,
 }
 
@@ -34,7 +34,7 @@ impl MineSweeperField for MineField {
             height,
             mines,
             board,
-            start_field: (0, 0),
+            start_cell: (0, 0),
         };
 
         field
@@ -52,8 +52,8 @@ impl MineSweeperField for MineField {
         self.height
     }
 
-    fn get_start_field(&self) -> (u32, u32) {
-        self.start_field
+    fn get_start_cell(&self) -> (u32, u32) {
+        self.start_cell
     }
 
     fn get_field(&self) -> Vec<Vec<MineSweeperCell>> {
@@ -78,15 +78,15 @@ impl MineField {
         self.assign_numbers();
     }
 
-    pub fn set_start_field(&mut self, x: u32, y: u32) {
-        self.start_field = (x, y);
+    pub fn set_start_cell(&mut self, x: u32, y: u32) {
+        self.start_cell = (x, y);
     }
 }
 
 pub fn get_evil_ng_field() -> impl MineSweeperField {
 
     let mut field = MineField::new(30, 20, MineSweeperFieldCreation::FixedCount(130));
-    field.set_start_field(4, 6);
+    field.set_start_cell(4, 6);
 
     // These are mine positions of an evil field from minesweeper.online for testing purposes
     field.initialize(vec![
@@ -128,7 +128,7 @@ pub fn get_evil_ng_field() -> impl MineSweeperField {
 pub fn get_small_test_field() -> impl MineSweeperField {
 
     let mut field = MineField::new(10, 10, MineSweeperFieldCreation::FixedCount(20));
-    field.set_start_field(4, 7);
+    field.set_start_cell(4, 7);
 
     field.initialize(vec![
         (6, 0), (2, 1), (4, 1), (4, 2), (5, 2),
@@ -151,7 +151,7 @@ mod tests {
         assert_eq!(field.get_width(), 30);
         assert_eq!(field.get_height(), 20);
         assert_eq!(field.get_mines(), 130);
-        assert_eq!(field.get_start_field(), (4, 6));
+        assert_eq!(field.get_start_cell(), (4, 6));
     }
 
     #[test]
@@ -160,7 +160,7 @@ mod tests {
         assert_eq!(field.get_width(), 10);
         assert_eq!(field.get_height(), 10);
         assert_eq!(field.get_mines(), 20);
-        assert_eq!(field.get_start_field(), (4, 7));
+        assert_eq!(field.get_start_cell(), (4, 7));
     }
 
     #[test]

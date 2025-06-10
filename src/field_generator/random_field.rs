@@ -15,7 +15,7 @@ pub struct RandomField {
     width: u32,
     height: u32,
     mines: u32,
-    start_field: (u32, u32),
+    start_cell: (u32, u32),
     board: Vec<Vec<MineSweeperCell>>,
 }
 
@@ -44,7 +44,7 @@ impl MineSweeperField for RandomField {
             height,
             mines,
             board,
-            start_field: (0, 0),
+            start_cell: (0, 0),
         };
 
         field.initialize();
@@ -63,8 +63,8 @@ impl MineSweeperField for RandomField {
         self.height
     }
 
-    fn get_start_field(&self) -> (u32, u32) {
-        self.start_field
+    fn get_start_cell(&self) -> (u32, u32) {
+        self.start_cell
     }
 
     fn get_field(&self) -> Vec<Vec<MineSweeperCell>> {
@@ -86,10 +86,10 @@ impl RandomField {
     fn initialize(&mut self) {
         self.place_mines();
         self.assign_numbers();
-        self.set_start_field();
+        self.set_start_cell();
     }
 
-    fn set_start_field(&mut self) {
+    fn set_start_cell(&mut self) {
         /*
         TODO:
         Set the start field to the first empty cell found
@@ -97,7 +97,7 @@ impl RandomField {
         */
         for (x, y) in self.sorted_fields() {
             if self.get_cell(x, y) == MineSweeperCell::Empty {
-                self.start_field = (x, y);
+                self.start_cell = (x, y);
                 return;
             }
         }
@@ -185,9 +185,9 @@ mod tests {
     }
 
     #[test]
-    fn test_start_field_not_mine() {
+    fn test_start_cell_not_mine() {
         let field = RandomField::new(5, 5, MineSweeperFieldCreation::FixedCount(10));
-        let (start_x, start_y) = field.get_start_field();
+        let (start_x, start_y) = field.get_start_cell();
 
         // Start field should not be a mine
         assert_ne!(field.get_cell(start_x, start_y), MineSweeperCell::Mine);
@@ -262,7 +262,7 @@ mod tests {
         assert_eq!(field1.get_width(), field2.get_width());
         assert_eq!(field1.get_height(), field2.get_height());
         assert_eq!(field1.get_mines(), field2.get_mines());
-        assert_eq!(field1.get_start_field(), field2.get_start_field());
+        assert_eq!(field1.get_start_cell(), field2.get_start_cell());
 
         // Check that all cells are the same
         for (x, y) in field1.sorted_fields() {
