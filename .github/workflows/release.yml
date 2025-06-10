@@ -34,8 +34,26 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }} --bins
       - name: Stage Linux binaries
         run: |
-          mkdir -p staging-linux-${{ matrix.arch }}
-          find target/${{ matrix.target }}/release -maxdepth 1 -type f -executable -exec cp {} staging-linux-${{ matrix.arch }}/ \;
+          ARCH_BIT_SUFFIX=""
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            ARCH_BIT_SUFFIX="-64bit"
+          elif [ "${{ matrix.arch }}" = "i686" ]; then
+            ARCH_BIT_SUFFIX="-32bit"
+          fi
+          DEST_DIR="staging-linux-${{ matrix.arch }}"
+          mkdir -p "$DEST_DIR"
+          SOURCE_DIR="target/${{ matrix.target }}/release"
+          
+          # Check if the source directory exists
+          if [ -d "$SOURCE_DIR" ]; then
+            # Find executable files and copy them with the new suffix
+            find "$SOURCE_DIR" -maxdepth 1 -type f -executable -print0 | while IFS= read -r -d $'\\0' FILE_PATH; do
+              BASENAME=$(basename "$FILE_PATH")
+              cp "$FILE_PATH" "$DEST_DIR/$BASENAME$ARCH_BIT_SUFFIX"
+            done
+          else
+            echo "Warning: Source directory $SOURCE_DIR not found for ${{ matrix.target }}."
+          fi
       - name: Upload Linux binaries artifact
         uses: actions/upload-artifact@v4
         with:
