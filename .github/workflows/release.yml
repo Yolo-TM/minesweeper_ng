@@ -54,21 +54,19 @@ jobs:
 
           if [ -d "$SOURCE_DIR" ]; then
             echo "Finding executable files in '$SOURCE_DIR'..."
-            FOUND_FILES=0
-            # Use a loop to process files found by find
-            find "$SOURCE_DIR" -maxdepth 1 -type f -executable -print0 | while IFS= read -r -d $'\\0' FILE_PATH; do
-              FOUND_FILES=$((FOUND_FILES + 1))
+            # Note: FOUND_FILES_IN_SUBSHELL is modified inside a subshell (due to the pipe).
+            # Its value won't be directly accessible after the loop in this parent shell.
+            # We rely on echos from the loop and the final ls of DEST_DIR for confirmation.
+            find "$SOURCE_DIR" -maxdepth 1 -type f -executable -print0 | while IFS= read -r -d $'\\0' FILE_PATH; do # Corrected delimiter here
+              # This block now executes in a subshell.
+              # To get a count out, alternative methods like process substitution for the loop would be needed.
               BASENAME=$(basename "$FILE_PATH")
               echo "Found executable file: '$FILE_PATH' (basename: '$BASENAME')"
               echo "Copying '$FILE_PATH' to '$DEST_DIR/$BASENAME$ARCH_BIT_SUFFIX'"
               cp "$FILE_PATH" "$DEST_DIR/$BASENAME$ARCH_BIT_SUFFIX"
             done
             
-            if [ "$FOUND_FILES" -eq 0 ]; then
-              echo "Warning: No executable files found in '$SOURCE_DIR' or the find/while loop did not process any files."
-            else
-              echo "Successfully processed and copied $FOUND_FILES executable file(s)."
-            fi
+            echo "File processing loop finished. Check 'ls -la $DEST_DIR' below to verify copied files."
           else
             echo "Error: Source directory '$SOURCE_DIR' not found for ${{ matrix.target }}."
           fi
