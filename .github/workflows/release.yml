@@ -139,7 +139,7 @@ jobs:
       - uses: ncipollo/release-action@v1.13.0
         with:
           tag: ${{ steps.get_version.outputs.version }}
-          name: "Minesweeper NG Generator"
-          body: "Manual Release"
+          name: "Minesweeper NG Generator v${{ steps.get_version.outputs.version }}"
+          generateReleaseNotes: true
           artifacts: "dist/**/*"
           token: ${{ secrets.GITHUB_TOKEN }}
