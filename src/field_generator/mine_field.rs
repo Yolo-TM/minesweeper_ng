@@ -166,12 +166,12 @@ mod tests {
     #[test]
     fn solve_evil() {
         let solved = MineSweeperSolver::new(get_evil_ng_field()).start(false);
-        assert!(matches!(solved, SolverSolution::FoundSolution(_, _)));
+        assert!(matches!(solved, SolverSolution::FoundSolution(_)));
     }
 
     #[test]
     fn solve_small() {
         let solved = MineSweeperSolver::new(get_small_test_field()).start(false);
-        assert!(matches!(solved, SolverSolution::FoundSolution(_, _)));
+        assert!(matches!(solved, SolverSolution::FoundSolution(_)));
     }
 }
