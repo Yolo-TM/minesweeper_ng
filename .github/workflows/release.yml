@@ -19,11 +19,12 @@ jobs:
             arch: i686
     steps:
       - uses: actions/checkout@v4
-      - name: Install 32-bit C libraries for i686 target
+      - name: Install 32-bit C/C++ dev libraries for i686 target
         if: matrix.arch == 'i686'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-multilib
+          sudo apt-get update -y
+          sudo apt-get install -y gcc-multilib g++-multilib libc6-dev-i386
+          echo "Finished installing 32-bit libraries for i686"
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
