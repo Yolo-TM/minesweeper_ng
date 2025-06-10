@@ -34,26 +34,47 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }} --bins
       - name: Stage Linux binaries
         run: |
+          echo "Starting staging for ${{ matrix.arch }} (target: ${{ matrix.target }})"
           ARCH_BIT_SUFFIX=""
           if [ "${{ matrix.arch }}" = "x86_64" ]; then
             ARCH_BIT_SUFFIX="-64bit"
           elif [ "${{ matrix.arch }}" = "i686" ]; then
             ARCH_BIT_SUFFIX="-32bit"
           fi
-          DEST_DIR="staging-linux-${{ matrix.arch }}"
-          mkdir -p "$DEST_DIR"
-          SOURCE_DIR="target/${{ matrix.target }}/release"
           
-          # Check if the source directory exists
+          DEST_DIR="staging-linux-${{ matrix.arch }}"
+          echo "Destination directory will be: $DEST_DIR"
+          mkdir -p "$DEST_DIR"
+          
+          SOURCE_DIR="target/${{ matrix.target }}/release"
+          echo "Source directory is: $SOURCE_DIR"
+
+          echo "Listing contents of source directory '$SOURCE_DIR':"
+          ls -la "$SOURCE_DIR" || echo "Warning: Source directory '$SOURCE_DIR' does not exist or is empty."
+
           if [ -d "$SOURCE_DIR" ]; then
-            # Find executable files and copy them with the new suffix
+            echo "Finding executable files in '$SOURCE_DIR'..."
+            FOUND_FILES=0
+            # Use a loop to process files found by find
             find "$SOURCE_DIR" -maxdepth 1 -type f -executable -print0 | while IFS= read -r -d $'\\0' FILE_PATH; do
+              FOUND_FILES=$((FOUND_FILES + 1))
               BASENAME=$(basename "$FILE_PATH")
+              echo "Found executable file: '$FILE_PATH' (basename: '$BASENAME')"
+              echo "Copying '$FILE_PATH' to '$DEST_DIR/$BASENAME$ARCH_BIT_SUFFIX'"
               cp "$FILE_PATH" "$DEST_DIR/$BASENAME$ARCH_BIT_SUFFIX"
             done
+            
+            if [ "$FOUND_FILES" -eq 0 ]; then
+              echo "Warning: No executable files found in '$SOURCE_DIR' or the find/while loop did not process any files."
+            else
+              echo "Successfully processed and copied $FOUND_FILES executable file(s)."
+            fi
           else
-            echo "Warning: Source directory $SOURCE_DIR not found for ${{ matrix.target }}."
+            echo "Error: Source directory '$SOURCE_DIR' not found for ${{ matrix.target }}."
           fi
+          
+          echo "Listing contents of destination directory '$DEST_DIR' after staging:"
+          ls -la "$DEST_DIR" || echo "Warning: Destination directory '$DEST_DIR' is empty or could not be listed."
       - name: Upload Linux binaries artifact
         uses: actions/upload-artifact@v4
         with:
