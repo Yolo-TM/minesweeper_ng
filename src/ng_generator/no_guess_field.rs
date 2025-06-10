@@ -23,25 +23,34 @@ impl NoGuessField {
             iteration += 1;
             match solver.continue_solving(true) {
                 SolverSolution::NoSolution(_steps, mines, hidden, states) => {
-                    eprintln!("No solution found, trying to move a mine. (Iteration: {}, Status: {}% solved)", iteration.to_string().cyan(), format!("{:.3}", (100_f64 - hidden as f64 / (self.width * self.height) as f64 * 100_f64)).blue());
-
-                    self.show();
+                    eprintln!("No solution found, editing field... (Iteration: {}, Status: {}% solved)", iteration.to_string().cyan(), format!("{:.3}", (100_f64 - hidden as f64 / (self.width * self.height) as f64 * 100_f64)).blue());
                     self.make_solvable(&mut solver, mines, hidden, states);
-                    self.show();
-
                     continue;
                 }
-                SolverSolution::FoundSolution(steps) => {
-                    println!("Found a solution after {} steps and {} iterations", steps.get_steps().to_string().green(), iteration.to_string().cyan());
-                    println!("Complexity: {}", steps.get_complexity().blue());
-                    println!("Average: {}", format!("{:.4}", steps.get_average()).yellow());
-                    self.show();
+                SolverSolution::FoundSolution(_steps) => {
+                    // Dont show anything here, the solving steps are probably not the fastest solution, bc it was not one continuous solving process
+                    break;
                 }
                 SolverSolution::NeverStarted => {
                     unreachable!("Solver never started, this shouldn't happen!");
                 }
             }
         }
+
+        // From this Point on, the field should be solvable without any guesses.
+        // just to make sure ...
+        match MineSweeperSolver::new(self.clone()).start(false) {
+            SolverSolution::FoundSolution(steps) => {
+                println!("Found a solution after {} steps and {} iterations", steps.get_steps().to_string().green(), iteration.to_string().cyan());
+                println!("Complexity: {}", steps.get_complexity().blue());
+                println!("Average: {}", format!("{:.4}", steps.get_average()).yellow());
+            }
+            _ => {
+                // Solver to dumb or not solvable ...
+                panic!("The field is currently not solvable, something went wrong!");
+            }
+        }
+        
     }
 
     fn make_solvable(&mut self, solver: &mut MineSweeperSolver<NoGuessField>, mines: u32, hidden: u32, states: Vec<Vec<MineSweeperCellState>>) {
