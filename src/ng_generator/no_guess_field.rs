@@ -32,7 +32,7 @@ impl NoGuessField {
                     break;
                 }
                 SolverSolution::NeverStarted => {
-                    unreachable!("Solver never started, this should never happen!");
+                    unreachable!("Solver never started, this shouldn't happen!");
                 }
             }
         }
@@ -53,7 +53,7 @@ impl MineSweeperField for NoGuessField {
             height,
             mines: mines.get_fixed_count(width, height),
             start_field: random_field.get_start_field(),
-            board: random_field.get_cells(),
+            board: random_field.get_field(),
         };
 
 
