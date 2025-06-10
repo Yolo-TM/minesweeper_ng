@@ -42,31 +42,41 @@ jobs:
             ARCH_BIT_SUFFIX="-32bit"
           fi
           
-          DEST_DIR="staging-linux-${{ matrix.arch }}"
-          echo "Destination directory will be: $DEST_DIR"
+          # For GitHub Actions, relative paths from GITHUB_WORKSPACE are usually fine for mkdir and cp.
+          # The path for upload-artifact should also be relative to workspace root.
+          DEST_DIR_NAME="staging-linux-${{ matrix.arch }}"
+          # DEST_DIR="$GITHUB_WORKSPACE/$DEST_DIR_NAME" # Using relative path is simpler
+          DEST_DIR="$DEST_DIR_NAME"
+          echo "Destination directory will be: $DEST_DIR (relative to workspace)"
           mkdir -p "$DEST_DIR"
           
-          SOURCE_DIR="target/${{ matrix.target }}/release"
-          echo "Source directory is: $SOURCE_DIR"
+          SOURCE_DIR_NAME="target/${{ matrix.target }}/release"
+          # SOURCE_DIR="$GITHUB_WORKSPACE/$SOURCE_DIR_NAME" # Using relative path
+          SOURCE_DIR="$SOURCE_DIR_NAME"
+          echo "Source directory is: $SOURCE_DIR (relative to workspace)"
 
           echo "Listing contents of source directory '$SOURCE_DIR':"
           ls -la "$SOURCE_DIR" || echo "Warning: Source directory '$SOURCE_DIR' does not exist or is empty."
 
           if [ -d "$SOURCE_DIR" ]; then
-            echo "Finding executable files in '$SOURCE_DIR'..."
-            # Note: FOUND_FILES_IN_SUBSHELL is modified inside a subshell (due to the pipe).
-            # Its value won't be directly accessible after the loop in this parent shell.
-            # We rely on echos from the loop and the final ls of DEST_DIR for confirmation.
-            find "$SOURCE_DIR" -maxdepth 1 -type f -executable -print0 | while IFS= read -r -d $'\\0' FILE_PATH; do # Corrected delimiter here
-              # This block now executes in a subshell.
-              # To get a count out, alternative methods like process substitution for the loop would be needed.
-              BASENAME=$(basename "$FILE_PATH")
-              echo "Found executable file: '$FILE_PATH' (basename: '$BASENAME')"
-              echo "Copying '$FILE_PATH' to '$DEST_DIR/$BASENAME$ARCH_BIT_SUFFIX'"
-              cp "$FILE_PATH" "$DEST_DIR/$BASENAME$ARCH_BIT_SUFFIX"
-            done
+            echo "Finding and copying executable files from '$SOURCE_DIR' to '$DEST_DIR'..."
             
-            echo "File processing loop finished. Check 'ls -la $DEST_DIR' below to verify copied files."
+            # Export variables to be available in the sh -c subshell
+            # Note: DEST_DIR here is the relative path name.
+            # The 'cp' command will resolve it correctly from the current working directory (workspace root).
+            export DEST_DIR_FOR_SUBPROCESS="$DEST_DIR" # Use a distinct name to avoid confusion if needed
+            export ARCH_BIT_SUFFIX_FOR_SUBPROCESS="$ARCH_BIT_SUFFIX"
+            
+            find "$SOURCE_DIR" -maxdepth 1 -type f -executable -exec sh -c '
+              FILE_PATH="$1"
+              FILENAME=$(basename "$FILE_PATH")
+              echo "Found executable file: $FILE_PATH (filename: $FILENAME)"
+              # Use the exported variables for destination path and suffix
+              echo "Copying $FILE_PATH to $DEST_DIR_FOR_SUBPROCESS/$FILENAME$ARCH_BIT_SUFFIX_FOR_SUBPROCESS"
+              cp "$FILE_PATH" "$DEST_DIR_FOR_SUBPROCESS/$FILENAME$ARCH_BIT_SUFFIX_FOR_SUBPROCESS"
+            ' _ {} \;
+
+            echo "File copying process finished."
           else
             echo "Error: Source directory '$SOURCE_DIR' not found for ${{ matrix.target }}."
           fi
