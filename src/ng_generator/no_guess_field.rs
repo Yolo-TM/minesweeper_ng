@@ -74,6 +74,7 @@ impl MineSweeperField for NoGuessField {
             board: random_field.get_field(),
         };
 
+        field.show();
 
         field.initialize();
         field

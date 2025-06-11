@@ -163,8 +163,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
                 if (new_shared_range.end() > new_other_range.end())
                 || (shared.len() == 1 && new_shared_range.start() != new_shared_range.end())
-                || (other_only.len() == 1 && *new_other_range.start() == 0 && *new_other_range.end() == 1)
-                {
+                || (other_only.len() == 1 && *new_other_range.start() == 0 && *new_other_range.end() == 1) {
                     // If the new shared range is larger than the new other range, we cannot split
                     // or 
                     // If the shared range is only one field, we cannot split it

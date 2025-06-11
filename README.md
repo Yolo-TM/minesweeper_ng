@@ -13,3 +13,36 @@
 
 - solver is currently not able to solve fields at the end if there are multiple islands without information borders
   - add a way to solve this by checking island sizes against minecount etc
+
+## Bugs
+
+- extended logic shouldn't be allowed to generate 0..=1 ranges for single fields
+
+```rust
+// extended_logic.rs:182
+} else if other_only.len() == 1 && new_other_range.start() != new_other_range.end() && *new_other_range.start() != 0 {
+```
+
+would fix it
+
+- permutations is not working properly for border islands, as seen below the solver misplaces a flag bc it doesnt consider the other important number for the 3
+
+```bash
+Solver Step: 1
+? ? ? ? 2 ? ? F ? ? ? ?
+? ? ? ? F 2 2 3 ? ? ? ?
+? ? ? ? 3 2   1 ? ? ? ?
+? ? ? ? F 2 2 3 ? ? ? ? 
+? ? ? ? 3 ? ? F ? ? ? ?
+? ? ? ? ? ? ? ? ? ? ? ?
+Solver: Applied insights from Permutations
+Solver Step: 2
+Solver Step: 2
+? ? ? ? 2 ? ? F F ? ? ?
+? ? ? ? F 2 2 3 ? ? ? ?
+? ? ? ? 3 2   1 ? ? ? ?
+? ? ? ? F 2 2 3 5 ? ? ?
+? ? ? ? 3 ? ? F ? ? ? ?
+thread 'main' panicked at src\minesweeper_solver\box_logic\basic_logic.rs:33:42:
+Game Over! The Solver hit a mine at (6, 0)
+```
