@@ -25,7 +25,7 @@ impl NoGuessField {
                 SolverSolution::NoSolution(_steps, mines, hidden, states) => {
                     eprintln!("No solution found, editing field... (Iteration: {}, Status: {}% solved)", iteration.to_string().cyan(), format!("{:.3}", (100_f64 - hidden as f64 / (self.width * self.height) as f64 * 100_f64)).blue());
                     self.make_solvable(&mut solver, mines, hidden, states);
-                    continue;
+                    break;
                 }
                 SolverSolution::FoundSolution(_steps) => {
                     // Dont show anything here, the solving steps are probably not the fastest solution, bc it was not one continuous solving process
