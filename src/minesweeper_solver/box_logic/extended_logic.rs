@@ -172,49 +172,31 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
                     // stop
                     continue;
-                } else if other_only.len() == 1 && new_other_range.start() != new_other_range.end() {
-                    // we have a range mismatch, go through all existing tuples and check if we can increase the range start until our range end in this case fits
-                    let mut split_diff = new_other_range.end() - new_other_range.start();
-                    new_other_range = *new_other_range.start()..=other_only.len();
+                } else if other_only.len() == 1 && new_other_range.start() != new_other_range.end() && *new_other_range.start() != 0 {
+                    // if other only contains 1 mine
+                    // and the the range is not definitive (start != end)
+                    // e.g. range 1..=3 for other_only but its len = 1
+                    // and the start is not zero (would lead to a range of 0..1 which is not helpful)
 
-                    // check if a part of the split diff fits into the new_shared_range
-                    let mut ii = split_diff;
-                    while new_shared_range.start() + ii > *new_shared_range.end() {
-                        ii -= 1;
-                    }
-                    if ii > 0 {
-                        split_diff -= ii;
-                        new_shared_range = new_shared_range.start() + ii ..=*new_shared_range.end();
-                    }
+                    let excess_mines = new_other_range.end() - new_other_range.start();
 
-                    if split_diff > 0 {
-                        // we still have a split diff, check if it can fit into anything else inside the field_tuples
-                        for j in 0..field_tuples.len() {
-                            if j == i {
-                                continue;
-                            }
-
-                            let range = &field_tuples[j].0;
-                            while range.start() + split_diff > *range.end() {
-                                split_diff -= 1;
-                            }
-                        }
-
-                        if split_diff > 0 {
-                            for j in 0..field_tuples.len() {
-                                if j == i {
-                                    continue;
-                                }
-                                let range = &field_tuples[j].0.clone();
-                                field_tuples[j].0 = *range.end() ..=*range.end();
-                            }
-                        }
+                    if self.did_redistribute_mines(excess_mines, &mut new_shared_range, field_tuples, i) {
+                        // Clamp the other_only range to its actual field count
+                        new_other_range = *new_other_range.start()..=other_only.len();
+                    } else {
+                        // didnt work .-.
+                        continue;
                     }
                 } else if *new_other_range.end() > other_only.len() {
                     // If the new other range is larger than the shared range, we cannot split
                     let diff = *new_other_range.end() - other_only.len();
                     new_other_range = *new_other_range.start()..=other_only.len();
                     new_shared_range = *new_shared_range.start() + diff..=*new_shared_range.end();
+
+                    if new_shared_range.start() > new_shared_range.end() {
+                        // If the new shared range is invalid, skip this tuple
+                        continue;
+                    }
                 }
 
                 // Mark this tuple for removal since it will be split
@@ -371,6 +353,87 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             if let Some(count) = field_map.get_mut(field) {
                 *count += 1;
             }
+        }
+    }
+
+    fn did_redistribute_mines(
+        &self,
+        excess_mines: usize,
+        shared_range: &mut std::ops::RangeInclusive<usize>,
+        field_tuples: &mut [(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)],
+        current_tuple_index: usize
+    ) -> bool {
+        let mut remaining_excess = excess_mines;
+
+        // does it fit into the shared range?
+        let shared_capacity = shared_range.end().saturating_sub(*shared_range.start());
+        let shared_absorption = remaining_excess.min(shared_capacity);
+
+        if shared_absorption > 0 {
+            *shared_range = (*shared_range.start() + shared_absorption)..=*shared_range.end();
+            remaining_excess -= shared_absorption;
+        }
+
+        // add it to other tuples
+        if remaining_excess > 0 {
+            self.distribute_excess_to_other_tuples(
+                &mut remaining_excess,
+                field_tuples,
+                current_tuple_index
+            );
+        }
+
+        // did we do it?
+        remaining_excess == 0
+    }
+
+    fn distribute_excess_to_other_tuples(
+        &self,
+        remaining_excess: &mut usize,
+        field_tuples: &mut [(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)],
+        skip_index: usize
+    ) {
+        // can we do sth?
+        let mut distribution_plan = Vec::new();
+        let mut test_excess = *remaining_excess;
+        let mut too_much_available_tuples = false;
+
+        for (j, (range, _fields)) in field_tuples.iter().enumerate() {
+            if j == skip_index {
+                continue;
+            }
+
+            let tuple_capacity = range.end().saturating_sub(*range.start());
+
+            if tuple_capacity == 0 {
+                // No capacity to absorb excess
+                continue;
+            }
+
+            if test_excess == 0 {
+                // we have nothing to distribute, but we have tuples left which would absorb sth
+                // this could mean that a previous tuple is overloaded and therefore wrong if we add the absorption to it
+                too_much_available_tuples = true;
+                break;
+            }
+
+            // could be a problem as this fills as much as possible to this tuple instead of distributing it evenly / based on logic
+            let absorption = test_excess.min(tuple_capacity);
+
+            if absorption > 0 {
+                distribution_plan.push((j, absorption));
+                test_excess -= absorption;
+            }
+        }
+
+        // apply
+        if test_excess == 0 && !too_much_available_tuples {
+            for (index, absorption) in distribution_plan {
+                let (range, _fields) = &mut field_tuples[index];
+                let new_start = *range.start() + absorption;
+                *range = new_start..=*range.end();
+            }
+            *remaining_excess = 0;
         }
     }
 }
