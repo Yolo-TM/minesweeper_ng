@@ -5,8 +5,9 @@ use std::vec;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
-    pub(in crate::minesweeper_solver) fn apply_extended_box_logic(&mut self) -> Option<()> {
-        let mut did_something = false;
+    pub(in crate::minesweeper_solver) fn apply_extended_box_logic(&self) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
+        let mut safe_fields = vec![];
+        let mut mine_fields = vec![];
         let mut boxes: Vec<Box> = vec![];
 
         // Create Boxes around fields with unrevealed neighbours
@@ -113,25 +114,19 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             }
 
             for &(x, y) in &safe {
-                self.reveal_field(x, y);
-                did_something = true;
+                safe_fields.push((x, y));
             }
 
             for &(x, y) in &mines {
-                self.flag_cell(x, y);
-                did_something = true;
+                mine_fields.push((x, y));
             }
         }
 
-        if did_something {
-            return Some(());
-        } else {
-            return None;
-        }
+        (safe_fields, mine_fields)
     }
 
     fn recursive_search(
-        &mut self,
+        &self,
         original_fields: &Vec<(u32, u32)>,
         field_tuples: &mut Vec<(std::ops::RangeInclusive<usize>, Vec<(u32, u32)>)>,
         boxes: &Vec<Box>,
@@ -250,7 +245,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     }
 
     fn deep_search(
-        &mut self,
+        &self,
         boxes: &Vec<Box>,
         safe_fields: &mut Vec<(u32, u32)>,
         mine_fields: &mut Vec<(u32, u32)>
@@ -280,7 +275,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     }
 
     fn generate_all_permutations(
-        &mut self,
+        &self,
         all_fields: &mut HashMap<(u32, u32), u32>,
         boxes: &Vec<Box>
     ) -> u32 {
@@ -292,7 +287,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     }
 
     fn recursively_generate_permutations(
-        &mut self,
+        &self,
         field_map: &mut HashMap<(u32, u32), u32>,
         field_vec: &mut Vec<((u32, u32), bool)>,
         index: usize,
@@ -316,7 +311,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
     }
 
     fn check_permutation(
-        &mut self,
+        &self,
         field_map: &mut HashMap<(u32, u32), u32>,
         permutations: &mut u32,
         field_vec: &Vec<((u32, u32), bool)>,

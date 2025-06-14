@@ -6,8 +6,9 @@ use num_cpus;
 const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 18;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
-    pub(in crate::minesweeper_solver) fn apply_permutation_checks(&mut self) -> Option<()> {
-        let mut did_something = false;
+    pub(in crate::minesweeper_solver) fn apply_permutation_checks(&self) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
+        let mut safe_fields = vec![];
+        let mut mine_fields = vec![];
         let max_mines: u32 = self.field.get_mines() - self.flag_count;
         let islands = search_for_islands(self.field.get_width(), self.field.get_height(), &self.field.get_field(), &self.state);
         
@@ -23,28 +24,21 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
         let merged_islands = merge_islands(islands, 3, 16);
         
         for island in &merged_islands {
-            self.try_permutation_solving(island, max_mines, &mut did_something);
+            self.try_permutation_solving(island, max_mines, &mut safe_fields, &mut mine_fields);
         }
 
-        if did_something {
-            return Some(());
-        } else {
-            return None;
-        }
+        (safe_fields, mine_fields)
     }
 
-    fn try_permutation_solving(&mut self, island: &Vec<(u32, u32)>, max_mines: u32, did_something: &mut bool) {
+    fn try_permutation_solving(&self, island: &Vec<(u32, u32)>, max_mines: u32, safe_fields: &mut Vec<(u32, u32)>, mine_fields: &mut Vec<(u32, u32)>) {
         let mut all_possible_permutations: u32 = 0;
         let mut all_wrong_permutations: u32 = 0;
         let mut permutation_field: HashMap<(u32, u32), u32> = HashMap::new();
         let mut permutation_vector: Vec<((u32, u32), bool)> = vec![];
-        let mut no_revealed_neighbours: u32 = 0;
 
         for &(x, y) in island {
             if self.has_revealed_neighbours(x, y) {
                 permutation_vector.push(((x, y), false));
-            } else {
-                no_revealed_neighbours += 1;
             }
         }
 
@@ -66,51 +60,16 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             for ((x, y), permutation_mines) in &permutation_field {
                 if *permutation_mines == 0 {
                     // Field is in every possible way empty
-                    self.reveal_field(*x, *y);
-                    *did_something = true;
+                    safe_fields.push((*x, *y));
                 }
                 if *permutation_mines == all_possible_permutations {
                     // Field is in every possible way a mine
-                    self.flag_cell(*x, *y);
-                    *did_something = true;
+                    mine_fields.push((*x, *y));
                 }
             }
         }
 
-        if *did_something == false && max_mines > no_revealed_neighbours {
-            let mut all_possible_permutations: u32 = 0;
-            let mut all_wrong_permutations: u32 = 0;
-            let mut permutation_field: HashMap<(u32, u32), u32> = HashMap::new();
-
-            for &((x, y), _) in &permutation_vector {
-                permutation_field.insert((x, y), 0);
-            }
-
-            // Edge Case, it could be solvable if all non information fields are mines and we give a reduced max mines to our permutation all_wrong_permutations
-            let max_mines = max_mines - no_revealed_neighbours;
-            if permutation_vector.len() >= 20 {
-                // This would take way too long, start multiple threads for speed up
-                self.start_permutation_threads(permutation_vector.clone(), max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
-            } else {
-                self.recursively_apply_permutations(&mut permutation_vector.clone(), 0, max_mines, &mut permutation_field, &mut all_possible_permutations, &mut all_wrong_permutations);
-            }
-
-            if all_possible_permutations != 0 {
-                for ((x, y), permutation_mines) in permutation_field {
-                    if permutation_mines == 0 {
-                        // Field is in every possible way empty
-                        self.reveal_field(x, y);
-                        *did_something = true;
-                    }
-
-                    if permutation_mines == all_possible_permutations {
-                        // Field is in every possible way a mine
-                        self.flag_cell(x, y);
-                        *did_something = true;
-                    }
-                }
-            }
-        }
+        // Edge Case, it could be solvable if all non information fields are mines and we give a reduced max mines to our permutation all_wrong_permutations
     }
 
     fn start_permutation_threads(

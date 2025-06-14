@@ -1,8 +1,9 @@
 use crate::*;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
-    pub(in crate::minesweeper_solver) fn apply_basic_box_logic(&mut self) -> Option<()> {
-        let mut did_something = false;
+    pub(in crate::minesweeper_solver) fn apply_basic_box_logic(&self) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
+        let mut safe_fields = vec![];
+        let mut mine_fields = vec![];
 
         for (x, y) in self.field.sorted_fields() {
             if self.has_informations(x, y) {
@@ -30,13 +31,11 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
                             if reduced_count == reduced_count2{
                                 for cell in &not_shared_fields {
-                                    self.reveal_field(cell.0, cell.1);
-                                    did_something = true;
+                                    safe_fields.push((cell.0, cell.1));
                                 }
                             } else if reduced_diff == (self.get_surrounding_unrevealed_count(new_x, new_y) - shared_fields.len() as u8) {
                                 for cell in &not_shared_fields {
-                                    self.flag_cell(cell.0, cell.1);
-                                    did_something = true;
+                                    mine_fields.push((cell.0, cell.1));
                                 }
                             }
                         } else if reduced_count > reduced_count2 {
@@ -49,8 +48,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
                             let reduced_diff = (reduced_count - reduced_count2) as usize;
                             if reduced_diff == rest_fields.len() {
                                 for cell in &rest_fields {
-                                    self.flag_cell(cell.0, cell.1);
-                                    did_something = true;
+                                    mine_fields.push((cell.0, cell.1));
                                 }
                             }
                         }
@@ -59,11 +57,7 @@ impl<M> MineSweeperSolver<M> where M: MineSweeperField {
             }
         }
 
-        if did_something {
-            return Some(());
-        } else {
-            return None;
-        }
+        (safe_fields, mine_fields)
     }
 }
 
@@ -85,11 +79,19 @@ mod tests {
         field.initialize(vec![(4, 0), (4, 3), (1, 4), (4, 4)]);
 
         let mut solver = MineSweeperSolver::new(field);
-        solver.reveal_field(0, 0);
-
-        assert_eq!(solver.do_basic_neighbour_check(), None);
+        solver.reveal_field(0, 0);        let (safe_fields, mine_fields) = solver.do_basic_neighbour_check();
+        assert!(safe_fields.is_empty() && mine_fields.is_empty());
         
-        assert_eq!(solver.apply_basic_box_logic(), Some(()));
+        let (safe_fields, mine_fields) = solver.apply_basic_box_logic();
+        assert!(!safe_fields.is_empty() || !mine_fields.is_empty());
+        
+        // Apply the changes to the solver
+        for (x, y) in safe_fields {
+            solver.reveal_field(x, y);
+        }
+        for (x, y) in mine_fields {
+            solver.flag_cell(x, y);
+        }
 
         assert_eq!(solver.get_state(4, 2), MineSweeperCellState::Revealed);
         assert_eq!(solver.get_state(2, 4), MineSweeperCellState::Revealed);
@@ -106,17 +108,32 @@ mod tests {
         field.initialize(vec![(2, 0), (2, 2)]);
 
         let mut solver = MineSweeperSolver::new(field);
-        solver.reveal_field(0, 0);
+        solver.reveal_field(0, 0);        let (safe_fields, mine_fields) = solver.do_basic_neighbour_check();
+        assert!(safe_fields.is_empty() && mine_fields.is_empty());
+        assert_ne!(solver.get_state(2, 1), MineSweeperCellState::Revealed);        let (safe_fields, mine_fields) = solver.apply_basic_box_logic();
+        assert!(!safe_fields.is_empty() || !mine_fields.is_empty());
 
-        assert_eq!(solver.do_basic_neighbour_check(), None);
-        assert_ne!(solver.get_state(2, 1), MineSweeperCellState::Revealed);
-
-        assert_eq!(solver.apply_basic_box_logic(), Some(()));
+        // Apply the changes to the solver
+        for (x, y) in safe_fields {
+            solver.reveal_field(x, y);
+        }
+        for (x, y) in mine_fields {
+            solver.flag_cell(x, y);
+        }
 
         assert_eq!(solver.get_state(2, 0), MineSweeperCellState::Flagged);
         assert_eq!(solver.get_state(2, 2), MineSweeperCellState::Flagged);
 
-        assert_eq!(solver.do_basic_neighbour_check(), Some(()));
+        let (safe_fields, mine_fields) = solver.do_basic_neighbour_check();
+        assert!(!safe_fields.is_empty() || !mine_fields.is_empty());
+        
+        // Apply the changes to the solver
+        for (x, y) in safe_fields {
+            solver.reveal_field(x, y);
+        }
+        for (x, y) in mine_fields {
+            solver.flag_cell(x, y);
+        }
         assert_eq!(solver.get_state(2, 1), MineSweeperCellState::Revealed);
     }
 }

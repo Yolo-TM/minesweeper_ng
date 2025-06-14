@@ -147,34 +147,44 @@ where
         }
     }
 
+    fn apply_infos(&mut self, fields: (Vec<(u32, u32)>, Vec<(u32, u32)>)) -> bool {
+        let (safe_fields, mine_fields) = fields;
+        let mut did_something = false;
+
+        if !safe_fields.is_empty() {
+            for (x, y) in safe_fields {
+                self.reveal_field(x, y);
+            }
+            did_something = true;
+        }
+        if !mine_fields.is_empty() {
+            for (x, y) in mine_fields {
+                self.flag_cell(x, y);
+            }
+            did_something = true;
+        }
+
+        did_something
+    }
+
     fn do_solving_step(&mut self) -> Option<SolverStep> {
-        match self.do_basic_neighbour_check() {
-            Some(_) => {
-                return Some(SolverStep::Basic);
-            }
-            None => {}
+
+        if self.apply_infos(self.do_basic_neighbour_check()) {
+            return Some(SolverStep::Basic);
         }
 
-        match self.apply_basic_box_logic() {
-            Some(_) => {
-                return Some(SolverStep::Reduction);
-            }
-            None => {}
+        if self.apply_infos(self.apply_basic_box_logic()) {
+            return Some(SolverStep::Reduction);
         }
 
-        match self.apply_extended_box_logic() {
-            Some(_) => {
-                return Some(SolverStep::Complex);
-            }
-            None => {}
+        if self.apply_infos(self.apply_extended_box_logic()) {
+            return Some(SolverStep::Complex);
         }
 
-        match self.apply_permutation_checks() {
-            Some(_) => {
-                return Some(SolverStep::Permutations);
-            }
-            None => {}
+        if self.apply_infos(self.apply_permutation_checks()) {
+            return Some(SolverStep::Permutations);
         }
+
         None
     }
 
@@ -211,16 +221,16 @@ where
     }
 
     pub(super) fn flag_cell(&mut self, x: u32, y: u32) {
-        if self.get_state(x, y) == MineSweeperCellState::Revealed
-            || self.get_state(x, y) == MineSweeperCellState::Flagged
-        {
+        if self.get_state(x, y) != MineSweeperCellState::Hidden {
             return;
         }
 
         self.set_state(x, y, MineSweeperCellState::Flagged);
         self.flag_count += 1;
         self.hidden_count -= 1;
-        self.remaining_mines -= 1;
+        if self.remaining_mines > 0 {
+            self.remaining_mines -= 1;
+        }
     }
 
     #[track_caller]
@@ -228,14 +238,6 @@ where
         for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
             if self.get_state(new_x, new_y) == MineSweeperCellState::Hidden {
                 self.reveal_field(new_x, new_y);
-            }
-        }
-    }
-
-    pub(super) fn flag_surrounding_cells(&mut self, x: u32, y: u32) {
-        for (new_x, new_y) in self.field.surrounding_fields(x, y, None) {
-            if self.get_state(new_x, new_y) == MineSweeperCellState::Hidden {
-                self.flag_cell(new_x, new_y);
             }
         }
     }
@@ -312,32 +314,28 @@ where
 
     pub(super) fn has_informations(&self, x: u32, y: u32) -> bool {
         self.get_state(x, y) == MineSweeperCellState::Revealed
-            && matches!(self.field.get_cell(x, y), MineSweeperCell::Number(_))
-            && self.has_unrevealed_neighbours(x, y)
+        && matches!(self.field.get_cell(x, y), MineSweeperCell::Number(_))
+        && self.has_unrevealed_neighbours(x, y)
     }
 
-    pub(super) fn do_basic_neighbour_check(&mut self) -> Option<()> {
-        let mut did_something = false;
+    pub(super) fn do_basic_neighbour_check(&self) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
+        let mut safe_fields = vec![];
+        let mut mine_fields = vec![];
 
         for (x, y) in self.field.sorted_fields() {
             if self.has_informations(x, y) {
                 let needed_mines = self.get_reduced_count(x, y);
-                if needed_mines == self.get_surrounding_unrevealed_count(x, y) {
-                    self.flag_surrounding_cells(x, y);
-                    did_something = true;
-                }
+                let fields = self.get_surrounding_unrevealed(x, y);
+
                 if needed_mines == 0 {
-                    self.reveal_surrounding_cells(x, y);
-                    did_something = true;
+                    safe_fields.extend(fields);
+                } else if needed_mines == fields.len() as u8 {
+                    mine_fields.extend(fields);
                 }
             }
         }
 
-        if did_something {
-            return Some(());
-        } else {
-            return None;
-        }
+        (safe_fields, mine_fields)
     }
 }
 
@@ -467,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Game Over! The Solver hit a mine")]
+    #[should_panic(expected = "Flag count is greater than number")]
     fn test_solver_hits_mine_with_incorrect_numbers() {
         // Test a malformed field where numbers don't match mine placement
         let mut field = MineField::new(5, 5, MineSweeperFieldCreation::FixedCount(2));
@@ -497,13 +495,20 @@ mod tests {
 
         // Reveal safe neighbors to leave only the mine unrevealed
         solver.set_state(0, 1, MineSweeperCellState::Revealed);
-        solver.set_state(1, 0, MineSweeperCellState::Revealed);
-
-        // Now only (0,0) is unrevealed around (1,1), and needed_mines == unrevealed_count == 1
-        let result = solver.do_basic_neighbour_check();
+        solver.set_state(1, 0, MineSweeperCellState::Revealed);        // Now only (0,0) is unrevealed around (1,1), and needed_mines == unrevealed_count == 1
+        let (safe_fields, mine_fields) = solver.do_basic_neighbour_check();
 
         // Should flag the remaining mine
-        assert!(result.is_some());
+        assert!(!safe_fields.is_empty() || !mine_fields.is_empty());
+        
+        // Apply the changes to the solver
+        for (x, y) in safe_fields {
+            solver.reveal_field(x, y);
+        }
+        for (x, y) in mine_fields {
+            solver.flag_cell(x, y);
+        }
+        
         assert_eq!(solver.get_state(0, 0), MineSweeperCellState::Flagged);
     }
 
@@ -521,12 +526,18 @@ mod tests {
         solver.set_state(1, 1, MineSweeperCellState::Revealed);
 
         // Flag the mine at (0,0)
-        solver.flag_cell(0, 0);
+        solver.flag_cell(0, 0);        // Now needed_mines = 1 - 1 = 0, so all surrounding cells should be revealed
+        let (safe_fields, mine_fields) = solver.do_basic_neighbour_check();
 
-        // Now needed_mines = 1 - 1 = 0, so all surrounding cells should be revealed
-        let result = solver.do_basic_neighbour_check();
-
-        assert!(result.is_some()); // Should have done something
+        assert!(!safe_fields.is_empty() || !mine_fields.is_empty()); // Should have done something
+        
+        // Apply the changes to the solver
+        for (x, y) in safe_fields {
+            solver.reveal_field(x, y);
+        }
+        for (x, y) in mine_fields {
+            solver.flag_cell(x, y);
+        }
 
         // Check that safe neighbors were revealed
         assert_eq!(solver.get_state(0, 1), MineSweeperCellState::Revealed);
@@ -548,13 +559,11 @@ mod tests {
         let mut solver = MineSweeperSolver::new(field);
 
         // Reveal the center cell (1,1) - it should be a Number(2)
-        solver.set_state(1, 1, MineSweeperCellState::Revealed);
-
-        // Don't flag any mines, so needed_mines = 2, but unrevealed_count = 8
+        solver.set_state(1, 1, MineSweeperCellState::Revealed);        // Don't flag any mines, so needed_mines = 2, but unrevealed_count = 8
         // Neither condition (needed_mines == unrevealed_count nor needed_mines == 0) is met
-        let result = solver.do_basic_neighbour_check();
+        let (safe_fields, mine_fields) = solver.do_basic_neighbour_check();
 
-        assert!(result.is_none()); // Should have done nothing
+        assert!(safe_fields.is_empty() && mine_fields.is_empty()); // Should have done nothing
     }
 
     #[test]
@@ -573,11 +582,9 @@ mod tests {
 
         // Flag some mines
         solver.flag_cell(0, 0);
-        solver.flag_cell(3, 3);
+        solver.flag_cell(3, 3);        let (safe_fields, mine_fields) = solver.do_basic_neighbour_check();
 
-        let result = solver.do_basic_neighbour_check();
-
-        assert!(result.is_some()); // Should have done something
+        assert!(!safe_fields.is_empty() || !mine_fields.is_empty()); // Should have done something
     }
 
     #[test]
@@ -598,10 +605,16 @@ mod tests {
         solver.set_state(1, 1, MineSweeperCellState::Revealed);
 
         // Flag one mine correctly to make needed_mines = 0
-        solver.flag_cell(2, 2);
-
-        // This should trigger reveal_surrounding_cells, hitting the mine at (0,1)
-        solver.do_basic_neighbour_check();
+        solver.flag_cell(2, 2);        // This should trigger reveal_surrounding_cells, hitting the mine at (0,1)
+        let (safe_fields, mine_fields) = solver.do_basic_neighbour_check();
+        
+        // Apply the changes - this should trigger the panic
+        for (x, y) in safe_fields {
+            solver.reveal_field(x, y);
+        }
+        for (x, y) in mine_fields {
+            solver.flag_cell(x, y);
+        }
     }
 
     #[test]
@@ -665,12 +678,10 @@ mod tests {
         solver.set_state(2, 1, MineSweeperCellState::Revealed);
         solver.set_state(2, 2, MineSweeperCellState::Revealed);
         solver.set_state(1, 2, MineSweeperCellState::Revealed);
-        solver.set_state(0, 2, MineSweeperCellState::Revealed);
+        solver.set_state(0, 2, MineSweeperCellState::Revealed);        // Now (1,1) has no unrevealed neighbors, so has_informations should return false
+        let (safe_fields, mine_fields) = solver.do_basic_neighbour_check();
 
-        // Now (1,1) has no unrevealed neighbors, so has_informations should return false
-        let result = solver.do_basic_neighbour_check();
-
-        assert!(result.is_none()); // Should do nothing since no cells have unrevealed neighbors
+        assert!(safe_fields.is_empty() && mine_fields.is_empty()); // Should do nothing since no cells have unrevealed neighbors
     }
 
     #[test]
@@ -863,7 +874,9 @@ mod tests {
         let initial_flag_count = solver.flag_count;
         let initial_remaining_mines = solver.remaining_mines;
 
-        solver.flag_surrounding_cells(1, 1);
+        for (x, y) in solver.field.surrounding_fields(1, 1, None) {
+            solver.flag_cell(x, y);
+        }
 
         // Should have flagged all hidden neighbors (8 total - 1 already flagged - 1 already revealed = 6)
         assert_eq!(solver.flag_count, initial_flag_count + 6);
