@@ -46,3 +46,10 @@ Solver Step: 2
 thread 'main' panicked at src\minesweeper_solver\box_logic\basic_logic.rs:33:42:
 Game Over! The Solver hit a mine at (6, 0)
 ```
+
+## Other Solvers
+
+- [mrgris](https://mrgris.com/projects/minesweepr/demo/player/)
+- [JS Minesweeper](https://davidnhill.github.io/JSMinesweeper/index.html)
+- [Logigames](https://www.logigames.com/minesweeper/solver)
+- [Java Solver](missing github link)
