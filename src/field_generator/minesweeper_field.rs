@@ -198,7 +198,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
                 if (byte >> (7 - bit)) & 1 == 1 {
                     let x = (i * 8 + bit) as u32 % width;
                     let y = (i * 8 + bit) as u32 / width;
-                    
+
                     if x >= width || y >= height {
                         return Err(std::io::Error::new(
                             std::io::ErrorKind::InvalidData,
