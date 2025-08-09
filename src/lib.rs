@@ -1,6 +1,7 @@
 mod ng_generator;
 pub(crate) mod minesweeper_solver;
 pub(crate) mod field_generator;
+pub mod cli_utils;
 
 // Re-export commonly used types for cleaner imports
 pub use field_generator::{
