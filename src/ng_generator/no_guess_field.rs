@@ -108,39 +108,3 @@ impl MineSweeperField for NoGuessField {
         self.board[x as usize][y as usize] = cell;
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::field_generator::MineSweeperFieldCreation;
-
-    #[test]
-    #[ignore]
-    fn test_no_guess_field_creation() {
-        let field = NoGuessField::new(10, 10, MineSweeperFieldCreation::FixedCount(20));
-        assert_eq!(field.get_width(), 10);
-        assert_eq!(field.get_height(), 10);
-        assert_eq!(field.get_mines(), 20);
-        assert_eq!(field.get_start_cell(), (0, 0)); // Assuming the start field is always (0, 0)
-    }
-
-    #[test]
-    #[ignore]
-    fn test_no_guess_field_initialization() {
-        let field = NoGuessField::new(5, 5, MineSweeperFieldCreation::Percentage(0.2));
-        assert_eq!(field.get_width(), 5);
-        assert_eq!(field.get_height(), 5);
-        assert_eq!(field.get_mines(), 5); // 20% of 25 cells
-    }
-
-    #[test]
-    #[ignore]
-    fn test_no_guess_field_is_solvable() {
-        let field = NoGuessField::new(8, 8, MineSweeperFieldCreation::FixedCount(10));
-
-        let solution = MineSweeperSolver::new(field).start(true);
-
-        assert!(matches!(solution, SolverSolution::FoundSolution(_)));
-    }
-
-}

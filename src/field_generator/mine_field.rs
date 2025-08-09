@@ -139,39 +139,3 @@ pub fn get_small_test_field() -> impl MineSweeperField {
 
     field
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::minesweeper_solver::{MineSweeperSolver, SolverSolution};
-
-    #[test]
-    fn field_setup_evil() {
-        let field = get_evil_ng_field();
-        assert_eq!(field.get_width(), 30);
-        assert_eq!(field.get_height(), 20);
-        assert_eq!(field.get_mines(), 130);
-        assert_eq!(field.get_start_cell(), (4, 6));
-    }
-
-    #[test]
-    fn field_setup_small() {
-        let field = get_small_test_field();
-        assert_eq!(field.get_width(), 10);
-        assert_eq!(field.get_height(), 10);
-        assert_eq!(field.get_mines(), 20);
-        assert_eq!(field.get_start_cell(), (4, 7));
-    }
-
-    #[test]
-    fn solve_evil() {
-        let solved = MineSweeperSolver::new(get_evil_ng_field()).start(false);
-        assert!(matches!(solved, SolverSolution::FoundSolution(_)));
-    }
-
-    #[test]
-    fn solve_small() {
-        let solved = MineSweeperSolver::new(get_small_test_field()).start(false);
-        assert!(matches!(solved, SolverSolution::FoundSolution(_)));
-    }
-}

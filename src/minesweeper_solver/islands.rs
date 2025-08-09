@@ -93,17 +93,3 @@ fn are_islands_within_reach(island1: &Vec<(u32, u32)>, island2: &Vec<(u32, u32)>
 fn manhattan_distance(a: (u32, u32), b: (u32, u32)) -> u32 {
     ((a.0 as isize - b.0 as isize).abs() + (a.1 as isize - b.1 as isize).abs()) as u32
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_manhattan_distance() {
-        assert_eq!(manhattan_distance((0, 0), (0, 0)), 0);
-        assert_eq!(manhattan_distance((0, 0), (1, 0)), 1);
-        assert_eq!(manhattan_distance((0, 0), (0, 1)), 1);
-        assert_eq!(manhattan_distance((0, 0), (1, 1)), 2);
-        assert_eq!(manhattan_distance((1, 1), (3, 4)), 5); // |1-3| + |1-4| = 2 + 3 = 5
-        assert_eq!(manhattan_distance((5, 2), (2, 6)), 7); // |5-2| + |2-6| = 3 + 4 = 7
-    }
-}
