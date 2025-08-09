@@ -2,50 +2,33 @@
 
 ## In Work
 
-- only mark changed parts as hidden
-- implement changing parts of the field to make it solvable
-- only change one thing at a time bc other parts could get solvable later
+### Solver
+
+- add more steps for solving
+- add default pattern fields for testing
 - start with the biggest island with border informations
 
-- write tests for all patterns (minesweeper.online) for the respective solving steps
-- new algorithm which gets all disjunct border fields instead of the islands for the permutation checks?
-- new solving step: allow inaccessible parts be completely filled with mines or completely empty, the minecount should help with this at the end
+- new algorithm which gets all disjunct border fields instead of the islands for the permutation checks
 
-- solver is currently not able to solve fields at the end if there are multiple islands without information borders
-  - add a way to solve this by checking island sizes against minecount etc
+- implement a tree for permutation solving?
+- improve perm algorithm so in places where only one info field is accessing a part of the border, their permutations are not all tryed bc it doesnt bring value, only check with all count arrangements
 
-## Bugs
+- ignore inaccessible parts of the field until nothing else can be solved, then try to solve the inaccessible parts via minecount
 
-- extended logic shouldn't be allowed to generate 0..=1 ranges for single fields
+- linear equation solver
+- could be not as efficient as pure brute force ...
+  -> to be tested
 
-```rust
-// extended_logic.rs:182
-} else if other_only.len() == 1 && new_other_range.start() != new_other_range.end() && *new_other_range.start() != 0 {
-```
+### NG Gen
 
-would fix it
+- only mark changed parts as hidden
+- implement changing parts of the field to make it solvable
 
-- permutations is not working properly for border islands, as seen below the solver misplaces a flag bc it doesnt consider the other important number for the 3
+### Other
 
-```bash
-Solver Step: 1
-? ? ? ? 2 ? ? F ? ? ? ?
-? ? ? ? F 2 2 3 ? ? ? ?
-? ? ? ? 3 2   1 ? ? ? ?
-? ? ? ? F 2 2 3 ? ? ? ? 
-? ? ? ? 3 ? ? F ? ? ? ?
-? ? ? ? ? ? ? ? ? ? ? ?
-Solver: Applied insights from Permutations
-Solver Step: 2
-Solver Step: 2
-? ? ? ? 2 ? ? F F ? ? ?
-? ? ? ? F 2 2 3 ? ? ? ?
-? ? ? ? 3 2   1 ? ? ? ?
-? ? ? ? F 2 2 3 5 ? ? ?
-? ? ? ? 3 ? ? F ? ? ? ?
-thread 'main' panicked at src\minesweeper_solver\box_logic\basic_logic.rs:33:42:
-Game Over! The Solver hit a mine at (6, 0)
-```
+- allow a 0 tile from every island to be the start tile, so not only one start tile per field is possible (NoGG & Normal Gen)
+- Field to SVG
+  - animated svg of solving steps / progress?
 
 ## Other Solvers
 
