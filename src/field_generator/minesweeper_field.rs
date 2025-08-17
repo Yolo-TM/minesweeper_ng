@@ -26,13 +26,32 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
         let (w, h, m) = self.get_dimensions();
         println!("Width: {}, Height: {}, Mines: {}", w, h, m);
         println!("Start field: {:?}", self.get_start_cell());
+
+        print!("╔═");
+        for i in 0..self.get_width() {
+            print!("══");
+        }
+        println!("╗");
+
+        print!("║");
         for (x, y) in self.sorted_fields() {
-            print!("{} ", &self.get_cell(x, y).get_colored());
+            print!(" {}", &self.get_cell(x, y).get_colored());
 
             if x == self.get_width() - 1 {
+                print!(" ║");
                 println!();
+
+                if y != self.get_height() - 1 {
+                    print!("║");
+                }
             }
         }
+
+        print!("╚═");
+        for i in 0..self.get_width() {
+            print!("══");
+        }
+        println!("╝");
     }
 
     fn get_dimensions(&self) -> (u32, u32, u32) {
