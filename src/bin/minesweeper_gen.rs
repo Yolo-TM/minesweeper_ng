@@ -1,15 +1,16 @@
-use std::fs;
-use std::path::Path;
-use std::io;
-use std::sync::mpsc;
-use std::thread;
+use std::{fs, io, thread, path::Path, sync::mpsc};
 use std::time::{Duration, Instant};
 use clap::{Arg, ArgAction, ArgGroup, Command};
 use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
 use minesweeper_ng_gen::{minesweeper_field, minesweeper_ng_field, MineSweeperField, MineSweeperFieldCreation};
 
+const DEFAULT_PROGRESS_TEMPLATE: &str = "Overall: [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) | {wide_msg}";
+const WORKER_PROGRESS_TEMPLATE: &str = "Worker {}: {{spinner:.green}} [{{bar:40.cyan/blue}}] {{pos}}/{{len}} ({{percent}}%) | {{wide_msg}}";
+const PROGRESS_CHARS: &str = "█▉▊▋▌▍▎▏  ";
+
 #[derive(Debug)]
 enum Commands {
+    // mines or percentage must be specified for both commands
     Generate {
         width: u32,
         height: u32,
@@ -29,12 +30,14 @@ enum Commands {
 }
 
 fn main() -> io::Result<()> {
-    let app = Command::new("minesweeper_gen")
+    let mut app = Command::new("minesweeper_gen")
         .version(env!("CARGO_PKG_VERSION"))
         .about("Generate minesweeper fields")
-        .subcommand(
+        .subcommand({
             Command::new("generate")
                 .about("Generate a single minesweeper field")
+                .disable_help_flag(true)
+                .help_template("{about}\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}")
                 .arg(Arg::new("width")
                     .short('w')
                     .long("width")
@@ -61,13 +64,19 @@ fn main() -> io::Result<()> {
                     .long("no-guess")
                     .help("Generate no-guess fields (solvable without guessing)")
                     .action(ArgAction::SetTrue))
+                .arg(Arg::new("help")
+                    .long("help")
+                    .help("Print help")
+                    .action(ArgAction::Help))
                 .group(ArgGroup::new("mine_spec")
                     .args(&["mines", "percentage"])
                     .required(true))
-        )
+        })
         .subcommand(
             Command::new("batch")
                 .about("Generate multiple minesweeper fields")
+                .disable_help_flag(true)
+                .help_template("{about}\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}")
                 .arg(Arg::new("width")
                     .short('w')
                     .long("width")
@@ -105,14 +114,16 @@ fn main() -> io::Result<()> {
                     .long("no-guess")
                     .help("Generate no-guess fields (solvable without guessing)")
                     .action(ArgAction::SetTrue))
+                .arg(Arg::new("help")
+                    .long("help")
+                    .help("Print help")
+                    .action(ArgAction::Help))
                 .group(ArgGroup::new("mine_spec")
                     .args(&["mines", "percentage"])
                     .required(true))
         );
 
-    let matches = app.get_matches();
-
-    let command = match matches.subcommand() {
+    let command = match app.clone().get_matches().subcommand() {
         Some(("generate", sub_matches)) => {
             let width = *sub_matches.get_one::<u32>("width").unwrap();
             let height = *sub_matches.get_one::<u32>("height").unwrap();
@@ -134,7 +145,9 @@ fn main() -> io::Result<()> {
             Commands::Batch { width, height, mines, percentage, count, output, no_guess }
         }
         _ => {
-            eprintln!("No subcommand provided. Use --help for usage information.");
+            // Print clap-generated help and exit
+            app.print_help().unwrap();
+            println!();
             return Ok(());
         }
     };
@@ -172,16 +185,35 @@ fn generate_single_field(width: u32, height: u32, mine_spec: MineSweeperFieldCre
         width, height,
         format!("{} mines ({}%)", mine_spec.get_fixed_count(width, height), mine_spec.get_percentage(width, height) * 100.0));
 
+    let filename = if is_noguess {
+        "noguess_field.minesweeper"
+    } else {
+        "field.minesweeper"
+    };
+
+    // Check if file already exists and warn user
+    if Path::new(filename).exists() {
+        println!("Warning: File '{}' already exists and will be overwritten.", filename);
+    }
+
     if is_noguess {
         let field = minesweeper_ng_field(width, height, mine_spec);
-        let filename = "noguess_field.minesweeper";
-        field.to_file(filename)?;
+        field.to_file(filename).map_err(|e| {
+            io::Error::new(
+                e.kind(),
+                format!("Failed to save field to '{}': {}", filename, e)
+            )
+        })?;
         println!("Field generated and saved to: {}", filename);
         field.show();
     } else {
         let field = minesweeper_field(width, height, mine_spec);
-        let filename = "field.minesweeper";
-        field.to_file(filename)?;
+        field.to_file(filename).map_err(|e| {
+            io::Error::new(
+                e.kind(),
+                format!("Failed to save field to '{}': {}", filename, e)
+            )
+        })?;
         println!("Field generated and saved to: {}", filename);
         field.show();
     }
@@ -201,7 +233,12 @@ fn setup_output_directory(output: Option<String>, width: u32, height: u32, mine_
     if Path::new(&output_dir).exists() {
         println!("Directory '{}' already exists. Files will be added/overwritten.", output_dir);
     } else {
-        fs::create_dir_all(&output_dir)?;
+        fs::create_dir_all(&output_dir).map_err(|e| {
+            io::Error::new(
+                e.kind(),
+                format!("Failed to create directory '{}': {}", output_dir, e)
+            )
+        })?;
         println!("Created directory: {}", output_dir);
     }
 
@@ -245,9 +282,9 @@ fn batch_generate_with_workers(
     let main_progress_bar = controller.multi_progress.add(ProgressBar::new(field_count as u64));
     main_progress_bar.set_style(
         ProgressStyle::default_bar()
-            .template("Overall: [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) | {wide_msg}")
+            .template(DEFAULT_PROGRESS_TEMPLATE)
             .unwrap()
-            .progress_chars("█▉▊▋▌▍▎▏  ")
+            .progress_chars(PROGRESS_CHARS)
     );
     main_progress_bar.set_message("Starting field generation...");
 
@@ -354,9 +391,9 @@ impl WorkerController {
             let pb = multi_progress.add(ProgressBar::new(field_count as u64 / worker_count as u64));
             pb.set_style(
                 ProgressStyle::default_bar()
-                    .template(&format!("Worker {}: {{spinner:.green}} [{{bar:40.cyan/blue}}] {{pos}}/{{len}} ({{percent}}%) | {{wide_msg}}", worker_id))
+                    .template(&format!("{}", WORKER_PROGRESS_TEMPLATE).replace("{}", &worker_id.to_string()))
                     .unwrap()
-                    .progress_chars("█▉▊▋▌▍▎▏  ")
+                    .progress_chars(PROGRESS_CHARS)
             );
             pb.set_message("Waiting for tasks...");
 
