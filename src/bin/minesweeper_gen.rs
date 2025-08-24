@@ -6,7 +6,30 @@ use minesweeper_ng_gen::{minesweeper_field, minesweeper_ng_field, MineSweeperFie
 
 const DEFAULT_PROGRESS_TEMPLATE: &str = "Overall: [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) | {wide_msg}";
 const WORKER_PROGRESS_TEMPLATE: &str = "Worker {}: {spinner:.green} [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) | {wide_msg}";
-const PROGRESS_CHARS: &str = "█▉▊▋▌▍▎▏  ";
+const PROGRESS_CHARS: &str = "█▉▊▋▌▍▎▏ .";
+
+#[derive(Debug, Clone, PartialEq)]
+enum FieldType {
+    NoGuess,
+    Regular,
+}
+
+impl FieldType {
+    fn prefix(&self) -> &'static str {
+        match self {
+            FieldType::NoGuess => "noguess_field",
+            FieldType::Regular => "field",
+        }
+    }
+
+    fn from_bool(is_noguess: bool) -> Self {
+        if is_noguess {
+            FieldType::NoGuess
+        } else {
+            FieldType::Regular
+        }
+    }
+}
 
 fn main() -> io::Result<()> {
     let mut app = build_cli();
@@ -116,11 +139,6 @@ fn parse_common_args(sub_matches: &clap::ArgMatches) -> io::Result<(u32, u32, Mi
 }
 
 fn generate_single_field(width: u32, height: u32, mine_spec: MineSweeperFieldCreation, is_noguess: bool) -> io::Result<()> {
-    println!("Generating {}field with dimensions {}x{} and {}...",
-        if is_noguess { "no-guess " } else { "" },
-        width, height,
-        format!("{} mines ({}%)", mine_spec.get_fixed_count(width, height), mine_spec.get_percentage(width, height) * 100.0));
-
     let filename = if is_noguess {
         "noguess_field.minesweeper"
     } else {
@@ -132,26 +150,25 @@ fn generate_single_field(width: u32, height: u32, mine_spec: MineSweeperFieldCre
         println!("Warning: File '{}' already exists and will be overwritten.", filename);
     }
 
+    macro_rules! process_field {
+        ($field:expr, $filename:expr) => {{
+            $field.to_file($filename).map_err(|e| {
+                io::Error::new(
+                    e.kind(),
+                    format!("Failed to save field to '{}': {}", $filename, e)
+                )
+            })?;
+            println!("Field generated and saved to: {}", $filename);
+            $field.show();
+        }};
+    }
+
     if is_noguess {
         let field = minesweeper_ng_field(width, height, mine_spec);
-        field.to_file(filename).map_err(|e| {
-            io::Error::new(
-                e.kind(),
-                format!("Failed to save field to '{}': {}", filename, e)
-            )
-        })?;
-        println!("Field generated and saved to: {}", filename);
-        field.show();
+        process_field!(field, filename);
     } else {
         let field = minesweeper_field(width, height, mine_spec);
-        field.to_file(filename).map_err(|e| {
-            io::Error::new(
-                e.kind(),
-                format!("Failed to save field to '{}': {}", filename, e)
-            )
-        })?;
-        println!("Field generated and saved to: {}", filename);
-        field.show();
+        process_field!(field, filename);
     }
 
     Ok(())
@@ -280,7 +297,7 @@ struct WorkTask {
     mine_spec: MineSweeperFieldCreation,
     output_dir: String,
     file_name_padding: usize,
-    is_noguess: bool,
+    field_type: FieldType,
 
     start_index: u32,
     end_index: u32,
@@ -313,13 +330,14 @@ impl WorkerController {
     ) -> Self {
         let (result_sender, result_receiver) = mpsc::channel::<WorkResult>();
         let multi_progress = MultiProgress::new();
+        let worker_id_padding = worker_count.to_string().len();
 
         // Create progress bars for each worker
         for worker_id in 0..worker_count {
             let pb = multi_progress.add(ProgressBar::new(field_count as u64 / worker_count as u64));
             pb.set_style(
                 ProgressStyle::default_bar()
-                    .template(&format!("{}", WORKER_PROGRESS_TEMPLATE).replace("{}", &worker_id.to_string()))
+                    .template(&format!("{}", WORKER_PROGRESS_TEMPLATE).replace("{}", &format!("{:width$}", worker_id, width = worker_id_padding)))
                     .unwrap()
                     .progress_chars(PROGRESS_CHARS)
             );
@@ -376,18 +394,24 @@ impl WorkerController {
     }
 
     fn execute_task(task: &WorkTask, index: u32) -> io::Result<()> {
-        let filename = if task.is_noguess {
-            Path::new(&task.output_dir).join(format!("noguess_field_{:0width$}.minesweeper", index, width = task.file_name_padding)).to_string_lossy().to_string()
-        } else {
-            Path::new(&task.output_dir).join(format!("field_{:0width$}.minesweeper", index, width = task.file_name_padding)).to_string_lossy().to_string()
-        };
+        let filename = Path::new(&task.output_dir)
+            .join(format!("{}_{:0width$}.minesweeper", 
+                task.field_type.prefix(), 
+                index, 
+                width = task.file_name_padding));
 
-        if task.is_noguess {
-            let field = minesweeper_ng_field(task.width, task.height, task.mine_spec.clone());
-            field.to_file(&filename)?;
-        } else {
-            let field = minesweeper_field(task.width, task.height, task.mine_spec.clone());
-            field.to_file(&filename)?;
+        let filename_str = filename.to_str()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid filename encoding"))?;
+
+        match task.field_type {
+            FieldType::NoGuess => {
+                let field = minesweeper_ng_field(task.width, task.height, task.mine_spec.clone());
+                field.to_file(filename_str)?;
+            }
+            FieldType::Regular => {
+                let field = minesweeper_field(task.width, task.height, task.mine_spec.clone());
+                field.to_file(filename_str)?;
+            }
         }
         Ok(())
     }
@@ -404,11 +428,21 @@ impl WorkerController {
     ) -> WorkTask {
         let output_dir = output_dir.to_string();
         let file_name_padding = field_count.to_string().len();
+        let field_type = FieldType::from_bool(is_noguess);
 
         let start_index = field_count * worker_id / worker_count;
         let end_index = field_count * (worker_id + 1) / worker_count;
 
-        WorkTask{width, height, mine_spec, output_dir, is_noguess, file_name_padding, start_index, end_index}
+        WorkTask{
+            width, 
+            height, 
+            mine_spec, 
+            output_dir, 
+            file_name_padding, 
+            field_type,
+            start_index, 
+            end_index
+        }
     }
 
     fn receive_result(&self) -> Result<WorkResult, mpsc::RecvError> {
