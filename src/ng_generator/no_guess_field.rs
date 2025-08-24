@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 use crate::*;
 use crate::minesweeper_solver::search_for_islands;
 use std::vec;

@@ -28,7 +28,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
         println!("Start field: {:?}", self.get_start_cell());
 
         print!("╔═");
-        for i in 0..self.get_width() {
+        for _ in 0..self.get_width() {
             print!("══");
         }
         println!("╗");
@@ -48,7 +48,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
         }
 
         print!("╚═");
-        for i in 0..self.get_width() {
+        for _ in 0..self.get_width() {
             print!("══");
         }
         println!("╝");
