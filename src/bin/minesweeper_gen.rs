@@ -203,11 +203,18 @@ fn batch_generate_fields(width: u32, height: u32, mine_spec: MineSweeperFieldCre
         width, height,
         format!("{} mines ({}%)", mine_spec.get_fixed_count(width, height), mine_spec.get_percentage(width, height) * 100.0));
 
-    let worker_count = std::cmp::min(num_cpus::get(), field_count as usize) as u32;
+    let worker_count = {
+        let available_cpus = num_cpus::get() as u32;
 
-    if is_noguess {
-        println!("This may take some time as each field needs to be verified as solvable without guessing.\n");
-    }
+        if is_noguess && field_count >= available_cpus {
+            // keep cores free for multithreaded solving
+            available_cpus / 2
+        } else if !is_noguess && field_count >= available_cpus {
+            available_cpus
+        } else {
+            std::cmp::min(available_cpus, field_count)
+        }
+    };
 
     println!("Using {} worker threads...\n", worker_count);
     batch_generate_with_workers(width, height, mine_spec, field_count, &output, is_noguess, worker_count)
