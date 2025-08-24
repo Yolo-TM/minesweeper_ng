@@ -5,178 +5,114 @@ use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
 use minesweeper_ng_gen::{minesweeper_field, minesweeper_ng_field, MineSweeperField, MineSweeperFieldCreation};
 
 const DEFAULT_PROGRESS_TEMPLATE: &str = "Overall: [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) | {wide_msg}";
-const WORKER_PROGRESS_TEMPLATE: &str = "Worker {}: {{spinner:.green}} [{{bar:40.cyan/blue}}] {{pos}}/{{len}} ({{percent}}%) | {{wide_msg}}";
+const WORKER_PROGRESS_TEMPLATE: &str = "Worker {}: {spinner:.green} [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) | {wide_msg}";
 const PROGRESS_CHARS: &str = "█▉▊▋▌▍▎▏  ";
 
-#[derive(Debug)]
-enum Commands {
-    // mines or percentage must be specified for both commands
-    Generate {
-        width: u32,
-        height: u32,
-        mines: Option<u32>,
-        percentage: Option<f32>,
-        no_guess: bool,
-    },
-    Batch {
-        width: u32,
-        height: u32,
-        mines: Option<u32>,
-        percentage: Option<f32>,
-        count: u32,
-        output: Option<String>,
-        no_guess: bool,
+fn main() -> io::Result<()> {
+    let mut app = build_cli();
+
+    match app.clone().get_matches().subcommand() {
+        Some(("generate", sub_matches)) => {
+            let (width, height, mine_spec, no_guess) = parse_common_args(sub_matches)?;
+            generate_single_field(width, height, mine_spec, no_guess)
+        },
+        Some(("batch", sub_matches)) => {
+            let (width, height, mine_spec, no_guess) = parse_common_args(sub_matches)?;
+
+            let count = *sub_matches.get_one::<u32>("count").unwrap();
+            let output = sub_matches.get_one::<String>("output").cloned().unwrap_or_else(|| {
+                    let prefix = if no_guess { "noguess_fields" } else { "fields" };
+                    format!("{}_{}x{}_{}_mines", prefix, width, height, mine_spec.get_fixed_count(width, height))
+            });
+
+            batch_generate_fields(width, height, mine_spec, count, output, no_guess)
+        },
+        _ => {
+            app.print_help().unwrap();
+            println!();
+            Ok(())
+        }
     }
 }
 
-fn main() -> io::Result<()> {
-    let mut app = Command::new("minesweeper_gen")
+fn build_cli() -> Command {
+    fn build_base_subcommand(name: &'static str, about: &'static str) -> Command {
+        Command::new(name)
+            .about(about)
+            .disable_help_flag(true)
+            .help_template("{about}\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}")
+            .arg(Arg::new("width")
+                .short('w')
+                .long("width")
+                .help("Width of the field")
+                .value_parser(clap::value_parser!(u32))
+                .required(true))
+            .arg(Arg::new("height")
+                .short('h')
+                .long("height")
+                .help("Height of the field")
+                .value_parser(clap::value_parser!(u32))
+                .required(true))
+            .arg(Arg::new("mines")
+                .short('m')
+                .long("mines")
+                .help("Number of mines")
+                .value_parser(clap::value_parser!(u32)))
+            .arg(Arg::new("percentage")
+                .short('p')
+                .long("percentage")
+                .help("Percentage of mines (0.0-1.0)")
+                .value_parser(clap::value_parser!(f32)))
+            .arg(Arg::new("no-guess")
+                .long("no-guess")
+                .help("Generate no-guess fields (solvable without guessing)")
+                .action(ArgAction::SetTrue))
+            .arg(Arg::new("help")
+                .long("help")
+                .help("Print help")
+                .action(ArgAction::Help))
+            .group(ArgGroup::new("mine_spec")
+                .args(&["mines", "percentage"])
+                .required(true))
+    }
+
+    Command::new("minesweeper_gen")
         .version(env!("CARGO_PKG_VERSION"))
         .about("Generate minesweeper fields")
-        .subcommand({
-            Command::new("generate")
-                .about("Generate a single minesweeper field")
-                .disable_help_flag(true)
-                .help_template("{about}\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}")
-                .arg(Arg::new("width")
-                    .short('w')
-                    .long("width")
-                    .help("Width of the field")
-                    .value_parser(clap::value_parser!(u32))
-                    .required(true))
-                .arg(Arg::new("height")
-                    .short('h')
-                    .long("height")
-                    .help("Height of the field")
-                    .value_parser(clap::value_parser!(u32))
-                    .required(true))
-                .arg(Arg::new("mines")
-                    .short('m')
-                    .long("mines")
-                    .help("Number of mines")
-                    .value_parser(clap::value_parser!(u32)))
-                .arg(Arg::new("percentage")
-                    .short('p')
-                    .long("percentage")
-                    .help("Percentage of mines (0.0-1.0)")
-                    .value_parser(clap::value_parser!(f32)))
-                .arg(Arg::new("no-guess")
-                    .long("no-guess")
-                    .help("Generate no-guess fields (solvable without guessing)")
-                    .action(ArgAction::SetTrue))
-                .arg(Arg::new("help")
-                    .long("help")
-                    .help("Print help")
-                    .action(ArgAction::Help))
-                .group(ArgGroup::new("mine_spec")
-                    .args(&["mines", "percentage"])
-                    .required(true))
-        })
-        .subcommand(
-            Command::new("batch")
-                .about("Generate multiple minesweeper fields")
-                .disable_help_flag(true)
-                .help_template("{about}\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}")
-                .arg(Arg::new("width")
-                    .short('w')
-                    .long("width")
-                    .help("Width of the field")
-                    .value_parser(clap::value_parser!(u32))
-                    .required(true))
-                .arg(Arg::new("height")
-                    .short('h')
-                    .long("height")
-                    .help("Height of the field")
-                    .value_parser(clap::value_parser!(u32))
-                    .required(true))
-                .arg(Arg::new("mines")
-                    .short('m')
-                    .long("mines")
-                    .help("Number of mines")
-                    .value_parser(clap::value_parser!(u32)))
-                .arg(Arg::new("percentage")
-                    .short('p')
-                    .long("percentage")
-                    .help("Percentage of mines (0.0-1.0)")
-                    .value_parser(clap::value_parser!(f32)))
-                .arg(Arg::new("count")
-                    .short('c')
-                    .long("count")
-                    .help("Number of fields to generate")
-                    .value_parser(clap::value_parser!(u32))
-                    .required(true))
-                .arg(Arg::new("output")
-                    .short('o')
-                    .long("output")
-                    .help("Output directory")
-                    .value_parser(clap::value_parser!(String)))
-                .arg(Arg::new("no-guess")
-                    .long("no-guess")
-                    .help("Generate no-guess fields (solvable without guessing)")
-                    .action(ArgAction::SetTrue))
-                .arg(Arg::new("help")
-                    .long("help")
-                    .help("Print help")
-                    .action(ArgAction::Help))
-                .group(ArgGroup::new("mine_spec")
-                    .args(&["mines", "percentage"])
-                    .required(true))
-        );
+        .subcommand(build_base_subcommand("generate", "Generate a single minesweeper field"))
+        .subcommand(build_base_subcommand("batch", "Generate multiple minesweeper fields")
+            .arg(Arg::new("count")
+                .short('c')
+                .long("count")
+                .help("Number of fields to generate")
+                .value_parser(clap::value_parser!(u32))
+                .required(true))
+            .arg(Arg::new("output")
+                .short('o')
+                .long("output")
+                .help("Output directory")
+                .value_parser(clap::value_parser!(String)))
+            )
+}
 
-    let command = match app.clone().get_matches().subcommand() {
-        Some(("generate", sub_matches)) => {
-            let width = *sub_matches.get_one::<u32>("width").unwrap();
-            let height = *sub_matches.get_one::<u32>("height").unwrap();
-            let mines = sub_matches.get_one::<u32>("mines").copied();
-            let percentage = sub_matches.get_one::<f32>("percentage").copied();
-            let no_guess = sub_matches.get_flag("no-guess");
+fn parse_common_args(sub_matches: &clap::ArgMatches) -> io::Result<(u32, u32, MineSweeperFieldCreation, bool)> {
+    let width = *sub_matches.get_one::<u32>("width").unwrap();
+    let height = *sub_matches.get_one::<u32>("height").unwrap();
+    let mines = sub_matches.get_one::<u32>("mines").copied();
+    let percentage = sub_matches.get_one::<f32>("percentage").copied();
+    let no_guess = sub_matches.get_flag("no-guess");
 
-            Commands::Generate { width, height, mines, percentage, no_guess }
-        }
-        Some(("batch", sub_matches)) => {
-            let width = *sub_matches.get_one::<u32>("width").unwrap();
-            let height = *sub_matches.get_one::<u32>("height").unwrap();
-            let mines = sub_matches.get_one::<u32>("mines").copied();
-            let percentage = sub_matches.get_one::<f32>("percentage").copied();
-            let count = *sub_matches.get_one::<u32>("count").unwrap();
-            let output = sub_matches.get_one::<String>("output").cloned();
-            let no_guess = sub_matches.get_flag("no-guess");
-
-            Commands::Batch { width, height, mines, percentage, count, output, no_guess }
-        }
-        _ => {
-            // Print clap-generated help and exit
-            app.print_help().unwrap();
-            println!();
-            return Ok(());
-        }
-    };
-
-    let mine_spec = match command {
-        Commands::Generate { mines: Some(mines), .. } | Commands::Batch { mines: Some(mines), .. } => {
-            MineSweeperFieldCreation::FixedCount(mines)
-        }
-        Commands::Generate { percentage: Some(percentage), .. } | Commands::Batch { percentage: Some(percentage), .. } => {
-            if percentage < 0.0 || percentage > 1.0 {
-                eprintln!("Error: Percentage must be between 0.0 and 1.0");
-                return Ok(());
-            }
-            MineSweeperFieldCreation::Percentage(percentage)
-        }
+    let mine_spec = match (mines, percentage) {
+        (Some(mines), None) => Ok(MineSweeperFieldCreation::FixedCount(mines)),
+        (None, Some(percentage)) => Ok(MineSweeperFieldCreation::Percentage(percentage)),
         _ => {
             eprintln!("Error: Either mines or percentage must be specified");
-            return Ok(());
+            Err(io::Error::new(io::ErrorKind::InvalidInput, 
+                "Either mines or percentage must be specified"))
         }
-    };
+    }?;
 
-    match command {
-        Commands::Generate { width, height, no_guess, .. } => {
-            generate_single_field(width, height, mine_spec, no_guess)
-        }
-        Commands::Batch { width, height, count, output, no_guess, .. } => {
-            batch_generate_fields(width, height, mine_spec, count, output, no_guess)
-        }
-    }
+    Ok((width, height, mine_spec, no_guess))
 }
 
 fn generate_single_field(width: u32, height: u32, mine_spec: MineSweeperFieldCreation, is_noguess: bool) -> io::Result<()> {
@@ -221,37 +157,29 @@ fn generate_single_field(width: u32, height: u32, mine_spec: MineSweeperFieldCre
     Ok(())
 }
 
-fn setup_output_directory(output: Option<String>, width: u32, height: u32, mine_spec: &MineSweeperFieldCreation, is_noguess: bool) -> io::Result<String> {
-    let output_dir = output.unwrap_or_else(|| {
-        if is_noguess {
-            format!("noguess_fields_{}x{}_{}_mines", width, height, mine_spec.get_fixed_count(width, height))
-        } else {
-            format!("fields_{}x{}_{}_mines", width, height, mine_spec.get_fixed_count(width, height))
-        }
-    });
-
-    if Path::new(&output_dir).exists() {
-        println!("Directory '{}' already exists. Files will be added/overwritten.", output_dir);
+fn setup_output_directory(output: &String) -> io::Result<()> {
+    if Path::new(&output).exists() {
+        println!("Directory '{}' already exists. Files will be added/overwritten.", output);
     } else {
-        fs::create_dir_all(&output_dir).map_err(|e| {
+        fs::create_dir_all(&output).map_err(|e| {
             io::Error::new(
                 e.kind(),
-                format!("Failed to create directory '{}': {}", output_dir, e)
+                format!("Failed to create directory '{}': {}", output, e)
             )
         })?;
-        println!("Created directory: {}", output_dir);
+        println!("Created directory: {}", output);
     }
 
-    Ok(output_dir)
+    Ok(())
 }
 
-fn batch_generate_fields(width: u32, height: u32, mine_spec: MineSweeperFieldCreation, field_count: u32, output: Option<String>, is_noguess: bool) -> io::Result<()> {
+fn batch_generate_fields(width: u32, height: u32, mine_spec: MineSweeperFieldCreation, field_count: u32, output: String, is_noguess: bool) -> io::Result<()> {
     if field_count == 0 {
         eprintln!("Error: Field count must be greater than 0");
         return Ok(());
     }
 
-    let output_dir = setup_output_directory(output, width, height, &mine_spec, is_noguess)?;
+    setup_output_directory(&output)?;
 
     println!("Generating {}field with dimensions {}x{} and {}...",
         if is_noguess { "no-guess " } else { "" },
@@ -265,7 +193,7 @@ fn batch_generate_fields(width: u32, height: u32, mine_spec: MineSweeperFieldCre
     }
 
     println!("Using {} worker threads...\n", worker_count);
-    batch_generate_with_workers(width, height, mine_spec, field_count, &output_dir, is_noguess, worker_count)
+    batch_generate_with_workers(width, height, mine_spec, field_count, &output, is_noguess, worker_count)
 }
 
 fn batch_generate_with_workers(
