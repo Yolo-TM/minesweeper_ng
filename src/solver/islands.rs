@@ -1,11 +1,11 @@
 use crate::*;
-use crate::field_generator::{MineSweeperFieldIterator, SurroundingFieldsIterator};
+use crate::normal_field::{SortedCells, SurroundingCells};
 
-pub fn search_for_islands(width: u32, height: u32, field: &Vec<Vec<MineSweeperCell>>, state: &Vec<Vec<MineSweeperCellState>>) -> Vec<Vec<(u32, u32)>> {
+pub fn search_for_islands(width: u32, height: u32, field: &Vec<Vec<Cell>>, state: &Vec<Vec<MineSweeperCellState>>) -> Vec<Vec<(u32, u32)>> {
     let mut visited = vec![vec![false; height as usize]; width as usize];
     let mut islands = vec![];
 
-    for (x, y) in (MineSweeperFieldIterator {
+    for (x, y) in (SortedCells {
             width,
             height,
             current_x: 0,
@@ -25,11 +25,11 @@ pub fn search_for_islands(width: u32, height: u32, field: &Vec<Vec<MineSweeperCe
     islands
 }
 
-fn recursive_search(x: u32, y: u32, fields: &mut Vec<(u32,u32)>, visited : &mut Vec<Vec<bool>>, width: u32, height: u32, field: &Vec<Vec<MineSweeperCell>>, state: &Vec<Vec<MineSweeperCellState>>) {
+fn recursive_search(x: u32, y: u32, fields: &mut Vec<(u32,u32)>, visited : &mut Vec<Vec<bool>>, width: u32, height: u32, field: &Vec<Vec<Cell>>, state: &Vec<Vec<MineSweeperCellState>>) {
     visited[x as usize][y as usize] = true;
     fields.push((x, y));
 
-    for (new_x, new_y) in (SurroundingFieldsIterator {
+    for (new_x, new_y) in (SurroundingCells {
             x,
             y,
             width,

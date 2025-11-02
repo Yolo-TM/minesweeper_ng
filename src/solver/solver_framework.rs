@@ -1,5 +1,5 @@
-use super::{MineSweeperCellState, SolverSolution, SolverStepCounter};
-use crate::{*, minesweeper_solver::SolverStep};
+use super::{MineSweeperCellState, SolverSolution, SolverStepCounter, SolverStep};
+use crate::*;
 use colored::Colorize;
 
 impl<M> MineSweeperSolver<M>
@@ -111,9 +111,9 @@ where
                 MineSweeperCellState::Hidden => print!("? "),
                 MineSweeperCellState::Flagged => print!("{} ", "F".red()),
                 MineSweeperCellState::Revealed => match self.field.get_cell(x as u32, y as u32) {
-                    MineSweeperCell::Empty => print!("  "),
-                    MineSweeperCell::Mine => print!("{} ", "X".red()),
-                    MineSweeperCell::Number(_n) => {
+                    Cell::Empty => print!("  "),
+                    Cell::Mine => print!("{} ", "X".red()),
+                    Cell::Number(_n) => {
                         print!("{} ", self.field.get_cell(x as u32, y as u32).get_colored())
                     }
                 },
@@ -134,7 +134,7 @@ where
     }
 
     // Method for changing cells at NoGuess Generation
-    pub(crate) fn update_field(&mut self, changes: Vec<(u32, u32, MineSweeperCell)>) {
+    pub(crate) fn update_field(&mut self, changes: Vec<(u32, u32, Cell)>) {
         for (x, y, state) in changes {
             self.field.set_cell(x, y, state);
         }
@@ -206,13 +206,13 @@ where
         self.hidden_count -= 1;
 
         match self.field.get_cell(x as u32, y as u32) {
-            MineSweeperCell::Mine => {
+            Cell::Mine => {
                 panic!("Game Over! The Solver hit a mine at ({}, {})", x, y);
             }
-            MineSweeperCell::Empty => {
+            Cell::Empty => {
                 self.reveal_surrounding_cells(x, y);
             }
-            MineSweeperCell::Number(i) => {
+            Cell::Number(i) => {
                 if i == self.get_surrounding_flag_count(x, y) {
                     self.reveal_surrounding_cells(x, y);
                 }
@@ -314,7 +314,7 @@ where
 
     pub(super) fn has_informations(&self, x: u32, y: u32) -> bool {
         self.get_state(x, y) == MineSweeperCellState::Revealed
-        && matches!(self.field.get_cell(x, y), MineSweeperCell::Number(_))
+        && matches!(self.field.get_cell(x, y), Cell::Number(_))
         && self.has_unrevealed_neighbours(x, y)
     }
 

@@ -1,0 +1,28 @@
+mod cell;
+mod mines;
+mod iterators;
+mod random_field;
+mod defined_field;
+mod r#trait;
+
+pub use cell::Cell;
+pub use mines::Mines;
+pub use iterators::{SortedCells, SurroundingCells};
+pub use random_field::RandomField;
+pub use defined_field::DefinedField;
+pub use r#trait::MineSweeperField;
+
+#[allow(dead_code)]
+pub fn minesweeper_field(width: u32, height: u32, mines: Mines) -> RandomField {
+    RandomField::new(width, height, mines)
+}
+
+#[allow(dead_code)]
+pub fn get_evil_ng_field() -> impl MineSweeperField {
+    DefinedField::from_file("./src/generated/testing/evil_ng_field.minesweeper").unwrap()
+}
+
+#[allow(dead_code)]
+pub fn get_small_test_field() -> impl MineSweeperField {
+    DefinedField::from_file("./src/generated/testing/hard.minesweeper").unwrap()
+}

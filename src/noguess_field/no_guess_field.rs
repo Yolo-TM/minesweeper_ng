@@ -1,7 +1,7 @@
 #![allow(warnings)]
 
 use crate::*;
-use crate::minesweeper_solver::search_for_islands;
+use crate::solver::search_for_islands;
 use std::vec;
 use colored::Colorize;
 
@@ -11,7 +11,7 @@ pub struct NoGuessField {
     height: u32,
     mines: u32,
     start_cell: (u32, u32),
-    board: Vec<Vec<MineSweeperCell>>,
+    board: Vec<Vec<Cell>>,
 }
 
 impl NoGuessField {
@@ -65,8 +65,8 @@ impl NoGuessField {
 
 impl MineSweeperField for NoGuessField {
     #[track_caller]
-    fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self {
-        let random_field = minesweeper_field(width, height, mines.clone());
+    fn new(width: u32, height: u32, mines: Mines) -> Self {
+        let random_field = RandomField::new(width, height, mines.clone());
 
         let mut field = NoGuessField {
             width,
@@ -98,15 +98,15 @@ impl MineSweeperField for NoGuessField {
         self.start_cell
     }
 
-    fn get_field(&self) -> Vec<Vec<MineSweeperCell>> {
+    fn get_field(&self) -> Vec<Vec<Cell>> {
         self.board.clone()
     }
 
-    fn get_cell(&self, x: u32, y: u32) -> MineSweeperCell {
+    fn get_cell(&self, x: u32, y: u32) -> Cell {
         self.board[x as usize][y as usize].clone()
     }
 
-    fn set_cell(&mut self, x: u32, y: u32, cell: MineSweeperCell) {
+    fn set_cell(&mut self, x: u32, y: u32, cell: Cell) {
         self.board[x as usize][y as usize] = cell;
     }
 }

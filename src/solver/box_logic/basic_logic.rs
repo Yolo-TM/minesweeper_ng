@@ -1,7 +1,7 @@
 use crate::*;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
-    pub(in crate::minesweeper_solver) fn apply_basic_box_logic(&self) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
+    pub(in crate::solver) fn apply_basic_box_logic(&self) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
         let mut safe_fields = vec![];
         let mut mine_fields = vec![];
 

@@ -2,25 +2,25 @@ use std::fs::File;
 use std::io::{Read, Write};
 use serde_json::Value;
 use super::{
-    MineField,
-    MineSweeperCell,
-    MineSweeperFieldCreation,
-    MineSweeperFieldIterator,
-    SurroundingFieldsIterator,
+    DefinedField,
+    Cell,
+    Mines,
+    SortedCells,
+    SurroundingCells,
 };
 
 pub trait MineSweeperField: Sync + Send + Clone + 'static {
     #[track_caller]
-    fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self;
+    fn new(width: u32, height: u32, mines: Mines) -> Self;
 
     fn get_mines(&self) -> u32;
     fn get_width(&self) -> u32;
     fn get_height(&self) -> u32;
     fn get_start_cell(&self) -> (u32, u32);
-    fn get_field(&self) -> Vec<Vec<MineSweeperCell>>;
+    fn get_field(&self) -> Vec<Vec<Cell>>;
 
-    fn get_cell(&self, x: u32, y: u32) -> MineSweeperCell;
-    fn set_cell(&mut self, x: u32, y: u32, cell: MineSweeperCell);
+    fn get_cell(&self, x: u32, y: u32) -> Cell;
+    fn set_cell(&mut self, x: u32, y: u32, cell: Cell);
 
     fn show(&self) {
         let (w, h, m) = self.get_dimensions();
@@ -60,13 +60,13 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
 
     fn assign_numbers(&mut self) {
         for (x, y) in self.sorted_fields() {
-            if self.get_cell(x, y) == MineSweeperCell::Mine {
+            if self.get_cell(x, y) == Cell::Mine {
                 continue;
             }
 
             let count = self.get_sourrounding_mine_count(x, y);
             if count != 0 {
-                self.set_cell(x, y, MineSweeperCell::Number(count));
+                self.set_cell(x, y, Cell::Number(count));
             }
         }
     }
@@ -74,15 +74,15 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
     fn get_sourrounding_mine_count(&self, x: u32, y: u32) -> u8 {
         let mut count = 0;
         for (x, y) in self.surrounding_fields(x, y, None) {
-            if self.get_cell(x, y) == MineSweeperCell::Mine {
+            if self.get_cell(x, y) == Cell::Mine {
                 count += 1;
             }
         }
         count
     }
 
-    fn sorted_fields(&self) -> MineSweeperFieldIterator {
-        MineSweeperFieldIterator {
+    fn sorted_fields(&self) -> SortedCells {
+        SortedCells {
             width: self.get_width(),
             height: self.get_height(),
             current_x: 0,
@@ -90,10 +90,10 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
         }
     }
 
-    fn surrounding_fields(&self, x: u32, y: u32, range: Option<u8>) -> SurroundingFieldsIterator {
+    fn surrounding_fields(&self, x: u32, y: u32, range: Option<u8>) -> SurroundingCells {
         let range = range.unwrap_or(1);
 
-        SurroundingFieldsIterator {
+        SurroundingCells {
             x,
             y,
             width: self.get_width(),
@@ -106,7 +106,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
 
     fn as_json(&self) -> String {
         let mine_positions: Vec<(u32, u32)> = self.sorted_fields()
-            .filter(|&(x, y)| self.get_cell(x, y) == MineSweeperCell::Mine)
+            .filter(|&(x, y)| self.get_cell(x, y) == Cell::Mine)
             .collect();
 
         let json = serde_json::json!({
@@ -136,7 +136,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
         let mut bit_count: u8  = 0;
 
         for (x, y) in self.sorted_fields() {
-            let is_mine = if self.get_cell(x, y) == MineSweeperCell::Mine { 1 } else { 0 };
+            let is_mine = if self.get_cell(x, y) == Cell::Mine { 1 } else { 0 };
 
             current_byte |= is_mine << (7 - bit_count);
             bit_count += 1;
@@ -179,7 +179,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
             }
         }
 
-        let mut field = MineField::new(width, height, MineSweeperFieldCreation::FixedCount(mines));
+        let mut field = DefinedField::new(width, height, Mines::Count(mines));
         field.initialize(mine_array);
         field.set_start_cell(start_x, start_y);
 
@@ -205,7 +205,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
             ));
         }
         
-        let mut field = MineField::new(width, height, MineSweeperFieldCreation::FixedCount(mines));
+        let mut field = DefinedField::new(width, height, Mines::Count(mines));
         field.set_start_cell(start_x, start_y);
 
         let mut bits = vec![];

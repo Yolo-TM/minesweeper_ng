@@ -1,18 +1,18 @@
 use colored::{ColoredString, Colorize};
 
 #[derive(Clone, PartialEq, Debug)]
-pub enum MineSweeperCell {
+pub enum Cell {
     Empty,
     Mine,
     Number(u8),
 }
 
-impl MineSweeperCell {
+impl Cell {
     pub fn get_number(&self) -> u8 {
         match self {
-            MineSweeperCell::Empty => 0,
-            MineSweeperCell::Mine => 9,
-            MineSweeperCell::Number(num) => *num,
+            Cell::Empty => 0,
+            Cell::Mine => 9,
+            Cell::Number(num) => *num,
         }
     }
 

@@ -6,7 +6,7 @@ use num_cpus;
 const MAXIMUM_PERMUTATIONS_IN_THREAD: usize = 18;
 
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
-    pub(in crate::minesweeper_solver) fn apply_permutation_checks(&self) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
+    pub(in crate::solver) fn apply_permutation_checks(&self) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
         let mut safe_fields = vec![];
         let mut mine_fields = vec![];
         let max_mines: u32 = self.field.get_mines() - self.flag_count;

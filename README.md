@@ -15,10 +15,6 @@
 
 - ignore inaccessible parts of the field until nothing else can be solved, then try to solve the inaccessible parts via minecount
 
-- linear equation solver
-- could be not as efficient as pure brute force ...
-  -> to be tested
-
 ### NG Gen
 
 - only mark changed parts as hidden

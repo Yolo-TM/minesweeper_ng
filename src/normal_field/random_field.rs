@@ -1,14 +1,5 @@
-use super::{
-    MineSweeperCell,
-    MineSweeperField,
-    MineSweeperFieldCreation,
-};
-
-use rand::{
-    Rng,
-    rngs::StdRng,
-    SeedableRng,
-};
+use super::{Cell, Mines, MineSweeperField};
+use rand::Rng;
 
 #[derive(Clone)]
 pub struct RandomField {
@@ -16,27 +7,22 @@ pub struct RandomField {
     height: u32,
     mines: u32,
     start_cell: (u32, u32),
-    board: Vec<Vec<MineSweeperCell>>,
+    board: Vec<Vec<Cell>>,
 }
 
 impl MineSweeperField for RandomField {
     #[track_caller]
-    fn new(width: u32, height: u32, mines: MineSweeperFieldCreation) -> Self {
+    fn new(width: u32, height: u32, mines: Mines) -> Self {
+        if !mines.is_valid(width, height) {
+            panic!("Invalid mine configuration!");
+        }
+
         let percentage = mines.get_percentage(width, height);
-
-        if percentage >= 0.9 {
-            panic!("Too many mines, this won't be solvable!");
-        }
-
-        if percentage <= 0.0 {
-            panic!("Negative or zero percentage of mines!");
-        }
-
         if percentage > 0.25 {
             println!("Warning: {}% of the fields are mines!", percentage * 100.0);
         }
 
-        let board = vec![vec![MineSweeperCell::Empty; height as usize]; width as usize];
+        let board = vec![vec![Cell::Empty; height as usize]; width as usize];
         let mines = mines.get_fixed_count(width, height);
 
         let mut field = RandomField {
@@ -67,15 +53,15 @@ impl MineSweeperField for RandomField {
         self.start_cell
     }
 
-    fn get_field(&self) -> Vec<Vec<MineSweeperCell>> {
+    fn get_field(&self) -> Vec<Vec<Cell>> {
         self.board.clone()
     }
 
-    fn get_cell(&self, x: u32, y: u32) -> MineSweeperCell {
+    fn get_cell(&self, x: u32, y: u32) -> Cell {
         self.board[x as usize][y as usize].clone()
     }
 
-    fn set_cell(&mut self, x: u32, y: u32, cell: MineSweeperCell) {
+    fn set_cell(&mut self, x: u32, y: u32, cell: Cell) {
         self.board[x as usize][y as usize] = cell;
     }
 
@@ -90,34 +76,36 @@ impl RandomField {
     }
 
     fn set_start_cell(&mut self) {
-        /*
-        TODO:
-        Set the start field to the first empty cell found
-        Can later also be set to a random empty cell
-        */
+        let mut start_cell_candidates = vec![];
         for (x, y) in self.sorted_fields() {
-            if self.get_cell(x, y) == MineSweeperCell::Empty {
-                self.start_cell = (x, y);
-                return;
+            if self.get_cell(x, y) == Cell::Empty {
+                start_cell_candidates.push((x, y));
             }
         }
+
+        // In the rare case there are no empty cells, fall back to any non-mine cell
+        if start_cell_candidates.is_empty() {
+            for (x, y) in self.sorted_fields() {
+                if self.get_cell(x, y) != Cell::Mine {
+                    start_cell_candidates.push((x, y));
+                }
+            }
+        }
+
+        let index = rand::rng().random_range(0..start_cell_candidates.len());
+        self.start_cell = start_cell_candidates[index];
     }
 
     fn place_mines(&mut self) {
         let mut placed_mines = 0;
-        /*
-        TODO:
-        Currently for testing purposes, but in the future a random seed will be used
-        */
-        let seed: u64 = 40;
-        let mut rng = StdRng::seed_from_u64(seed);
+        let mut rng = rand::rng();
 
         while placed_mines < self.mines {
             let x = (rng.random_range(0..u64::MAX) % self.width as u64 ) as u32;
             let y = (rng.random_range(0..u64::MAX) % self.height as u64 ) as u32;
 
-            if self.get_cell(x, y) == MineSweeperCell::Empty {
-                self.set_cell(x, y, MineSweeperCell::Mine);
+            if self.get_cell(x, y) == Cell::Empty {
+                self.set_cell(x, y, Cell::Mine);
                 placed_mines += 1;
             }
         }

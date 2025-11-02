@@ -1,3 +1,4 @@
 /target
-*.minesweeper
 *.log
+*.minesweeper
+!src/generated/**/*.minesweeper

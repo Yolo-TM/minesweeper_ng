@@ -1,6 +1,6 @@
 mod box_logic;
 mod permutation_checker;
-mod solver;
+mod solver_framework;
 mod islands;
 mod solver_steps;
 

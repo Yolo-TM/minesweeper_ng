@@ -1,4 +1,31 @@
-pub struct SurroundingFieldsIterator {
+pub struct SortedCells {
+    pub width: u32,
+    pub height: u32,
+    pub current_x: u32,
+    pub current_y: u32,
+}
+
+impl Iterator for SortedCells {
+    type Item = (u32, u32);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_y >= self.height {
+            return None;
+        }
+
+        let coord = (self.current_x, self.current_y);
+
+        self.current_x += 1;
+        if self.current_x >= self.width {
+            self.current_x = 0;
+            self.current_y += 1;
+        }
+
+        Some(coord)
+    }
+}
+
+pub struct SurroundingCells {
     pub x: u32,
     pub y: u32,
     pub width: u32,
@@ -8,7 +35,7 @@ pub struct SurroundingFieldsIterator {
     pub dy: i8,
 }
 
-impl Iterator for SurroundingFieldsIterator {
+impl Iterator for SurroundingCells {
     type Item = (u32, u32);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -33,7 +60,7 @@ impl Iterator for SurroundingFieldsIterator {
     }
 }
 
-impl SurroundingFieldsIterator {
+impl SurroundingCells {
     fn increment(&mut self) {
         self.dx += 1;
         if self.dx > self.range as i8 {
