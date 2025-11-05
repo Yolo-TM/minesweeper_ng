@@ -181,9 +181,9 @@ where
             return Some(SolverStep::Complex);
         }
 
-        if self.apply_infos(self.apply_permutation_checks()) {
-            return Some(SolverStep::Permutations);
-        }
+        //if self.apply_infos(self.apply_permutation_checks()) {
+        //    return Some(SolverStep::Permutations);
+        //}
 
         None
     }
