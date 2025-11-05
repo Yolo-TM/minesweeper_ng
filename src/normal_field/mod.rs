@@ -13,7 +13,7 @@ pub use defined_field::DefinedField;
 pub use r#trait::MineSweeperField;
 
 #[allow(dead_code)]
-pub fn minesweeper_field(width: u32, height: u32, mines: Mines) -> RandomField {
+pub fn minesweeper_field(width: u32, height: u32, mines: Mines) -> impl MineSweeperField {
     RandomField::new(width, height, mines)
 }
 

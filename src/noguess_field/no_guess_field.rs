@@ -14,6 +14,59 @@ pub struct NoGuessField {
     board: Vec<Vec<Cell>>,
 }
 
+impl MineSweeperField for NoGuessField {
+
+    #[track_caller]
+    fn new(width: u32, height: u32, mines: Mines) -> Self {
+        let random_field = RandomField::new(width, height, mines.clone());
+
+        let mut field = NoGuessField {
+            width,
+            height,
+            mines: mines.get_fixed_count(width, height),
+            start_cell: random_field.get_start_cell(),
+            board: random_field.get_field(),
+        };
+
+        field.initialize();
+        field
+    }
+
+    fn get_mines(&self) -> u32 {
+        self.mines
+    }
+
+    fn get_width(&self) -> u32 {
+        self.width
+    }
+
+    fn get_height(&self) -> u32 {
+        self.height
+    }
+
+    fn get_start_cell(&self) -> (u32, u32) {
+        self.start_cell
+    }
+
+    fn get_field(&self) -> Vec<Vec<Cell>> {
+        self.board.clone()
+    }
+
+    fn get_cell(&self, x: u32, y: u32) -> Cell {
+        self.board[x as usize][y as usize].clone()
+    }
+
+    fn set_cell(&mut self, x: u32, y: u32, cell: Cell) {
+        self.board[x as usize][y as usize] = cell;
+    }
+}
+
+// The Magic behind making a field solvable without guessing
+// Field has to be deterministicly solvable from the start cell
+// Therefore a deterministicly programm should be able to solve it without any guessing
+// If the solver reaches a point where it has to guess, the field has to be edited
+// until it is solvable again
+
 impl NoGuessField {
     fn initialize(&mut self) {
         let mut solver = MineSweeperSolver::new(self.clone());
@@ -48,7 +101,7 @@ impl NoGuessField {
                 println!("Average: {}", format!("{:.4}", steps.get_average()).yellow());
             }
             _ => {
-                // Solver to dumb or not solvable ...
+                // Solver to dumb or not solvable or any other error ...
                 panic!("The field is currently not solvable, something went wrong!");
             }
         }
@@ -60,53 +113,7 @@ impl NoGuessField {
 
         solver.update_field(vec![]);
         solver.update_states(vec![]);
-    }
-}
 
-impl MineSweeperField for NoGuessField {
-    #[track_caller]
-    fn new(width: u32, height: u32, mines: Mines) -> Self {
-        let random_field = RandomField::new(width, height, mines.clone());
-
-        let mut field = NoGuessField {
-            width,
-            height,
-            mines: mines.get_fixed_count(width, height),
-            start_cell: random_field.get_start_cell(),
-            board: random_field.get_field(),
-        };
-
-        field.show();
-
-        field.initialize();
-        field
-    }
-
-    fn get_mines(&self) -> u32 {
-        self.mines
-    }
-
-    fn get_width(&self) -> u32 {
-        self.width
-    }
-
-    fn get_height(&self) -> u32 {
-        self.height
-    }
-
-    fn get_start_cell(&self) -> (u32, u32) {
-        self.start_cell
-    }
-
-    fn get_field(&self) -> Vec<Vec<Cell>> {
-        self.board.clone()
-    }
-
-    fn get_cell(&self, x: u32, y: u32) -> Cell {
-        self.board[x as usize][y as usize].clone()
-    }
-
-    fn set_cell(&mut self, x: u32, y: u32, cell: Cell) {
-        self.board[x as usize][y as usize] = cell;
+        todo!("Implement field editing to make it solvable without guessing");
     }
 }

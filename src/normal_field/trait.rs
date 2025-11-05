@@ -2,14 +2,15 @@ use std::fs::File;
 use std::io::{Read, Write};
 use serde_json::Value;
 use super::{
-    DefinedField,
     Cell,
     Mines,
     SortedCells,
+    DefinedField,
     SurroundingCells,
 };
 
-pub trait MineSweeperField: Sync + Send + Clone + 'static {
+pub trait MineSweeperField: Clone {
+
     #[track_caller]
     fn new(width: u32, height: u32, mines: Mines) -> Self;
 
@@ -167,6 +168,10 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
         let start_x = parsed["start_x"].as_u64()? as u32;
         let start_y = parsed["start_y"].as_u64()? as u32;
 
+        if start_x >= width || start_y >= height {
+            eprintln!("Error: Start field out of bounds.");
+            return None;
+        }
 
         let mut mine_array = vec![];
         if let Some(mine_positions) = parsed["mine_positions"].as_array() {
@@ -179,13 +184,18 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
             }
         }
 
+        if mine_array.len() != mines as usize {
+            eprintln!("Error: Number of mines in JSON does not match the provided mine positions.");
+            return None;
+        }
+
         let mut field = DefinedField::new(width, height, Mines::Count(mines));
         field.initialize(mine_array);
         field.set_start_cell(start_x, start_y);
 
         Some(field)
     }
-    
+
     fn from_file(file_path: &str) -> std::io::Result<impl MineSweeperField> {
         let mut file = File::open(file_path)?;
         let mut buffer = [0u8; 20]; // buffer for 5 u32 integers
@@ -204,7 +214,7 @@ pub trait MineSweeperField: Sync + Send + Clone + 'static {
                 "Start field out of bounds.",
             ));
         }
-        
+
         let mut field = DefinedField::new(width, height, Mines::Count(mines));
         field.set_start_cell(start_x, start_y);
 

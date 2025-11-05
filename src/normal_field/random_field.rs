@@ -11,6 +11,7 @@ pub struct RandomField {
 }
 
 impl MineSweeperField for RandomField {
+
     #[track_caller]
     fn new(width: u32, height: u32, mines: Mines) -> Self {
         if !mines.is_valid(width, height) {
@@ -91,6 +92,8 @@ impl RandomField {
                 }
             }
         }
+
+        // By now there is definitely at least one candidate, since the percentage is limited to .9 in the Mines struct (Mines.is_valid)
 
         let index = rand::rng().random_range(0..start_cell_candidates.len());
         self.start_cell = start_cell_candidates[index];
