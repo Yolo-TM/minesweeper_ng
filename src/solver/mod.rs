@@ -1,55 +1,23 @@
-mod box_logic;
-//mod permutation_checker;
-mod solver_framework;
-mod islands;
-mod solver_steps;
+mod field_solver;
+mod cell_state;
 
-use crate::MineSweeperField;
-use colored::Colorize;
-pub use islands::{search_for_islands, merge_islands};
-pub use solver_steps::{SolverStepCounter, SolverStep};
+use field_solver::Solver;
+use cell_state::CellState;
+use super::MineSweeperField;
 
-#[derive(Clone)]
-pub struct MineSweeperSolver<M: MineSweeperField> {
-    field:  M,
-    state: Vec<Vec<MineSweeperCellState>>,
-    flag_count: u32,
-    hidden_count: u32,
-    remaining_mines: u32,
-    solution: SolverSolution,
-    steps: SolverStepCounter,
+// Solves the given MineSweeperField and prints the steps taken to reach the solution.
+pub fn solve_field(field: &impl MineSweeperField) {
+    let solver = create_solver(field, 10);
+    solver.solve();
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum MineSweeperCellState {
-    Hidden,
-    Revealed,
-    Flagged,
+// Checks if the given MineSweeperField is solvable. (No Output to stdout)
+pub fn is_solvable(field: &impl MineSweeperField) -> bool {
+    let solver = create_solver(field, 0);
+    solver.solve();
+    solver.is_solved()
 }
 
-
-#[derive(Clone, PartialEq, Debug)]
-pub enum SolverSolution {
-    NeverStarted,
-    NoSolution(u32, u32, u32, Vec<Vec<MineSweeperCellState>>),
-    FoundSolution(SolverStepCounter),
-}
-
-pub fn solve(field: impl MineSweeperField, print_steps: bool) {
-    let (width, height, mines) = field.get_dimensions();
-    let mut solver = MineSweeperSolver::new(field);
-
-    match solver.start(print_steps) {
-        SolverSolution::NoSolution(step_count, remaining_mines, hidden_count, _states) => {
-            println!("No solution found. Stopped after {} steps.\nRemaining Mines: {} ({} %)\nPercentage Solved: {} %", step_count.to_string().red(), remaining_mines.to_string().red(), format!("{:.3}", (remaining_mines as f64 / mines as f64 * 100_f64)).blue(), format!("{:.3}", (100_f64 - hidden_count as f64 / (width * height) as f64 * 100_f64)).blue());
-        }
-        SolverSolution::FoundSolution(steps) => {
-            println!("Found a solution after {} steps.", steps.get_steps().to_string().green());
-            println!("Complexity: {}", steps.get_complexity().blue());
-            println!("Average: {}", format!("{:.4}", steps.get_average()).yellow());
-        }
-        SolverSolution::NeverStarted => {
-            unreachable!("Solver never started, this shouldn't happen!");
-        }
-    }
+pub fn create_solver(field: &impl MineSweeperField, verbosity: u8) -> Solver {
+    Solver::new(field, verbosity)
 }

@@ -1,7 +1,7 @@
 #![allow(warnings)]
 
 use crate::*;
-use crate::solver::search_for_islands;
+//use crate::solver::search_for_islands;
 use std::vec;
 use colored::Colorize;
 
@@ -109,7 +109,7 @@ impl NoGuessField {
     }
 
     fn make_solvable(&mut self, solver: &mut MineSweeperSolver<NoGuessField>, mines: u32, hidden: u32, states: Vec<Vec<MineSweeperCellState>>) {
-        let islands = search_for_islands(self.width, self.height, &self.board, &states);
+        //let islands = search_for_islands(self.width, self.height, &self.board, &states);
 
         solver.update_field(vec![]);
         solver.update_states(vec![]);

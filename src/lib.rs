@@ -1,7 +1,7 @@
 mod generator;
-pub(crate) mod normal_field;
-pub(crate) mod solver;
-mod noguess_field;
+mod normal_field;
+mod solver;
+//mod noguess_field;
 
 // Re-export commonly used types for cleaner imports
 pub use normal_field::{
@@ -14,6 +14,14 @@ pub use normal_field::{
     get_small_test_field,
 };
 
-pub use solver::{MineSweeperSolver, SolverSolution, MineSweeperCellState, solve};
-pub use noguess_field::minesweeper_ng_field;
+pub use solver::{
+    solve_field,
+    is_solvable,
+    create_solver,
+};
 pub use generator::generate;
+
+//pub use noguess_field::minesweeper_ng_field;
+pub fn minesweeper_ng_field(width: u32, height: u32, mines: Mines) -> impl MineSweeperField {
+    RandomField::new(width, height, mines)
+}

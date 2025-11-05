@@ -2,3 +2,4 @@
 *.log
 *.minesweeper
 !src/generated/**/*.minesweeper
+.vscode/
