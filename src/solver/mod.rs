@@ -1,19 +1,21 @@
 mod field_solver;
 mod cell_state;
+mod strategy;
 
+use strategy::SolvingStrategy;
 use field_solver::Solver;
 use cell_state::CellState;
 use super::MineSweeperField;
 
 // Solves the given MineSweeperField and prints the steps taken to reach the solution.
 pub fn solve_field(field: &impl MineSweeperField) {
-    let solver = create_solver(field, 10);
+    let mut solver = create_solver(field, 10);
     solver.solve();
 }
 
 // Checks if the given MineSweeperField is solvable. (No Output to stdout)
 pub fn is_solvable(field: &impl MineSweeperField) -> bool {
-    let solver = create_solver(field, 0);
+    let mut solver = create_solver(field, 0);
     solver.solve();
     solver.is_solved()
 }

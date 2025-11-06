@@ -1,5 +1,5 @@
-use crate::MineSweeperField;
-use super::CellState;
+use crate::{MineSweeperField, Cell};
+use super::{CellState, SolvingStrategy};
 use crate::normal_field::SortedCells;
 
 pub struct Solver {
@@ -39,8 +39,8 @@ impl Solver {
         for (x, y) in self.sorted_fields() {
             match self.state[x as usize][y as usize] {
                 CellState::Revealed(_) => continue,
+                CellState::Hidden(_) => continue,
                 CellState::Flagged(_) => flag_counter += 1,
-                CellState::Hidden(_) => return false,
             }
         }
 
@@ -51,7 +51,7 @@ impl Solver {
         true
     }
 
-    pub fn solve(&self) {
+    pub fn solve(&mut self) {
         if self.verbosity > 8 {
             println!("Starting solving process...");
             println!("Field dimensions: {}x{}, Mines: {}", self.width, self.height, self.mines);
@@ -81,11 +81,25 @@ impl Solver {
         }
     }
 
-    fn do_solving_step(&self) {
-        let revealed_cells: Vec<(u32, u32)> = Vec::new();
-        let flagged_cells: Vec<(u32, u32)> = Vec::new();
+    fn do_solving_step(&mut self) {
+        let mut revealed_cells: Vec<(u32, u32)> = Vec::new();
+        let mut flagged_cells: Vec<(u32, u32)> = Vec::new();
 
-        // TODO! Implement solving logic here
+        for strategy in SolvingStrategy::iter() {
+            let (rev, flag) = strategy.execute(self);
+
+            if !rev.is_empty() || !flag.is_empty() {
+                if self.verbosity > 6 {
+                    println!("Strategy {:?} made progress: Revealed {}, Flagged {}", strategy, rev.len(), flag.len());
+                }
+
+                revealed_cells.extend(rev);
+                flagged_cells.extend(flag);
+
+                // Only apply one strategy per step
+                break;
+            }
+        }
 
         if revealed_cells.is_empty() && flagged_cells.is_empty() {
             if self.verbosity > 7 {
@@ -93,24 +107,24 @@ impl Solver {
             }
         } else {
             for (x, y) in &revealed_cells {
-                self.reveal_cell(self, *x, *y);
+                self.reveal_cell(*x, *y);
             }
 
             for (x, y) in &flagged_cells {
-                self.flag_cell(self, *x, *y);
+                self.flag_cell(*x, *y);
             }
 
             self.solving_steps.push((revealed_cells, flagged_cells));
         }
     }
 
-    fn flag_cell(&self, x: u32, y: u32) {
+    fn flag_cell(&mut self, x: u32, y: u32) {
         // Don't bother checking if it's actually a mine here, if its no mine, were definitely hitting one in the next step
         let cell = self.state[x as usize][y as usize].get_cell();
-        self.state[x as usize][y as usize] = CellState::Flagged(cell);
+        self.state[x as usize][y as usize] = CellState::Flagged(cell.clone());
     }
 
-    fn reveal_cell(&self, x: u32, y: u32) {
+    fn reveal_cell(&mut self, x: u32, y: u32) {
         let cell = self.state[x as usize][y as usize].get_cell();
 
         match cell {
@@ -121,7 +135,9 @@ impl Solver {
                 }
                 panic!("Solver hit a mine!");
             }
-            _ => self.state[x as usize][y as usize] = CellState::Revealed(cell);
+            _ => {
+                self.state[x as usize][y as usize] = CellState::Revealed(cell.clone());
+            }
         }
     }
 
