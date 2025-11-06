@@ -1,6 +1,7 @@
 #[macro_use]
 mod r#macro;
-use super::Solver;
+use super::{CellState, Solver};
+use crate::Cell;
 
 mod simple;
 mod complex;
