@@ -1,12 +1,13 @@
 #[macro_use]
 mod r#macro;
-use super::{CellState, Solver};
-use crate::Cell;
+use super::Solver;
 
 mod simple;
-mod complex;
+mod reduction;
+mod boxes;
 
 define_strategies! {
     Simple => simple,
-    Complex => complex,
+    Reduction => reduction,
+    Boxes => boxes,
 }
