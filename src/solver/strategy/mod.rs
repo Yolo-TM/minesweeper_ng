@@ -2,9 +2,9 @@
 mod r#macro;
 use super::Solver;
 
-mod simple;
-mod reduction;
 mod boxes;
+mod reduction;
+mod simple;
 
 define_strategies! {
     Simple => simple,

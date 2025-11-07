@@ -2,7 +2,6 @@ use super::Solver;
 use crate::normal_field::{SortedCells, SurroundingCells};
 
 impl Solver {
-
     pub(super) fn println(&self, message: &str, verbosity_level: u8) {
         if self.verbosity >= verbosity_level {
             println!("{}", message);
@@ -54,6 +53,14 @@ impl Solver {
 
     pub(super) fn surrounding_fields(&self, x: u32, y: u32, range: Option<u8>) -> SurroundingCells {
         let range = range.unwrap_or(1);
-        SurroundingCells { x, y, width: self.width, height: self.height, range, dx: -(range as i8), dy: -(range as i8) }
+        SurroundingCells {
+            x,
+            y,
+            width: self.width,
+            height: self.height,
+            range,
+            dx: -(range as i8),
+            dy: -(range as i8),
+        }
     }
 }

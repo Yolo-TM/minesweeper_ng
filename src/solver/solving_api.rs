@@ -1,15 +1,16 @@
+use super::{CellState, Solver, SolvingStrategy};
+use crate::{Cell, MineSweeperField};
 use core::panic;
-use crate::{MineSweeperField, Cell};
-use super::{Solver, CellState, SolvingStrategy};
 
 impl Solver {
-
     pub fn new(field: &impl MineSweeperField, verbosity: u8) -> Self {
-        let state = (0..field.get_width()).map(|x| {
-            (0..field.get_height())
-                .map(|y| CellState::Hidden(field.get_cell(x, y)))
-                .collect()
-            }).collect();
+        let state = (0..field.get_width())
+            .map(|x| {
+                (0..field.get_height())
+                    .map(|y| CellState::Hidden(field.get_cell(x, y)))
+                    .collect()
+            })
+            .collect();
 
         Solver {
             verbosity,
@@ -41,7 +42,13 @@ impl Solver {
 
     pub fn solve(&mut self) {
         self.println("Starting solving process...", 8);
-        self.println(&format!("Field dimensions: {}x{}, Mines: {}", self.width, self.height, self.mines), 8);
+        self.println(
+            &format!(
+                "Field dimensions: {}x{}, Mines: {}",
+                self.width, self.height, self.mines
+            ),
+            8,
+        );
         self.println(&format!("Start cell: {:?}", self.start_cell), 8);
         self.println("Opening start cell...", 8);
 
@@ -60,7 +67,13 @@ impl Solver {
         if self.is_solved() {
             self.println(&format!("Field solved in {} steps!", step_count), 8);
         } else {
-            self.println(&format!("Solver could not solve the field after {} steps.", step_count), 8);
+            self.println(
+                &format!(
+                    "Solver could not solve the field after {} steps.",
+                    step_count
+                ),
+                8,
+            );
         }
     }
 
@@ -72,7 +85,15 @@ impl Solver {
             let (rev, flag) = strategy.execute(self);
 
             if !rev.is_empty() || !flag.is_empty() {
-                self.println(&format!("Strategy {:?} made progress: Revealed {}, Flagged {}", strategy, rev.len(), flag.len()), 7);
+                self.println(
+                    &format!(
+                        "Strategy {:?} made progress: Revealed {}, Flagged {}",
+                        strategy,
+                        rev.len(),
+                        flag.len()
+                    ),
+                    7,
+                );
 
                 revealed_cells.extend(rev);
                 flagged_cells.extend(flag);
@@ -97,8 +118,14 @@ impl Solver {
     }
 
     fn open_start_cell(&mut self) {
-        if self.get_state(self.start_cell.0, self.start_cell.1).get_cell() != &Cell::Empty {
-            panic!("The Start Cell is directly bordering a Mine! The Solver expects the start cell to be empty.");
+        if self
+            .get_state(self.start_cell.0, self.start_cell.1)
+            .get_cell()
+            != &Cell::Empty
+        {
+            panic!(
+                "The Start Cell is directly bordering a Mine! The Solver expects the start cell to be empty."
+            );
         }
 
         self.reveal_cell(self.start_cell.0, self.start_cell.1);

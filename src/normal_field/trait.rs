@@ -1,16 +1,9 @@
+use super::{Cell, DefinedField, Mines, SortedCells, SurroundingCells};
+use serde_json::Value;
 use std::fs::File;
 use std::io::{Read, Write};
-use serde_json::Value;
-use super::{
-    Cell,
-    Mines,
-    SortedCells,
-    DefinedField,
-    SurroundingCells,
-};
 
 pub trait MineSweeperField: Clone {
-
     #[track_caller]
     fn new(width: u32, height: u32, mines: Mines) -> Self;
 
@@ -106,7 +99,8 @@ pub trait MineSweeperField: Clone {
     }
 
     fn as_json(&self) -> String {
-        let mine_positions: Vec<(u32, u32)> = self.sorted_fields()
+        let mine_positions: Vec<(u32, u32)> = self
+            .sorted_fields()
             .filter(|&(x, y)| self.get_cell(x, y) == Cell::Mine)
             .collect();
 
@@ -134,10 +128,14 @@ pub trait MineSweeperField: Clone {
 
         let mut bits: Vec<u8> = Vec::new();
         let mut current_byte: u8 = 0u8;
-        let mut bit_count: u8  = 0;
+        let mut bit_count: u8 = 0;
 
         for (x, y) in self.sorted_fields() {
-            let is_mine = if self.get_cell(x, y) == Cell::Mine { 1 } else { 0 };
+            let is_mine = if self.get_cell(x, y) == Cell::Mine {
+                1
+            } else {
+                0
+            };
 
             current_byte |= is_mine << (7 - bit_count);
             bit_count += 1;
@@ -176,7 +174,8 @@ pub trait MineSweeperField: Clone {
         let mut mine_array = vec![];
         if let Some(mine_positions) = parsed["mine_positions"].as_array() {
             for position in mine_positions {
-                if let Some((x, y)) = position.as_array()
+                if let Some((x, y)) = position
+                    .as_array()
                     .and_then(|arr| Some((arr[0].as_u64()? as u32, arr[1].as_u64()? as u32)))
                 {
                     mine_array.push((x, y));

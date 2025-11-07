@@ -13,7 +13,7 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
     let mut flag: Vec<(u32, u32)> = Vec::new();
 
     for (x, y) in solver.sorted_fields() {
-        if !solver.has_informations(x, y){
+        if !solver.has_informations(x, y) {
             continue;
         }
 

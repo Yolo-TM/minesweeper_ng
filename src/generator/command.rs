@@ -1,6 +1,6 @@
-use std::process::exit;
-use clap::{Arg, ArgAction, ArgGroup, Command};
 use crate::Mines;
+use clap::{Arg, ArgAction, ArgGroup, Command};
+use std::process::exit;
 
 #[derive(Clone)]
 pub struct CommandResult {
@@ -27,7 +27,7 @@ pub fn execute_command() -> CommandResult {
                 no_guess,
                 output: output + ".minesweeper",
             }
-        },
+        }
         Some(("batch", sub_matches)) => {
             let (width, height, mine_spec, no_guess, output) = parse_common_args(sub_matches);
             let count = *sub_matches.get_one::<u32>("count").unwrap();
@@ -40,7 +40,7 @@ pub fn execute_command() -> CommandResult {
                 no_guess,
                 output,
             }
-        },
+        }
         _ => {
             build_command().print_help().unwrap();
             println!();
@@ -55,58 +55,79 @@ fn build_command() -> Command {
             .about(about)
             .disable_help_flag(true)
             .help_template("{about}\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}")
-            .arg(Arg::new("width")
-                .short('w')
-                .long("width")
-                .help("Width of the field")
-                .value_parser(clap::value_parser!(u32))
-                .required(true))
-            .arg(Arg::new("height")
-                .short('h')
-                .long("height")
-                .help("Height of the field")
-                .value_parser(clap::value_parser!(u32))
-                .required(true))
-            .arg(Arg::new("mines")
-                .short('m')
-                .long("mines")
-                .help("Number of mines")
-                .value_parser(clap::value_parser!(u32)))
-            .arg(Arg::new("percentage")
-                .short('p')
-                .long("percentage")
-                .help("Percentage of mines (0.0-1.0)")
-                .value_parser(clap::value_parser!(f32)))
-            .arg(Arg::new("no-guess")
-                .long("no-guess")
-                .help("Generate no-guess fields (solvable without guessing)")
-                .action(ArgAction::SetTrue))
-            .arg(Arg::new("output")
-                .short('o')
-                .long("output")
-                .help("Output Folder")
-                .value_parser(clap::value_parser!(String)))
-            .arg(Arg::new("help")
-                .long("help")
-                .help("Print help")
-                .action(ArgAction::Help))
-            .group(ArgGroup::new("mine_spec")
-                .args(&["mines", "percentage"])
-                .required(true))
+            .arg(
+                Arg::new("width")
+                    .short('w')
+                    .long("width")
+                    .help("Width of the field")
+                    .value_parser(clap::value_parser!(u32))
+                    .required(true),
+            )
+            .arg(
+                Arg::new("height")
+                    .short('h')
+                    .long("height")
+                    .help("Height of the field")
+                    .value_parser(clap::value_parser!(u32))
+                    .required(true),
+            )
+            .arg(
+                Arg::new("mines")
+                    .short('m')
+                    .long("mines")
+                    .help("Number of mines")
+                    .value_parser(clap::value_parser!(u32)),
+            )
+            .arg(
+                Arg::new("percentage")
+                    .short('p')
+                    .long("percentage")
+                    .help("Percentage of mines (0.0-1.0)")
+                    .value_parser(clap::value_parser!(f32)),
+            )
+            .arg(
+                Arg::new("no-guess")
+                    .long("no-guess")
+                    .help("Generate no-guess fields (solvable without guessing)")
+                    .action(ArgAction::SetTrue),
+            )
+            .arg(
+                Arg::new("output")
+                    .short('o')
+                    .long("output")
+                    .help("Output Folder")
+                    .value_parser(clap::value_parser!(String)),
+            )
+            .arg(
+                Arg::new("help")
+                    .long("help")
+                    .help("Print help")
+                    .action(ArgAction::Help),
+            )
+            .group(
+                ArgGroup::new("mine_spec")
+                    .args(&["mines", "percentage"])
+                    .required(true),
+            )
     }
 
     Command::new("minesweeper_gen")
         .version(env!("CARGO_PKG_VERSION"))
         .about("Generate minesweeper fields")
-        .subcommand(build_base_subcommand("generate", "Generate a single minesweeper field"))
-        .subcommand(build_base_subcommand("batch", "Generate multiple minesweeper fields")
-            .arg(Arg::new("count")
-                .short('c')
-                .long("count")
-                .help("Number of fields to generate")
-                .value_parser(clap::value_parser!(u32))
-                .required(true))
-            )
+        .subcommand(build_base_subcommand(
+            "generate",
+            "Generate a single minesweeper field",
+        ))
+        .subcommand(
+            build_base_subcommand("batch", "Generate multiple minesweeper fields").arg(
+                Arg::new("count")
+                    .short('c')
+                    .long("count")
+                    .help("Number of fields to generate")
+                    .value_parser(clap::value_parser!(u32))
+                    .required(true),
+            ),
+        )
 }
 
 fn parse_common_args(sub_matches: &clap::ArgMatches) -> (u32, u32, Mines, bool, String) {
@@ -130,10 +151,19 @@ fn parse_common_args(sub_matches: &clap::ArgMatches) -> (u32, u32, Mines, bool, 
         exit(2);
     }
 
-    let output_directory = sub_matches.get_one::<String>("output").cloned().unwrap_or_else(|| {
-        let prefix = if no_guess { "ng_" } else { "" };
-        format!("{}{}x{}_{}_mines", prefix, width, height, mine_spec.get_fixed_count(width, height))
-    });
+    let output_directory = sub_matches
+        .get_one::<String>("output")
+        .cloned()
+        .unwrap_or_else(|| {
+            let prefix = if no_guess { "ng_" } else { "" };
+            format!(
+                "{}{}x{}_{}_mines",
+                prefix,
+                width,
+                height,
+                mine_spec.get_fixed_count(width, height)
+            )
+        });
 
     (width, height, mine_spec, no_guess, output_directory)
 }

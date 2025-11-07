@@ -1,8 +1,8 @@
-mod command;
 mod batch;
+mod command;
 mod single;
 
-use command::{execute_command, CommandResult};
+use command::{CommandResult, execute_command};
 
 pub fn generate() {
     let res = execute_command();
@@ -13,4 +13,3 @@ pub fn generate() {
         batch::generate_fields(res);
     }
 }
-

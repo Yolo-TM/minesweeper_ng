@@ -45,7 +45,8 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
                     safe_fields.extend(unique_to_second.iter().copied());
                 } else {
                     let reduced_diff = reduced_count2 - reduced_count;
-                    let unique_count = solver.get_surrounding_unrevealed_count(new_x, new_y) - shared_fields.len() as u8;
+                    let unique_count = solver.get_surrounding_unrevealed_count(new_x, new_y)
+                        - shared_fields.len() as u8;
 
                     if reduced_diff == unique_count {
                         // All unique fields must be mines
@@ -53,7 +54,6 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
                     }
                 }
             }
-
             // Case 2: First cell has more mines than second
             else if reduced_count > reduced_count2 {
                 // Fields unique to first cell

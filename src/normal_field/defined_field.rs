@@ -10,10 +10,8 @@ pub struct DefinedField {
 }
 
 impl MineSweeperField for DefinedField {
-
     #[track_caller]
     fn new(width: u32, height: u32, mines: Mines) -> Self {
-
         if !mines.is_valid(width, height) {
             panic!("Invalid mine configuration!");
         }

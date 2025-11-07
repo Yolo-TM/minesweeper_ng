@@ -1,15 +1,15 @@
 mod cell;
-mod mines;
-mod iterators;
-mod random_field;
 mod defined_field;
+mod iterators;
+mod mines;
+mod random_field;
 mod r#trait;
 
 pub use cell::Cell;
-pub use mines::Mines;
-pub use iterators::{SortedCells, SurroundingCells};
-pub use random_field::RandomField;
 pub use defined_field::DefinedField;
+pub use iterators::{SortedCells, SurroundingCells};
+pub use mines::Mines;
+pub use random_field::RandomField;
 pub use r#trait::MineSweeperField;
 
 #[allow(dead_code)]

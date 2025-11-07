@@ -1,9 +1,8 @@
-use core::panic;
+use super::{CellState, Solver};
 use crate::Cell;
-use super::{Solver, CellState};
+use core::panic;
 
 impl Solver {
-
     pub(super) fn get_state(&self, x: u32, y: u32) -> &CellState {
         &self.state[x as usize][y as usize]
     }
@@ -32,7 +31,10 @@ impl Solver {
         match cell {
             Cell::Mine => {
                 self.print_field(2);
-                self.println(&format!("Stepped on a mine at ({}, {})! Solver failed.", x, y), 2);
+                self.println(
+                    &format!("Stepped on a mine at ({}, {})! Solver failed.", x, y),
+                    2,
+                );
                 panic!("Solver hit a mine!");
             }
             Cell::Number(n) => {
@@ -119,7 +121,10 @@ impl Solver {
         let flag_count = self.get_surrounding_flag_count(x, y);
         let number = match self.get_state(x, y).get_cell() {
             Cell::Number(n) => n,
-            _ => panic!("get_reduced_count called on non-number cell at ({}, {})", x, y),
+            _ => panic!(
+                "get_reduced_count called on non-number cell at ({}, {})",
+                x, y
+            ),
         };
 
         if flag_count > *number {
@@ -134,7 +139,7 @@ impl Solver {
 
     pub(super) fn has_informations(&self, x: u32, y: u32) -> bool {
         matches!(self.get_state(x, y), CellState::Revealed(_))
-        && matches!(self.get_state(x, y).get_cell(), Cell::Number(_))
-        && self.has_unrevealed_neighbours(x, y)
+            && matches!(self.get_state(x, y).get_cell(), Cell::Number(_))
+            && self.has_unrevealed_neighbours(x, y)
     }
 }

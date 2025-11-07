@@ -1,4 +1,4 @@
-use super::{Cell, Mines, MineSweeperField};
+use super::{Cell, MineSweeperField, Mines};
 use rand::Rng;
 
 #[derive(Clone)]
@@ -11,7 +11,6 @@ pub struct RandomField {
 }
 
 impl MineSweeperField for RandomField {
-
     #[track_caller]
     fn new(width: u32, height: u32, mines: Mines) -> Self {
         if !mines.is_valid(width, height) {
@@ -65,11 +64,9 @@ impl MineSweeperField for RandomField {
     fn set_cell(&mut self, x: u32, y: u32, cell: Cell) {
         self.board[x as usize][y as usize] = cell;
     }
-
 }
 
 impl RandomField {
-
     fn initialize(&mut self) {
         self.place_mines();
         self.assign_numbers();
@@ -104,8 +101,8 @@ impl RandomField {
         let mut rng = rand::rng();
 
         while placed_mines < self.mines {
-            let x = (rng.random_range(0..u64::MAX) % self.width as u64 ) as u32;
-            let y = (rng.random_range(0..u64::MAX) % self.height as u64 ) as u32;
+            let x = (rng.random_range(0..u64::MAX) % self.width as u64) as u32;
+            let y = (rng.random_range(0..u64::MAX) % self.height as u64) as u32;
 
             if self.get_cell(x, y) == Cell::Empty {
                 self.set_cell(x, y, Cell::Mine);

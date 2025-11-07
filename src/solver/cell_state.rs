@@ -1,5 +1,5 @@
-use colored::{ColoredString, Colorize};
 use crate::Cell;
+use colored::{ColoredString, Colorize};
 
 #[derive(Clone)]
 pub enum CellState {

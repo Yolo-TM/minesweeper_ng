@@ -1,13 +1,16 @@
 use super::CommandResult;
-use std::{process::exit, path::Path};
+use crate::MineSweeperField;
 use crate::RandomField;
 use crate::minesweeper_ng_field;
-use crate::MineSweeperField;
+use std::{path::Path, process::exit};
 
 pub fn generate_field(field_data: CommandResult) {
     // Check if file already exists and warn user
     if Path::new(&field_data.output).exists() {
-        println!("Warning: File '{}' already exists and will be overwritten.", field_data.output);
+        println!(
+            "Warning: File '{}' already exists and will be overwritten.",
+            field_data.output
+        );
     }
 
     macro_rules! process_field {
