@@ -11,6 +11,7 @@ fn main() {
     //field.to_file("ng_field.minesweeper").unwrap();
     let field = RandomField::new(45, 26, Mines::Density(0.22));
     field.show();
+    solve_field(&field);
     //solve(field, true);
 
     println!("Time elapsed: {:?}", start.elapsed());
