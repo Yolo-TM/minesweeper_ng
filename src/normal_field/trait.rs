@@ -61,6 +61,8 @@ pub trait MineSweeperField: Clone {
             let count = self.get_sourrounding_mine_count(x, y);
             if count != 0 {
                 self.set_cell(x, y, Cell::Number(count));
+            } else if self.get_cell(x, y) != Cell::Empty {
+                self.set_cell(x, y, Cell::Empty);
             }
         }
     }
