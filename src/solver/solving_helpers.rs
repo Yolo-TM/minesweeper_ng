@@ -71,16 +71,6 @@ impl Solver {
         false
     }
 
-    pub(super) fn has_revealed_neighbours(&self, x: u32, y: u32) -> bool {
-        for (new_x, new_y) in self.surrounding_fields(x, y, None) {
-            if let CellState::Revealed(_) = self.get_state(new_x, new_y) {
-                return true;
-            }
-        }
-
-        false
-    }
-
     pub(super) fn get_surrounding_flag_count(&self, x: u32, y: u32) -> u8 {
         let mut flag_count = 0;
 
