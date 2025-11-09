@@ -18,7 +18,7 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
 
         let surrounding_unrevealed = solver.get_surrounding_unrevealed(x, y);
         let reduced_count = solver.get_reduced_count(x, y);
-        let group = Group::new(surrounding_unrevealed, reduced_count);
+        let group = Group::new(surrounding_unrevealed, reduced_count..=reduced_count);
 
         /*
         Gather all Possible Groups around our current one
@@ -31,7 +31,7 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
 
             let surrounding_unrevealed = solver.get_surrounding_unrevealed(sx, sy);
             let reduced_count = solver.get_reduced_count(sx, sy);
-            possible_relevant_groups.push(Group::new(surrounding_unrevealed, reduced_count));
+            possible_relevant_groups.push(Group::new(surrounding_unrevealed, reduced_count..=reduced_count));
         }
 
         /*
@@ -45,7 +45,7 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
                     continue 'outer;
                 }
             }
-            dedup_relevant_groups.push(Group::new(g.fields.clone(), g.count));
+            dedup_relevant_groups.push(Group::new(g.fields.clone(), g.range.clone()));
         }
 
         /*
@@ -59,7 +59,7 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
         */
         let mut relevant_groups: Vec<Group> = vec![];
         for g in &dedup_relevant_groups {
-            if g.count == 1 {
+            if *g.range.end() == 1 {
                 relevant_groups.push(Group::from(g));
                 continue;
             }
@@ -80,10 +80,10 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
                         }
                     }
 
-                    let shared_count = other.count;
-                    let unique_count = g.count - shared_count;
-                    relevant_groups.push(Group::new(shared_fields, shared_count));
-                    relevant_groups.push(Group::new(unique_fields, unique_count));
+                    let shared_count = *other.range.start();
+                    let unique_count = g.range.start().saturating_sub(shared_count);
+                    relevant_groups.push(Group::new(shared_fields, shared_count..=shared_count));
+                    relevant_groups.push(Group::new(unique_fields, unique_count..=unique_count));
                     found_subset = true;
                     break;
                 }
@@ -102,11 +102,15 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
         /*
         Now Compare or new groups to our main group and check if we can deduce any safe or mine fields
         */
+        let splitted_main: Vec<Group> = vec![];
+        for g in &relevant_groups {
+            
+        }
 
         println!("Current Field: ({}, {})\n Group: {:?}", x, y, group.fields);
         println!("Possible relevant groups:");
         for g in &relevant_groups {
-            println!("  Group: {:?}, Count: {}", g.fields, g.count);
+            println!("  Group: {:?}, Count: {:?}", g.fields, g.range);
         }
     }
 
@@ -115,18 +119,18 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
 
 struct Group {
     fields: Vec<(u32, u32)>,
-    count: u8,
+    range: std::ops::RangeInclusive<u8>,
 }
 
 impl Group {
-    fn new(fields: Vec<(u32, u32)>, count: u8) -> Self {
-        Self { fields, count }
+    fn new(fields: Vec<(u32, u32)>, range: std::ops::RangeInclusive<u8>) -> Self {
+        Self { fields, range }
     }
 
     fn from(other: &Group) -> Self {
         Self {
             fields: other.fields.clone(),
-            count: other.count,
+            range: other.range.clone(),
         }
     }
 
@@ -143,7 +147,7 @@ impl Group {
     }
 
     fn has_same_count(&self, other: &Group) -> bool {
-        self.count == other.count
+        self.range.start() == other.range.start() && self.range.end() == other.range.end()
     }
 
     fn has_same_fields(&self, other: &Group) -> bool {
