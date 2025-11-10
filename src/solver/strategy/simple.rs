@@ -1,4 +1,4 @@
-use super::Solver;
+use super::{Solver, Finding};
 
 /*
 Simple strategy:
@@ -8,9 +8,8 @@ For each revealed cell with neighbouring hidden cells:
 - If the reduced mine count equals the number of neighbouring hidden cells, all those hidden cells are mines and should be flagged.
 */
 
-pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
-    let mut reveale: Vec<(u32, u32)> = Vec::new();
-    let mut flag: Vec<(u32, u32)> = Vec::new();
+pub fn solve(solver: &Solver) -> Finding {
+    let mut finding = Finding::new();
 
     for (x, y) in solver.sorted_fields() {
         if !solver.has_informations(x, y) {
@@ -21,11 +20,12 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
         let fields = solver.get_surrounding_unrevealed(x, y);
 
         if needed_mines == 0 {
-            reveale.extend(fields);
+            // Only add new fields to avoid duplicates
+            finding.add_safe_fields(fields);
         } else if needed_mines == fields.len() as u8 {
-            flag.extend(fields);
+            finding.add_mine_fields(fields);
         }
     }
 
-    (reveale, flag)
+    finding
 }

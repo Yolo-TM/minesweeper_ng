@@ -1,4 +1,4 @@
-use super::Solver;
+use super::{Solver, Finding};
 
 /*
 Reduction strategy:
@@ -11,9 +11,8 @@ For each revealed Number cell with neighbouring hidden cells:
 - If the first cell has more mines than the second, and the difference equals the number of unique hidden cells of the first cell, those unique cells are mines.
 */
 
-pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
-    let mut safe_fields = vec![];
-    let mut mine_fields = vec![];
+pub fn solve(solver: &Solver) -> Finding {
+    let mut finding = Finding::new();
 
     for (x, y) in solver.sorted_fields() {
         if !solver.has_informations(x, y) {
@@ -42,7 +41,7 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
 
                 if reduced_count == reduced_count2 {
                     // Same mine count in shared area → unique fields are safe
-                    safe_fields.extend(unique_to_second.iter().copied());
+                    finding.add_safe_fields(unique_to_second);
                 } else {
                     let reduced_diff = reduced_count2 - reduced_count;
                     let unique_count = solver.get_surrounding_unrevealed_count(new_x, new_y)
@@ -50,7 +49,7 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
 
                     if reduced_diff == unique_count {
                         // All unique fields must be mines
-                        mine_fields.extend(unique_to_second.iter().copied());
+                        finding.add_mine_fields(unique_to_second);
                     }
                 }
             }
@@ -66,11 +65,11 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
 
                 if reduced_diff == unique_to_first.len() {
                     // All unique fields of first cell must be mines
-                    mine_fields.extend(unique_to_first);
+                    finding.add_mine_fields(unique_to_first);
                 }
             }
         }
     }
 
-    (safe_fields, mine_fields)
+    finding
 }

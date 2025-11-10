@@ -3,10 +3,12 @@ mod solving_api;
 mod solving_helpers;
 mod solving_utils;
 mod strategy;
+mod findings;
 
 use super::MineSweeperField;
 use cell_state::CellState;
 use strategy::SolvingStrategy;
+use findings::Finding;
 
 pub struct Solver {
     verbosity: u8,
@@ -17,7 +19,7 @@ pub struct Solver {
     start_cell: (u32, u32),
 
     // TODO: Later add tracking of how hard the step was / which logic was used
-    solving_steps: Vec<(Vec<(u32, u32)>, Vec<(u32, u32)>)>,
+    solving_steps: Vec<Finding>,
 }
 
 // Solves the given MineSweeperField and prints the steps taken to reach the solution.

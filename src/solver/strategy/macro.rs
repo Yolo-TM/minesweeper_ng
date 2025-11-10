@@ -10,7 +10,7 @@ macro_rules! define_strategies {
                 $(Self::$variant),*
             ];
 
-            fn get_method(&self) -> fn(&Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
+            fn get_method(&self) -> fn(&Solver) -> Finding {
                 match self {
                     $(Self::$variant => $module::solve),*
                 }
@@ -20,7 +20,7 @@ macro_rules! define_strategies {
                 Self::ALL.iter().copied()
             }
 
-            pub fn execute(&self, solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
+            pub fn execute(&self, solver: &Solver) -> Finding {
                 self.get_method()(solver)
             }
         }

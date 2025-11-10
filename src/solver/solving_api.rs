@@ -1,4 +1,4 @@
-use super::{CellState, Solver, SolvingStrategy};
+use super::{CellState, Solver, SolvingStrategy, Finding};
 use crate::{Cell, MineSweeperField};
 use core::panic;
 
@@ -78,43 +78,42 @@ impl Solver {
     }
 
     fn do_solving_step(&mut self) {
-        let mut revealed_cells: Vec<(u32, u32)> = Vec::new();
-        let mut flagged_cells: Vec<(u32, u32)> = Vec::new();
+        let mut step_solution: Option<Finding> = None;
 
         for strategy in SolvingStrategy::iter() {
-            let (rev, flag) = strategy.execute(self);
+            let finding: Finding = strategy.execute(self);
 
-            if !rev.is_empty() || !flag.is_empty() {
+            if finding.success() {
                 self.println(
                     &format!(
-                        "Strategy {:?} made progress: Revealed {}, Flagged {}",
+                        "Strategy {:?} made progress: Revealed {:?}, Flagged {:?}",
                         strategy,
-                        rev.len(),
-                        flag.len()
+                        finding.get_safe_fields(),
+                        finding.get_mine_fields()
                     ),
                     7,
                 );
 
-                revealed_cells.extend(rev);
-                flagged_cells.extend(flag);
-                // Only apply one strategy per step
+                step_solution = Some(finding);
                 break;
             }
         }
 
-        if revealed_cells.is_empty() && flagged_cells.is_empty() {
+        if step_solution.is_none() {
             self.println("No progress made in this step.", 8);
-        } else {
-            for (x, y) in &revealed_cells {
-                // Since Reveal Cell is recursive, not all cells will be in the solving_steps list
-                self.reveal_cell(*x, *y);
-            }
-            for (x, y) in &flagged_cells {
-                self.flag_cell(*x, *y);
-            }
-
-            self.solving_steps.push((revealed_cells, flagged_cells));
+            return;
         }
+        let step_solution: Finding = step_solution.unwrap();
+
+        for (x, y) in step_solution.get_safe_fields() {
+            // Since Reveal Cell is recursive, not all cells will be in the solving_steps list
+            self.reveal_cell(*x, *y);
+        }
+        for (x, y) in step_solution.get_mine_fields() {
+            self.flag_cell(*x, *y);
+        }
+
+        self.solving_steps.push(step_solution);
     }
 
     fn open_start_cell(&mut self) {

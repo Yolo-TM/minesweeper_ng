@@ -1,8 +1,3 @@
-use super::Box;
-use crate::*;
-use std::collections::HashMap;
-use std::vec;
-
 impl<M> MineSweeperSolver<M> where M: MineSweeperField {
 
     pub(in crate::solver) fn apply_extended_box_logic(&self) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {

@@ -3,7 +3,13 @@ use std::vec;
 
 /*
 
-Boxes strategy: In Rework
+Boxes strategy:
+
+- Complex strategy which analyses groups of fields and their mine counts to deduce safe fields and mine fields.
+- Should be able to solve things like 1-3-1 corners etc..
+- Works Partially
+- Logic is very complex and not proven to be true / work for every Case
+> Therefore this strategy is experimental and not used for now
 
 */
 
@@ -64,14 +70,11 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
                 continue;
             }
 
-            // Try to find subsets
             let mut found_subset = false;
             for other in &possible_relevant_groups {
                 if other.is_subset_of(g) && other.fields.len() != g.fields.len() {
-                    // create the 2 new groups
                     let mut shared_fields = vec![];
                     let mut unique_fields = vec![];
-
                     for field in &g.fields {
                         if other.fields.contains(field) {
                             shared_fields.push(*field);
@@ -79,7 +82,6 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
                             unique_fields.push(*field);
                         }
                     }
-
                     let shared_count = *other.range.start();
                     let unique_count = g.range.start().saturating_sub(shared_count);
                     relevant_groups.push(Group::new(shared_fields, shared_count..=shared_count));
@@ -88,23 +90,102 @@ pub fn solve(solver: &Solver) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
                     break;
                 }
             }
-
             if !found_subset {
                 relevant_groups.push(Group::from(g));
             }
         }
 
-        /*
-        Check Relevance again after subset splitting
-        */
+        // Re-check relevance after subset splitting
         relevant_groups.retain(|g| g.is_relevant_to(&group));
 
-        /*
-        Now Compare or new groups to our main group and check if we can deduce any safe or mine fields
-        */
-        let splitted_main: Vec<Group> = vec![];
+        // Begin refinement of constraints by overlapping each relevant group with cumulatively refined set
+        let mut all_groups = vec![Group::from(&group)];
         for g in &relevant_groups {
-            
+            let mut next_all_groups: Vec<Group> = Vec::new();
+            let push_or_merge = |target: &mut Vec<Group>, mut new_g: Group| {
+                let max_possible = new_g.fields.len() as u8;
+                let start = *new_g.range.start();
+                let end = *new_g.range.end();
+                let clamped_start = start.min(max_possible);
+                let clamped_end = end.min(max_possible);
+                new_g.range = clamped_start..=clamped_end;
+                if clamped_start > clamped_end { return; }
+                for existing in target.iter_mut() {
+                    if existing.has_same_fields(&new_g) {
+                        let ns = *new_g.range.start();
+                        let ne = *new_g.range.end();
+                        let es = *existing.range.start();
+                        let ee = *existing.range.end();
+                        let is = ns.max(es);
+                        let ie = ne.min(ee);
+                        if is <= ie { existing.range = is..=ie; }
+                        return;
+                    }
+                }
+                target.push(new_g);
+            };
+            for ag in &all_groups {
+                let shared_fields: Vec<(u32, u32)> = g.fields.iter().filter(|f| ag.fields.contains(f)).cloned().collect();
+                let unique_fields_g: Vec<(u32, u32)> = g.fields.iter().filter(|f| !ag.fields.contains(f)).cloned().collect();
+                let unique_fields_ag: Vec<(u32, u32)> = ag.fields.iter().filter(|f| !g.fields.contains(f)).cloned().collect();
+                if shared_fields.is_empty() {
+                    push_or_merge(&mut next_all_groups, Group::from(ag));
+                    continue;
+                }
+                let s = shared_fields.len() as u8;
+                let a = unique_fields_ag.len() as u8;
+                let b = unique_fields_g.len() as u8;
+                let min_g = *g.range.start();
+                let max_g = *g.range.end();
+                let min_ag = *ag.range.start();
+                let max_ag = *ag.range.end();
+                let mut x_low = 0u8;
+                x_low = x_low.max(min_ag.saturating_sub(a));
+                x_low = x_low.max(min_g.saturating_sub(b));
+                let x_high = s.min(max_ag).min(max_g);
+                if x_low > x_high {
+                    push_or_merge(&mut next_all_groups, Group::from(ag));
+                    continue;
+                }
+                let shared_group = if !shared_fields.is_empty() { Some(Group::new(shared_fields.clone(), x_low..=x_high)) } else { None };
+                let y_low = min_ag.saturating_sub(x_high).min(a);
+                let y_high = max_ag.saturating_sub(x_low).min(a);
+                let unique_ag_group = if !unique_fields_ag.is_empty() { Some(Group::new(unique_fields_ag.clone(), y_low..=y_high)) } else { None };
+                let z_low = min_g.saturating_sub(x_high).min(b);
+                let z_high = max_g.saturating_sub(x_low).min(b);
+                if let Some(sg) = shared_group { push_or_merge(&mut next_all_groups, sg); }
+                if let Some(ug) = unique_ag_group { push_or_merge(&mut next_all_groups, ug); }
+                let mut record = |fields: &Vec<(u32, u32)>, low: u8, high: u8| {
+                    if fields.is_empty() { return; }
+                    let n = fields.len() as u8;
+                    if high == 0 {
+                        for &f in fields { if !safe_fields.contains(&f) { safe_fields.push(f); } }
+                    }
+                    if low == n {
+                        for &f in fields { if !mine_fields.contains(&f) { mine_fields.push(f); } }
+                    }
+                };
+                record(&shared_fields, x_low, x_high);
+                record(&unique_fields_ag, y_low, y_high);
+                record(&unique_fields_g, z_low, z_high);
+            }
+            let mut merged: Vec<Group> = Vec::new();
+            'outer_merge: for ng in next_all_groups {
+                for mg in merged.iter_mut() {
+                    if mg.has_same_fields(&ng) {
+                        let ns = *ng.range.start();
+                        let ne = *ng.range.end();
+                        let es = *mg.range.start();
+                        let ee = *mg.range.end();
+                        let is = ns.max(es);
+                        let ie = ne.min(ee);
+                        if is <= ie { mg.range = is..=ie; }
+                        continue 'outer_merge;
+                    }
+                }
+                merged.push(ng);
+            }
+            all_groups = merged;
         }
 
         println!("Current Field: ({}, {})\n Group: {:?}", x, y, group.fields);
