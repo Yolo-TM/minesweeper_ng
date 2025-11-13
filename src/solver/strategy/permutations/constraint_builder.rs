@@ -4,8 +4,6 @@ use super::Solver;
 /// Example: A revealed cell showing "2" means exactly 2 of its unrevealed neighbors are mines
 #[derive(Debug, Clone)]
 pub struct Constraint {
-    /// The position of the constraint (revealed cell with a number)
-    pub position: (u32, u32),
     /// The number of mines that must exist among the fields
     pub mine_count: u32,
     /// The fields (positions) that this constraint applies to
@@ -42,7 +40,6 @@ pub fn build_constraints(solver: &Solver, component: &[(u32, u32)]) -> Vec<Const
         let mine_count = solver.get_reduced_count(x, y) as u32;
 
         constraints.push(Constraint {
-            position: (x, y),
             mine_count,
             fields: constraint_fields,
         });
