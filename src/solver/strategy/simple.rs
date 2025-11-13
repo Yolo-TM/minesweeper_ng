@@ -1,4 +1,4 @@
-use super::{Solver, Finding};
+use super::{Finding, Solver};
 
 /*
 Simple strategy:

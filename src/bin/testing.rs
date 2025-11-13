@@ -1,4 +1,4 @@
-use minesweeper_ng_gen::{solve_field, DefinedField, MineSweeperField, RandomField, Mines};
+use minesweeper_ng_gen::{DefinedField, MineSweeperField, Mines, RandomField, solve_field};
 
 fn main() {
     let start = std::time::Instant::now();

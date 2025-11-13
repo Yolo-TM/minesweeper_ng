@@ -1,4 +1,4 @@
-use super::{CellState, Solver, SolvingStrategy, Finding};
+use super::{CellState, Finding, Solver, SolvingStrategy};
 use crate::{Cell, MineSweeperField};
 use core::panic;
 

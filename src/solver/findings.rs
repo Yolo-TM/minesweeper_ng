@@ -1,4 +1,3 @@
-
 pub struct Finding {
     safe_fields: Vec<(u32, u32)>,
     mine_fields: Vec<(u32, u32)>,

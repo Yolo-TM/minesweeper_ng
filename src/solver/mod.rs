@@ -1,14 +1,14 @@
 mod cell_state;
+mod findings;
 mod solving_api;
 mod solving_helpers;
 mod solving_utils;
 mod strategy;
-mod findings;
 
 use super::MineSweeperField;
 use cell_state::CellState;
-use strategy::SolvingStrategy;
 use findings::Finding;
+use strategy::SolvingStrategy;
 
 pub struct Solver {
     verbosity: u8,
