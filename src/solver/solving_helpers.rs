@@ -3,6 +3,16 @@ use crate::Cell;
 use core::panic;
 
 impl Solver {
+    pub(super) fn get_remaining_mines(&self) -> u32 {
+        let mut flagged_count = 0;
+        for (x, y) in self.sorted_fields() {
+            if matches!(self.get_state(x, y), CellState::Flagged(_)) {
+                flagged_count += 1;
+            }
+        }
+        self.mines.saturating_sub(flagged_count)
+    }
+
     pub(super) fn get_state(&self, x: u32, y: u32) -> &CellState {
         &self.state[x as usize][y as usize]
     }

@@ -309,25 +309,293 @@ mod component_tests {
 
 #[cfg(test)]
 mod constraint_tests {
-    // TODO: Add constraint building tests
+    use super::super::constraint_builder::build_constraints;
+    use super::*;
 
     #[test]
-    fn test_placeholder() {
-        // Placeholder to prevent empty test module error
-        assert!(true);
+    fn test_simple_constraint() {
+        // Single revealed cell with unrevealed neighbors
+        let pattern = "
+            ?M?
+            .1.
+            ...
+        ";
+
+        let field = create_test_field(pattern);
+        let solver = create_solver_with_reveals(&field, &[(1, 1)]);
+
+        let component = vec![(0, 0), (1, 0), (2, 0)];
+        let constraints = build_constraints(&solver, &component);
+
+        assert_eq!(constraints.len(), 1, "Should have 1 constraint");
+        assert_eq!(constraints[0].mine_count, 1, "Should require 1 mine");
+        assert_eq!(constraints[0].fields.len(), 3, "Should constrain 3 fields");
+    }
+
+    #[test]
+    fn test_multiple_constraints() {
+        // Two revealed cells creating separate constraints
+        let pattern = "
+            M..M
+            1.1.
+        ";
+
+        let field = create_test_field(pattern);
+        let solver = create_solver_with_reveals(&field, &[(0, 1), (2, 1)]);
+
+        let component = vec![(0, 0), (3, 0)];
+        let constraints = build_constraints(&solver, &component);
+
+        assert_eq!(constraints.len(), 2, "Should have 2 constraints");
+    }
+
+    #[test]
+    fn test_overlapping_constraints() {
+        // Two constraints sharing a field
+        let pattern = "
+            ?M?
+            111
+        ";
+
+        let field = create_test_field(pattern);
+        let solver = create_solver_with_reveals(&field, &[(0, 1), (1, 1), (2, 1)]);
+
+        let component = vec![(0, 0), (1, 0), (2, 0)];
+        let constraints = build_constraints(&solver, &component);
+
+        assert_eq!(constraints.len(), 3, "Should have 3 constraints");
+        // Middle constraint should touch all 3 fields
+        assert!(
+            constraints.iter().any(|c| c.fields.len() == 3),
+            "Should have a constraint touching 3 fields"
+        );
+    }
+
+    #[test]
+    fn test_empty_component() {
+        let pattern = "
+            M.
+            1.
+        ";
+
+        let field = create_test_field(pattern);
+        let solver = create_solver_with_reveals(&field, &[(0, 1)]);
+
+        let component = vec![]; // Empty component
+        let constraints = build_constraints(&solver, &component);
+
+        assert_eq!(
+            constraints.len(),
+            0,
+            "Empty component should have no constraints"
+        );
+    }
+
+    #[test]
+    fn test_constraint_with_flags() {
+        // Revealed cell with flagged neighbors - mine count should be reduced
+        let pattern = "
+            MM
+            2.
+        ";
+
+        let field = create_test_field(pattern);
+        let mut solver = create_solver_with_reveals(&field, &[(0, 1)]);
+        solver.flag_cell(0, 0); // Flag one mine
+
+        let component = vec![(1, 0)];
+        let constraints = build_constraints(&solver, &component);
+
+        assert_eq!(constraints.len(), 1, "Should have 1 constraint");
+        assert_eq!(
+            constraints[0].mine_count, 1,
+            "Mine count should be reduced by flagged cell"
+        );
+        assert_eq!(
+            constraints[0].fields.len(),
+            1,
+            "Should only constrain unflagged field"
+        );
     }
 }
 
 #[cfg(test)]
 mod solver_tests {
-    // TODO: Add permutation solver tests
-    // - Test simple unique solution case
-    // - Test multiple solutions with certainties
-    // - Test no solution case
+    use super::*;
 
     #[test]
-    fn test_placeholder() {
-        // Placeholder to prevent empty test module error
-        assert!(true);
+    fn test_pattern_1_1() {
+        let field = DefinedField::from_file("src/generated/patterns/1-1.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in 1-1 pattern"
+        );
+    }
+
+    #[test]
+    fn test_pattern_1_2() {
+        let field = DefinedField::from_file("src/generated/patterns/1-2.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in 1-2 pattern"
+        );
+    }
+
+    #[test]
+    fn test_pattern_1_2_1_r() {
+        let field = DefinedField::from_file("src/generated/patterns/1-2-1-R.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in 1-2-1-R pattern"
+        );
+    }
+
+    #[test]
+    fn test_pattern_1_2_2_1() {
+        let field = DefinedField::from_file("src/generated/patterns/1-2-2-1.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in 1-2-2-1 pattern"
+        );
+    }
+
+    #[test]
+    fn test_pattern_1_3_1_1() {
+        let field = DefinedField::from_file("src/generated/patterns/1-3-1-1.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in 1-3-1-1 pattern"
+        );
+    }
+
+    #[test]
+    fn test_pattern_1_3_1_2() {
+        let field = DefinedField::from_file("src/generated/patterns/1-3-1-2.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in 1-3-1-2 pattern"
+        );
+    }
+
+    #[test]
+    fn test_pattern_1_3_1_3() {
+        let field = DefinedField::from_file("src/generated/patterns/1-3-1-3.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in 1-3-1-3 pattern"
+        );
+    }
+
+    #[test]
+    fn test_pattern_2_2_2() {
+        let field = DefinedField::from_file("src/generated/patterns/2-2-2.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in 2-2-2 pattern"
+        );
+    }
+
+    #[test]
+    fn test_pattern_b1() {
+        let field = DefinedField::from_file("src/generated/patterns/b1.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in b1 pattern"
+        );
+    }
+
+    #[test]
+    fn test_pattern_h2() {
+        let field = DefinedField::from_file("src/generated/patterns/h2.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in h2 pattern"
+        );
+    }
+
+    #[test]
+    fn test_pattern_h3() {
+        let field = DefinedField::from_file("src/generated/patterns/h3.minesweeper")
+            .expect("Failed to load pattern file");
+
+        let mut solver = Solver::new(&field, 0);
+        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+
+        let finding = super::super::solve(&solver);
+
+        assert!(
+            finding.get_mine_fields().len() > 0 || finding.get_safe_fields().len() > 0,
+            "Should find some certain fields in h3 pattern"
+        );
     }
 }

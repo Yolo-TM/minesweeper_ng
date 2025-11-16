@@ -15,7 +15,11 @@ fn calculate_num_threads(num_branches: usize) -> usize {
     (cpu_count * 5).min(num_branches)
 }
 
-pub fn solve_component(component: &[(u32, u32)], constraints: &[Constraint]) -> Finding {
+pub fn solve_component(
+    component: &[(u32, u32)],
+    constraints: &[Constraint],
+    remaining_mines: u32,
+) -> Finding {
     let mut finding = Finding::new();
 
     if component.is_empty() || constraints.is_empty() {
@@ -29,9 +33,9 @@ pub fn solve_component(component: &[(u32, u32)], constraints: &[Constraint]) -> 
         .collect();
 
     let field_certainties = if component.len() >= PARALLEL_THRESHOLD {
-        solve_parallel(component, constraints, &field_indices)
+        solve_parallel(component, constraints, &field_indices, remaining_mines)
     } else {
-        solve_sequential(component, constraints, &field_indices)
+        solve_sequential(component, constraints, &field_indices, remaining_mines)
     };
 
     for (idx, &pos) in component.iter().enumerate() {
@@ -51,6 +55,7 @@ fn solve_sequential(
     component: &[(u32, u32)],
     constraints: &[Constraint],
     field_indices: &HashMap<(u32, u32), usize>,
+    remaining_mines: u32,
 ) -> Vec<Option<bool>> {
     let mut assignment = vec![None; component.len()];
     let mut field_certainties: Vec<Option<bool>> = vec![None; component.len()];
@@ -65,6 +70,7 @@ fn solve_sequential(
         &mut field_certainties,
         &mut first_solution,
         &mut solution_count,
+        remaining_mines,
     );
 
     field_certainties
@@ -74,6 +80,7 @@ fn solve_parallel(
     component: &[(u32, u32)],
     constraints: &[Constraint],
     field_indices: &HashMap<(u32, u32), usize>,
+    remaining_mines: u32,
 ) -> Vec<Option<bool>> {
     let split_depth = calculate_split_depth(component.len());
     let num_branches = 1 << split_depth;
@@ -147,6 +154,7 @@ fn solve_parallel(
                         &mut local_certainties,
                         &mut local_first_solution,
                         &mut local_solution_count,
+                        remaining_mines,
                     );
                 }
 
@@ -192,11 +200,12 @@ fn backtrack(
     field_certainties: &mut Vec<Option<bool>>,
     first_solution: &mut bool,
     solution_count: &mut usize,
+    remaining_mines: u32,
 ) {
     if position >= assignment.len() {
         // Were done here with this path, return values
         let complete: Vec<bool> = assignment.iter().map(|&x| x.unwrap()).collect();
-        if is_valid_solution(&complete, constraints, field_indices) {
+        if is_valid_solution(&complete, constraints, field_indices, remaining_mines) {
             *solution_count += 1;
 
             if *first_solution {
@@ -230,6 +239,7 @@ fn backtrack(
         field_certainties,
         first_solution,
         solution_count,
+        remaining_mines,
     );
 
     assignment[position] = Some(true);
@@ -241,6 +251,7 @@ fn backtrack(
         field_certainties,
         first_solution,
         solution_count,
+        remaining_mines,
     );
 
     assignment[position] = None;
@@ -282,7 +293,13 @@ fn is_valid_solution(
     assignment: &[bool],
     constraints: &[Constraint],
     field_indices: &HashMap<(u32, u32), usize>,
+    remaining_mines: u32,
 ) -> bool {
+    let mine_count = assignment.iter().filter(|&&is_mine| is_mine).count() as u32;
+    if mine_count > remaining_mines {
+        return false;
+    }
+
     for constraint in constraints {
         let mut mines_count = 0;
 

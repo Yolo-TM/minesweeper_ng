@@ -39,7 +39,8 @@ pub fn solve(solver: &Solver) -> Finding {
         );
 
         // Solve this component
-        let component_finding = solve_component(&component, &constraints);
+        let remaining_mines = solver.get_remaining_mines();
+        let component_finding = solve_component(&component, &constraints, remaining_mines);
 
         solver.println(
             &format!(

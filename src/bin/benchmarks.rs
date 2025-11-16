@@ -7,7 +7,10 @@ fn main() {
     let mut unseccessful = 0;
 
     for i in 1..=100 {
-        let field: DefinedField = match DefinedField::from_file(&format!("src/generated/testing/benchmarking/{}.minesweeper", i)) {
+        let field: DefinedField = match DefinedField::from_file(&format!(
+            "src/generated/testing/benchmarking/{}.minesweeper",
+            i
+        )) {
             Ok(f) => f,
             Err(_) => {
                 continue;
@@ -17,7 +20,16 @@ fn main() {
         let start = std::time::Instant::now();
         let is_solvable = is_solvable(&field);
 
-        println!("Field {} solved {} in {:?}", i, if is_solvable { "successfully" } else { "unsuccessfully" }, start.elapsed());
+        println!(
+            "Field {} solved {} in {:?}",
+            i,
+            if is_solvable {
+                "successfully"
+            } else {
+                "unsuccessfully"
+            },
+            start.elapsed()
+        );
 
         if is_solvable {
             successful += 1;
@@ -27,5 +39,10 @@ fn main() {
     }
 
     let elapsed = start.elapsed();
-    println!("Time elapsed: {:?} Mean Time: {:?}, Successfully: {}", elapsed, elapsed / (successful + unseccessful), successful);
+    println!(
+        "Time elapsed: {:?} Mean Time: {:?}, Successfully: {}",
+        elapsed,
+        elapsed / (successful + unseccessful),
+        successful
+    );
 }
