@@ -2,6 +2,8 @@ use super::{Cell, DefinedField, Mines, SortedCells, SurroundingCells};
 use serde_json::Value;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::path::Path;
+use super::svg;
 
 pub trait MineSweeperField: Clone {
     #[track_caller]
@@ -250,5 +252,9 @@ pub trait MineSweeperField: Clone {
         field.initialize(mine_positions);
         field.assign_numbers();
         Ok(field)
+    }
+
+    fn to_svg(&self, file_path: &str) {
+        svg::create_field(self.get_dimensions(), self.get_field(), file_path)
     }
 }

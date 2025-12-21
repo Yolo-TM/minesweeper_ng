@@ -3,6 +3,7 @@ mod defined_field;
 mod iterators;
 mod mines;
 mod random_field;
+mod svg;
 mod r#trait;
 
 pub use cell::Cell;
