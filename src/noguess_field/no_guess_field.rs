@@ -1,7 +1,6 @@
 #![allow(warnings)]
 
 use crate::*;
-//use crate::solver::search_for_islands;
 use std::vec;
 use colored::Colorize;
 

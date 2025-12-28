@@ -2,7 +2,6 @@ use super::{Cell, DefinedField, Mines, SortedCells, SurroundingCells};
 use serde_json::Value;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::path::Path;
 use super::svg;
 
 pub trait MineSweeperField: Clone {

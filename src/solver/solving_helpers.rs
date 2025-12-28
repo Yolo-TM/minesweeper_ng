@@ -1,6 +1,7 @@
 use super::{CellState, Solver};
 use crate::Cell;
 use core::panic;
+use std::vec;
 
 impl Solver {
     pub(super) fn get_remaining_mines(&self) -> u32 {
@@ -30,7 +31,7 @@ impl Solver {
     }
 
     #[track_caller]
-    pub(super) fn reveal_cell(&mut self, x: u32, y: u32) {
+    pub(super) fn reveal_cell(&mut self, x: u32, y: u32, recursive_revealed_fields: &mut Vec<Vec<(u32, u32)>>, depth: usize) {
         let state = self.get_state(x, y);
 
         if let CellState::Revealed(_) = state {
@@ -51,22 +52,29 @@ impl Solver {
                 self.state[x as usize][y as usize] = CellState::Revealed(cell);
 
                 if self.get_surrounding_flag_count(x, y) == n {
-                    self.reveal_surrounding_cells(x, y);
+                    self.reveal_surrounding_cells(x, y, recursive_revealed_fields, depth);
                 }
             }
             Cell::Empty => {
                 self.state[x as usize][y as usize] = CellState::Revealed(cell);
 
-                self.reveal_surrounding_cells(x, y);
+                self.reveal_surrounding_cells(x, y, recursive_revealed_fields, depth);
             }
         }
     }
 
     #[track_caller]
-    pub(super) fn reveal_surrounding_cells(&mut self, x: u32, y: u32) {
+    pub(super) fn reveal_surrounding_cells(&mut self, x: u32, y: u32, recursive_revealed_fields: &mut Vec<Vec<(u32, u32)>>, depth: usize) {
+        // Ensure an vector exists for this depth
+        while recursive_revealed_fields.len() <= depth {
+            recursive_revealed_fields.push(vec![]);
+        }
+
         for (sx, sy) in self.surrounding_fields(x, y, None) {
             if let CellState::Hidden(_) = self.get_state(sx, sy) {
-                self.reveal_cell(sx, sy);
+
+                recursive_revealed_fields[depth].push((sx, sy));
+                self.reveal_cell(sx, sy, recursive_revealed_fields, depth + 1);
             }
         }
     }

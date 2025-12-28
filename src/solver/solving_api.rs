@@ -57,9 +57,9 @@ impl Solver {
         self.print_field(9);
 
         let mut step_count = 0;
-        while step_count == self.solving_steps.len() {
+        while let Some(finding) = self.do_solving_step() {
+            self.solving_steps.push(finding);
             step_count += 1;
-            self.do_solving_step();
 
             self.print_field(9);
         }
@@ -77,7 +77,7 @@ impl Solver {
         }
     }
 
-    fn do_solving_step(&mut self) {
+    fn do_solving_step(&mut self) -> Option<Finding> {
         let mut step_solution: Option<Finding> = None;
 
         for strategy in SolvingStrategy::iter() {
@@ -101,22 +101,23 @@ impl Solver {
 
         if step_solution.is_none() {
             self.println("No progress made in this step.", 8);
-            return;
+            return step_solution;
         }
-        let step_solution: Finding = step_solution.unwrap();
+        let mut step_solution: Finding = step_solution.unwrap();
 
+        let mut recursive_revealed_fields: Vec<Vec<(u32, u32)>> = Vec::new();
         for (x, y) in step_solution.get_safe_fields() {
-            // Since Reveal Cell is recursive, not all cells will be in the solving_steps list
-            self.reveal_cell(*x, *y);
+            self.reveal_cell(*x, *y, &mut recursive_revealed_fields, 0);
         }
         for (x, y) in step_solution.get_mine_fields() {
             self.flag_cell(*x, *y);
         }
 
-        self.solving_steps.push(step_solution);
+        step_solution.add_recursive_informations(recursive_revealed_fields);
+        Some(step_solution)
     }
 
-    fn open_start_cell(&mut self) {
+    pub fn open_start_cell(&mut self) {
         if self
             .get_state(self.start_cell.0, self.start_cell.1)
             .get_cell()
@@ -127,6 +128,14 @@ impl Solver {
             );
         }
 
-        self.reveal_cell(self.start_cell.0, self.start_cell.1);
+        let mut finding = Finding::new();
+        finding.add_safe_field((self.start_cell.0, self.start_cell.1));
+
+        let mut recursive_revealed_fields: Vec<Vec<(u32, u32)>> = Vec::new();
+
+        self.reveal_cell(self.start_cell.0, self.start_cell.1, &mut recursive_revealed_fields, 0);
+
+        finding.add_recursive_informations(recursive_revealed_fields);
+        self.solving_steps.push(finding);
     }
 }
