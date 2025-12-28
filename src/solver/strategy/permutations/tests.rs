@@ -231,7 +231,7 @@ mod component_tests {
 
         let field = create_test_field(pattern);
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(0, 0); // Reveal the safe cell
+        let _ = solver.reveal_cell(0, 0, &mut vec![vec![]], 0); // Reveal the safe cell
         solver.flag_cell(1, 0); // Flag the mine
 
         let components = find_independent_components(&solver);
@@ -429,7 +429,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 
@@ -445,7 +445,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 
@@ -461,7 +461,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 
@@ -477,7 +477,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 
@@ -493,7 +493,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 
@@ -509,7 +509,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 
@@ -525,7 +525,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 
@@ -541,7 +541,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 
@@ -557,7 +557,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 
@@ -573,7 +573,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 
@@ -589,7 +589,7 @@ mod solver_tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
 

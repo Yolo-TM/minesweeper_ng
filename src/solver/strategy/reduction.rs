@@ -77,7 +77,7 @@ pub fn solve(solver: &Solver) -> Finding {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{DefinedField, MineSweeperField};
+    use crate::{DefinedField};
 
     #[test]
     fn test_1_1_pattern() {
@@ -85,7 +85,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
@@ -102,7 +102,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
@@ -119,7 +119,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
@@ -136,7 +136,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
@@ -152,7 +152,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
@@ -168,7 +168,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
@@ -184,7 +184,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
@@ -200,7 +200,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
@@ -216,7 +216,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
@@ -232,7 +232,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
@@ -248,7 +248,7 @@ mod tests {
             .expect("Failed to load pattern file");
 
         let mut solver = Solver::new(&field, 0);
-        solver.reveal_cell(field.get_start_cell().0, field.get_start_cell().1);
+        solver.open_start_cell();
 
         let finding = solve(&solver);
 
