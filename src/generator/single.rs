@@ -25,10 +25,18 @@ pub fn generate_field(field_data: CommandResult) {
     }
 
     if field_data.no_guess {
-        let field = minesweeper_ng_field(field_data.width, field_data.height, field_data.mine_spec);
+        let field = minesweeper_ng_field(field_data.width, field_data.height, field_data.mine_spec)
+            .unwrap_or_else(|err| {
+                eprintln!("Error: {}", err);
+                exit(1);
+            });
         process_field!(field, &field_data.output);
     } else {
-        let field = RandomField::new(field_data.width, field_data.height, field_data.mine_spec);
+        let field = RandomField::new(field_data.width, field_data.height, field_data.mine_spec)
+            .unwrap_or_else(|err| {
+                eprintln!("Error: {}", err);
+                exit(1);
+            });
         process_field!(field, &field_data.output);
     }
 }

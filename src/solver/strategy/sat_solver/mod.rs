@@ -1,6 +1,6 @@
 mod components;
 mod constraint_builder;
-mod permutation_checker;
+mod sat_solving;
 
 #[cfg(test)]
 mod tests;
@@ -8,7 +8,7 @@ mod tests;
 use super::{Finding, Solver};
 pub use components::find_independent_components;
 use constraint_builder::build_constraints;
-use permutation_checker::solve_component;
+use sat_solving::solve_component;
 
 pub fn solve(solver: &Solver) -> Finding {
     let mut finding = Finding::new();

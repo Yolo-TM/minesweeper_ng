@@ -1,20 +1,20 @@
 use super::{Cell, DefinedField, Mines, SortedCells, SurroundingCells};
+use super::error::FieldError;
 use serde_json::Value;
 use std::fs::File;
 use std::io::{Read, Write};
 use super::svg;
 
 pub trait MineSweeperField: Clone {
-    #[track_caller]
-    fn new(width: u32, height: u32, mines: Mines) -> Self;
+    fn new(width: u32, height: u32, mines: Mines) -> Result<Self, FieldError>;
 
     fn get_mines(&self) -> u32;
     fn get_width(&self) -> u32;
     fn get_height(&self) -> u32;
     fn get_start_cell(&self) -> (u32, u32);
-    fn get_field(&self) -> Vec<Vec<Cell>>;
+    fn get_field(&self) -> &Vec<Vec<Cell>>;
 
-    fn get_cell(&self, x: u32, y: u32) -> Cell;
+    fn get_cell(&self, x: u32, y: u32) -> &Cell;
     fn set_cell(&mut self, x: u32, y: u32, cell: Cell);
 
     fn show(&self) {
@@ -55,14 +55,14 @@ pub trait MineSweeperField: Clone {
 
     fn assign_numbers(&mut self) {
         for (x, y) in self.sorted_fields() {
-            if self.get_cell(x, y) == Cell::Mine {
+            if self.get_cell(x, y) == &Cell::Mine {
                 continue;
             }
 
             let count = self.get_sourrounding_mine_count(x, y);
             if count != 0 {
                 self.set_cell(x, y, Cell::Number(count));
-            } else if self.get_cell(x, y) != Cell::Empty {
+            } else if self.get_cell(x, y) != &Cell::Empty {
                 self.set_cell(x, y, Cell::Empty);
             }
         }
@@ -71,7 +71,7 @@ pub trait MineSweeperField: Clone {
     fn get_sourrounding_mine_count(&self, x: u32, y: u32) -> u8 {
         let mut count = 0;
         for (x, y) in self.surrounding_fields(x, y, None) {
-            if self.get_cell(x, y) == Cell::Mine {
+            if self.get_cell(x, y) == &Cell::Mine {
                 count += 1;
             }
         }
@@ -104,7 +104,7 @@ pub trait MineSweeperField: Clone {
     fn as_json(&self) -> String {
         let mine_positions: Vec<(u32, u32)> = self
             .sorted_fields()
-            .filter(|&(x, y)| self.get_cell(x, y) == Cell::Mine)
+            .filter(|&(x, y)| self.get_cell(x, y) == &Cell::Mine)
             .collect();
 
         let json = serde_json::json!({
@@ -134,7 +134,7 @@ pub trait MineSweeperField: Clone {
         let mut bit_count: u8 = 0;
 
         for (x, y) in self.sorted_fields() {
-            let is_mine = if self.get_cell(x, y) == Cell::Mine {
+            let is_mine = if self.get_cell(x, y) == &Cell::Mine {
                 1
             } else {
                 0
@@ -160,18 +160,23 @@ pub trait MineSweeperField: Clone {
         Ok(())
     }
 
-    fn from_json(json: &str) -> Option<impl MineSweeperField> {
-        let parsed: Value = serde_json::from_str(json).ok()?;
+    fn from_json(json: &str) -> Result<impl MineSweeperField, FieldError> {
+        let parsed: Value = serde_json::from_str(json)
+            .map_err(|e| FieldError::SerializationError(e.to_string()))?;
 
-        let width = parsed["width"].as_u64()? as u32;
-        let height = parsed["height"].as_u64()? as u32;
-        let mines = parsed["mines"].as_u64()? as u32;
-        let start_x = parsed["start_x"].as_u64()? as u32;
-        let start_y = parsed["start_y"].as_u64()? as u32;
+        let width = parsed["width"].as_u64()
+            .ok_or_else(|| FieldError::InvalidFileData("missing 'width'".into()))? as u32;
+        let height = parsed["height"].as_u64()
+            .ok_or_else(|| FieldError::InvalidFileData("missing 'height'".into()))? as u32;
+        let mines = parsed["mines"].as_u64()
+            .ok_or_else(|| FieldError::InvalidFileData("missing 'mines'".into()))? as u32;
+        let start_x = parsed["start_x"].as_u64()
+            .ok_or_else(|| FieldError::InvalidFileData("missing 'start_x'".into()))? as u32;
+        let start_y = parsed["start_y"].as_u64()
+            .ok_or_else(|| FieldError::InvalidFileData("missing 'start_y'".into()))? as u32;
 
         if start_x >= width || start_y >= height {
-            eprintln!("Error: Start field out of bounds.");
-            return None;
+            return Err(FieldError::OutOfBounds { x: start_x, y: start_y, width, height });
         }
 
         let mut mine_array = vec![];
@@ -187,18 +192,19 @@ pub trait MineSweeperField: Clone {
         }
 
         if mine_array.len() != mines as usize {
-            eprintln!("Error: Number of mines in JSON does not match the provided mine positions.");
-            return None;
+            return Err(FieldError::InvalidFileData(format!(
+                "expected {} mines but found {} positions", mines, mine_array.len()
+            )));
         }
 
-        let mut field = DefinedField::new(width, height, Mines::Count(mines));
+        let mut field = DefinedField::new(width, height, Mines::Count(mines))?;
         field.initialize(mine_array);
         field.set_start_cell(start_x, start_y);
 
-        Some(field)
+        Ok(field)
     }
 
-    fn from_file(file_path: &str) -> std::io::Result<impl MineSweeperField> {
+    fn from_file(file_path: &str) -> Result<impl MineSweeperField, FieldError> {
         let mut file = File::open(file_path)?;
         let mut buffer = [0u8; 20]; // buffer for 5 u32 integers
 
@@ -211,13 +217,10 @@ pub trait MineSweeperField: Clone {
         let start_y = u32::from_le_bytes(buffer[16..20].try_into().unwrap());
 
         if start_x >= width || start_y >= height {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "Start field out of bounds.",
-            ));
+            return Err(FieldError::OutOfBounds { x: start_x, y: start_y, width, height });
         }
 
-        let mut field = DefinedField::new(width, height, Mines::Count(mines));
+        let mut field = DefinedField::new(width, height, Mines::Count(mines))?;
         field.set_start_cell(start_x, start_y);
 
         let mut bits = vec![];
@@ -231,10 +234,7 @@ pub trait MineSweeperField: Clone {
                     let y = (i * 8 + bit) as u32 / width;
 
                     if x >= width || y >= height {
-                        return Err(std::io::Error::new(
-                            std::io::ErrorKind::InvalidData,
-                            "Mine position out of bounds.",
-                        ));
+                        return Err(FieldError::OutOfBounds { x, y, width, height });
                     }
                     mine_positions.push((x, y));
                 }
@@ -242,10 +242,9 @@ pub trait MineSweeperField: Clone {
         }
 
         if mine_positions.len() != mines as usize {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "Number of mines does not match the expected count.",
-            ));
+            return Err(FieldError::InvalidFileData(format!(
+                "expected {} mines but found {}", mines, mine_positions.len()
+            )));
         }
 
         field.initialize(mine_positions);

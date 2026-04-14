@@ -3,13 +3,13 @@ use minesweeper_ng_gen::*;
 fn main() {
     let start = std::time::Instant::now();
 
-    //let field: RandomField = RandomField::new(10, 10, Mines::Density(0.24));
-    //let field: RandomField = RandomField::new(45, 26, Mines::Density(0.24));
+    //let field: RandomField = RandomField::new(10, 10, Mines::Density(0.24)).unwrap();
+    //let field: RandomField = RandomField::new(45, 26, Mines::Density(0.20)).unwrap();
     let field: DefinedField = DefinedField::from_file("src/generated/testing/benchmarking/7.minesweeper").unwrap();
-    //let field: DefinedField = DefinedField::from_file("src/generated/testing/hard.minesweeper").unwrap();
-    //solve_field(&field);
-    is_solvable(&field);
-    //field.to_svg("output.svg");
+    //let field: DefinedField = DefinedField::from_file("src/generated/testing/extended_box_logic.minesweeper ").unwrap();
+    solve_field(&field);
+    let solved = is_solvable(&field);
+    field.to_svg("output.svg");
 
-    println!("Time elapsed: {:?}", start.elapsed());
+    println!("Time elapsed: {:?} - Solved: {:?}", start.elapsed(), solved);
 }

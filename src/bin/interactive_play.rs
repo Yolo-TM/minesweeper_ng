@@ -76,7 +76,7 @@ impl InteractivePlayer {
                     .filter(|(nx, ny)| self.state[*nx as usize][*ny as usize] == CellState::Flagged)
                     .collect();
 
-                if flags.len() == num as usize {
+                if flags.len() == num.clone() as usize {
                     for (nx, ny) in self.field.surrounding_fields(x, y, None) {
                         self.reveal_cell(nx, ny);
                     }
@@ -309,7 +309,7 @@ fn main() -> io::Result<()> {
         input.trim().to_string()
     };
 
-    let field = DefinedField::from_file(&filepath)?;
+    let field = DefinedField::from_file(&filepath).map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
     terminal::enable_raw_mode()?;
     execute!(io::stdout(), EnterAlternateScreen)?;

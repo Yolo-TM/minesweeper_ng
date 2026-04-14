@@ -1,5 +1,6 @@
 use super::{Cell, MineSweeperField, Mines};
-use rand::Rng;
+use super::error::FieldError;
+use rand::RngExt;
 
 #[derive(Clone)]
 pub struct RandomField {
@@ -11,10 +12,14 @@ pub struct RandomField {
 }
 
 impl MineSweeperField for RandomField {
-    #[track_caller]
-    fn new(width: u32, height: u32, mines: Mines) -> Self {
+    fn new(width: u32, height: u32, mines: Mines) -> Result<Self, FieldError> {
         if !mines.is_valid(width, height) {
-            panic!("Invalid mine configuration!");
+            return Err(FieldError::InvalidMineConfig {
+                reason: format!(
+                    "{} mines on a {}x{} field is not valid",
+                    mines.get_fixed_count(width, height), width, height
+                ),
+            });
         }
 
         let percentage = mines.get_percentage(width, height);
@@ -34,7 +39,7 @@ impl MineSweeperField for RandomField {
         };
 
         field.initialize();
-        field
+        Ok(field)
     }
 
     fn get_mines(&self) -> u32 {
@@ -53,12 +58,12 @@ impl MineSweeperField for RandomField {
         self.start_cell
     }
 
-    fn get_field(&self) -> Vec<Vec<Cell>> {
-        self.board.clone()
+    fn get_field(&self) -> &Vec<Vec<Cell>> {
+        &self.board
     }
 
-    fn get_cell(&self, x: u32, y: u32) -> Cell {
-        self.board[x as usize][y as usize].clone()
+    fn get_cell(&self, x: u32, y: u32) -> &Cell {
+        &self.board[x as usize][y as usize]
     }
 
     fn set_cell(&mut self, x: u32, y: u32, cell: Cell) {
@@ -76,7 +81,7 @@ impl RandomField {
     fn set_start_cell(&mut self) {
         let mut start_cell_candidates = vec![];
         for (x, y) in self.sorted_fields() {
-            if self.get_cell(x, y) == Cell::Empty {
+            if self.get_cell(x, y) == &Cell::Empty {
                 start_cell_candidates.push((x, y));
             }
         }
@@ -84,7 +89,7 @@ impl RandomField {
         // In the rare case there are no empty cells, fall back to any non-mine cell
         if start_cell_candidates.is_empty() {
             for (x, y) in self.sorted_fields() {
-                if self.get_cell(x, y) != Cell::Mine {
+                if self.get_cell(x, y) != &Cell::Mine {
                     start_cell_candidates.push((x, y));
                 }
             }
@@ -104,7 +109,7 @@ impl RandomField {
             let x = (rng.random_range(0..u64::MAX) % self.width as u64) as u32;
             let y = (rng.random_range(0..u64::MAX) % self.height as u64) as u32;
 
-            if self.get_cell(x, y) == Cell::Empty {
+            if self.get_cell(x, y) == &Cell::Empty {
                 self.set_cell(x, y, Cell::Mine);
                 placed_mines += 1;
             }

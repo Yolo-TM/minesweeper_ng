@@ -15,9 +15,8 @@ pub struct NoGuessField {
 
 impl MineSweeperField for NoGuessField {
 
-    #[track_caller]
-    fn new(width: u32, height: u32, mines: Mines) -> Self {
-        let random_field = RandomField::new(width, height, mines.clone());
+    fn new(width: u32, height: u32, mines: Mines) -> Result<Self, FieldError> {
+        let random_field = RandomField::new(width, height, mines.clone())?;
 
         let mut field = NoGuessField {
             width,
@@ -28,7 +27,7 @@ impl MineSweeperField for NoGuessField {
         };
 
         field.initialize();
-        field
+        Ok(field)
     }
 
     fn get_mines(&self) -> u32 {

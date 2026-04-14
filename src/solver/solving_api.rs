@@ -7,7 +7,7 @@ impl Solver {
         let state = (0..field.get_width())
             .map(|x| {
                 (0..field.get_height())
-                    .map(|y| CellState::Hidden(field.get_cell(x, y)))
+                    .map(|y| CellState::Hidden(field.get_cell(x, y).clone()))
                     .collect()
             })
             .collect();

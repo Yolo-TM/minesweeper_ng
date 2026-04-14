@@ -25,7 +25,7 @@ pub fn create_test_field(pattern: &str) -> DefinedField {
 
     // Create field with mine count
     let mine_count = mine_positions.len() as u32;
-    let mut field = DefinedField::new(width, height, Mines::Count(mine_count));
+    let mut field = DefinedField::new(width, height, Mines::Count(mine_count)).unwrap();
     field.initialize(mine_positions);
     field.set_start_cell(0, 0);
     field
@@ -39,7 +39,7 @@ pub fn create_solver_with_reveals(field: &impl MineSweeperField, reveals: &[(u32
     // Directly set cells as revealed without triggering cascade
     for &(x, y) in reveals {
         let cell = field.get_cell(x, y);
-        solver.state[x as usize][y as usize] = CellState::Revealed(cell);
+        solver.state[x as usize][y as usize] = CellState::Revealed(cell.clone());
     }
 
     solver

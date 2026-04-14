@@ -14,7 +14,7 @@ Output an Image as SVG file
 - Later add option to output an solver run as SVG using Animations
 */
 
-pub fn create_field(dimensions: (u32, u32, u32), field: Vec<Vec<Cell>>, file_path : &str) {
+pub fn create_field(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>, file_path : &str) {
     let (width, height, _mines) = dimensions;
 
     let document = Document::new()
@@ -80,7 +80,7 @@ fn create_grid(dimensions: (u32, u32, u32)) -> Path {
         .set("d", grid)
 }
 
-fn create_cells(dimensions: (u32, u32, u32), field: Vec<Vec<Cell>>) -> Text {
+fn create_cells(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>) -> Text {
     let (width, height, _mines) = dimensions;
     let font_size = CELL_SIZE as f32 * 0.8;
 

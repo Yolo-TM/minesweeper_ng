@@ -19,7 +19,7 @@ struct InteractiveField {
 impl InteractiveField {
     fn new(width: u32, height: u32) -> Self {
         // Small Hack to create an empty field since creating an field with Mines::Count(0) is forbidden
-        let mut field = DefinedField::new(width, height, Mines::Count(1));
+        let mut field = DefinedField::new(width, height, Mines::Count(1)).unwrap();
         field.initialize(vec![(0, 0)]);
         field.remove_mine(0, 0);
         Self {
@@ -216,7 +216,7 @@ fn main() -> io::Result<()> {
 
                     let (start_x, start_y) = interactive_field.field.get_start_cell();
                     let start_cell = interactive_field.field.get_cell(start_x, start_y);
-                    if start_cell != Cell::Empty {
+                    if start_cell != &Cell::Empty {
                         interactive_field.error_message = Some(format!(
                             "Start cell at ({}, {}) is not empty! Move it to an empty cell.",
                             start_x, start_y

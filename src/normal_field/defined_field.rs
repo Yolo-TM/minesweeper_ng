@@ -1,4 +1,5 @@
 use super::{Cell, MineSweeperField, Mines};
+use super::error::FieldError;
 
 #[derive(Clone)]
 pub struct DefinedField {
@@ -10,10 +11,14 @@ pub struct DefinedField {
 }
 
 impl MineSweeperField for DefinedField {
-    #[track_caller]
-    fn new(width: u32, height: u32, mines: Mines) -> Self {
+    fn new(width: u32, height: u32, mines: Mines) -> Result<Self, FieldError> {
         if !mines.is_valid(width, height) {
-            panic!("Invalid mine configuration!");
+            return Err(FieldError::InvalidMineConfig {
+                reason: format!(
+                    "{} mines on a {}x{} field is not valid",
+                    mines.get_fixed_count(width, height), width, height
+                ),
+            });
         }
 
         let percentage = mines.get_percentage(width, height);
@@ -24,15 +29,13 @@ impl MineSweeperField for DefinedField {
         let board = vec![vec![Cell::Empty; height as usize]; width as usize];
         let mines = mines.get_fixed_count(width, height);
 
-        let field = DefinedField {
+        Ok(DefinedField {
             width,
             height,
             mines,
             board,
             start_cell: (0, 0),
-        };
-
-        field
+        })
     }
 
     fn get_mines(&self) -> u32 {
@@ -51,12 +54,12 @@ impl MineSweeperField for DefinedField {
         self.start_cell
     }
 
-    fn get_field(&self) -> Vec<Vec<Cell>> {
-        self.board.clone()
+    fn get_field(&self) -> &Vec<Vec<Cell>> {
+        &self.board
     }
 
-    fn get_cell(&self, x: u32, y: u32) -> Cell {
-        self.board[x as usize][y as usize].clone()
+    fn get_cell(&self, x: u32, y: u32) -> &Cell {
+        &self.board[x as usize][y as usize]
     }
 
     fn set_cell(&mut self, x: u32, y: u32, cell: Cell) {
@@ -93,25 +96,23 @@ impl DefinedField {
         }
     }
 
-    pub fn from_file(file_path: &str) -> std::io::Result<DefinedField> {
-        // Delegate to the trait method, but return the concrete type
-        // This uses qualified syntax to call the trait method explicitly
-        <DefinedField as MineSweeperField>::from_file(file_path).map(|impl_field| {
-            let mut field = DefinedField::new(
-                impl_field.get_width(),
-                impl_field.get_height(),
-                Mines::Count(impl_field.get_mines()),
-            );
-            field.set_start_cell(impl_field.get_start_cell().0, impl_field.get_start_cell().1);
+    pub fn from_file(file_path: &str) -> Result<DefinedField, FieldError> {
+        let impl_field = <DefinedField as MineSweeperField>::from_file(file_path)?;
 
-            let board = impl_field.get_field();
-            for x in 0..impl_field.get_width() {
-                for y in 0..impl_field.get_height() {
-                    field.set_cell(x, y, board[x as usize][y as usize].clone());
-                }
+        let mut field = DefinedField::new(
+            impl_field.get_width(),
+            impl_field.get_height(),
+            Mines::Count(impl_field.get_mines()),
+        )?;
+        field.set_start_cell(impl_field.get_start_cell().0, impl_field.get_start_cell().1);
+
+        let board = impl_field.get_field();
+        for x in 0..impl_field.get_width() {
+            for y in 0..impl_field.get_height() {
+                field.set_cell(x, y, board[x as usize][y as usize].clone());
             }
+        }
 
-            field
-        })
+        Ok(field)
     }
 }
