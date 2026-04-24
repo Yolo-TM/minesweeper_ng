@@ -5,8 +5,8 @@ mod solver;
 
 // Re-export commonly used types for cleaner imports
 pub use normal_field::{
-    Cell, DefinedField, FieldError, MineSweeperField, Mines, RandomField, SVG_Mode, get_evil_ng_field,
-    get_small_test_field,
+    Cell, DefinedField, FieldError, MineSweeperField, Mines, RandomField, SVG_Mode,
+    get_evil_ng_field, get_small_test_field,
 };
 
 pub use generator::generate;

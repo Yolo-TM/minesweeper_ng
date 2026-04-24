@@ -70,4 +70,8 @@ impl Finding {
     pub fn get_mine_fields(&self) -> &Vec<(u32, u32)> {
         &self.mine_fields
     }
+
+    pub fn get_recursive_informations(&self) -> &Vec<Vec<(u32, u32)>> {
+        &self.recursive_informations
+    }
 }

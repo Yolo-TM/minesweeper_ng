@@ -1,5 +1,6 @@
 // SVG rendering for Minesweeper fields with reveal animation
 use crate::Cell;
+use crate::solver::Finding;
 use rand::RngExt;
 use svg::Document;
 use svg::node::element::path::Data;
@@ -9,6 +10,7 @@ use svg::node::element::{Animate, Path, Rectangle, TSpan, Text};
 pub enum SVG_Mode {
     Normal,
     RevealRandom(f32),
+    RevealSolver(Vec<Finding>),
 }
 
 const CELL_SIZE: u32 = 20;
@@ -22,7 +24,12 @@ const MAX_HEADER_SIZE: u32 = 200;
  - Includes per‑cell reveal animation (tiles start hidden and appear randomly)
 */
 
-pub fn create_field(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>, file_path: &str, mode: SVG_Mode) {
+pub fn create_field(
+    dimensions: (u32, u32, u32),
+    field: &Vec<Vec<Cell>>,
+    file_path: &str,
+    mode: SVG_Mode,
+) {
     let (width, height, _mines) = dimensions;
 
     let document = Document::new()
@@ -107,6 +114,26 @@ fn create_cells(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>, mode: SVG_M
         .set("dominant-baseline", "middle")
         .set("font-size", font_size);
 
+    let mut step_map: std::collections::HashMap<(u32, u32), usize> = std::collections::HashMap::new();
+    if let SVG_Mode::RevealSolver(ref findings) = mode {
+        for (step_idx, finding) in findings.iter().enumerate() {
+            // safe fields
+            for &pos in finding.get_safe_fields() {
+                step_map.entry(pos).or_insert(step_idx);
+            }
+            // mine fields
+            for &pos in finding.get_mine_fields() {
+                step_map.entry(pos).or_insert(step_idx);
+            }
+            // recursive informations
+            for inner in finding.get_recursive_informations() {
+                for &pos in inner {
+                    step_map.entry(pos).or_insert(step_idx);
+                }
+            }
+        }
+    }
+
     let mut rng = rand::rng();
     for x in 0..width {
         for y in 0..height {
@@ -119,7 +146,7 @@ fn create_cells(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>, mode: SVG_M
                 get_header_size(width, height) + CELL_SIZE * y,
             );
 
-            match mode {
+            match &mode {
                 SVG_Mode::Normal => {
                     text = text.add(create_cell(position, cell));
                 }
@@ -138,6 +165,22 @@ fn create_cells(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>, mode: SVG_M
                         .set("fill", "freeze");
                     cell_tspan = cell_tspan.add(animate);
                     text = text.add(cell_tspan);
+                }
+                SVG_Mode::RevealSolver(_findings) => {
+                    if let Some(&step_idx) = step_map.get(&(x, y)) {
+                        let mut cell_tspan = create_cell(position, cell);
+                        cell_tspan = cell_tspan.set("visibility", "hidden");
+                        let delay = step_idx as f32 * 0.05; // 50ms per step
+                        let animate = Animate::new()
+                            .set("attributeName", "visibility")
+                            .set("from", "hidden")
+                            .set("to", "visible")
+                            .set("begin", format!("{}s", delay))
+                            .set("dur", "0.1s")
+                            .set("fill", "freeze");
+                        cell_tspan = cell_tspan.add(animate);
+                        text = text.add(cell_tspan);
+                    }
                 }
             }
         }

@@ -13,8 +13,8 @@ pub use error::FieldError;
 pub use iterators::{SortedCells, SurroundingCells};
 pub use mines::Mines;
 pub use random_field::RandomField;
-pub use r#trait::MineSweeperField;
 pub use svg::SVG_Mode;
+pub use r#trait::MineSweeperField;
 
 #[allow(dead_code)]
 pub fn minesweeper_field(

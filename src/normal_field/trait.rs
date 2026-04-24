@@ -282,6 +282,11 @@ pub trait MineSweeperField: Clone {
     }
 
     fn to_svg(&self, file_path: &str, creation_mode: SVG_Mode) {
-        create_field(self.get_dimensions(), self.get_field(), file_path, creation_mode)
+        create_field(
+            self.get_dimensions(),
+            self.get_field(),
+            file_path,
+            creation_mode,
+        )
     }
 }

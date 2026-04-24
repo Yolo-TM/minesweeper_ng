@@ -7,8 +7,9 @@ mod strategy;
 
 use super::MineSweeperField;
 use cell_state::CellState;
-use findings::Finding;
 use strategy::SolvingStrategy;
+
+pub use findings::Finding;
 
 pub struct Solver {
     verbosity: u8,
