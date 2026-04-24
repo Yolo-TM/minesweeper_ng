@@ -1,5 +1,5 @@
-use super::{Cell, MineSweeperField, Mines};
 use super::error::FieldError;
+use super::{Cell, MineSweeperField, Mines};
 use rand::RngExt;
 
 #[derive(Clone)]
@@ -17,7 +17,9 @@ impl MineSweeperField for RandomField {
             return Err(FieldError::InvalidMineConfig {
                 reason: format!(
                     "{} mines on a {}x{} field is not valid",
-                    mines.get_fixed_count(width, height), width, height
+                    mines.get_fixed_count(width, height),
+                    width,
+                    height
                 ),
             });
         }

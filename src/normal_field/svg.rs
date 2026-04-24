@@ -1,9 +1,15 @@
 // SVG rendering for Minesweeper fields with reveal animation
 use crate::Cell;
-use svg::Document;
-use svg::node::element::{Rectangle, TSpan, Text, Path, Animate};
-use svg::node::element::path::Data;
 use rand::RngExt;
+use svg::Document;
+use svg::node::element::path::Data;
+use svg::node::element::{Animate, Path, Rectangle, TSpan, Text};
+
+#[allow(non_camel_case_types)]
+pub enum SVG_Mode {
+    Normal,
+    RevealRandom(f32),
+}
 
 const CELL_SIZE: u32 = 20;
 const MIN_HEADER_SIZE: u32 = 60;
@@ -12,21 +18,27 @@ const MAX_HEADER_SIZE: u32 = 200;
 /*
  Output an Image as SVG file
 
+ - Normal Mode just show all
  - Includes per‑cell reveal animation (tiles start hidden and appear randomly)
 */
 
-pub fn create_field(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>, file_path: &str) {
+pub fn create_field(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>, file_path: &str, mode: SVG_Mode) {
     let (width, height, _mines) = dimensions;
 
     let document = Document::new()
         .set(
             "viewBox",
-            (0, 0, CELL_SIZE * width, get_header_size(width, height) + CELL_SIZE * height),
+            (
+                0,
+                0,
+                CELL_SIZE * width,
+                get_header_size(width, height) + CELL_SIZE * height,
+            ),
         )
         .add(create_background(dimensions))
         .add(create_header(dimensions))
         .add(create_grid(dimensions))
-        .add(create_cells(dimensions, field));
+        .add(create_cells(dimensions, field, mode));
 
     svg::save(file_path, &document).unwrap();
 }
@@ -53,13 +65,16 @@ fn create_header(dimensions: (u32, u32, u32)) -> Text {
     let (width, height, mines) = dimensions;
     let svg_width = CELL_SIZE * width;
     let font_size = svg_width / 16;
-    Text::new(format!("Width: {}, Height: {}, Mines: {}", width, height, mines))
-        .set("x", svg_width / 2)
-        .set("y", get_header_size(width, height) / 2)
-        .set("text-anchor", "middle")
-        .set("dominant-baseline", "middle")
-        .set("font-size", font_size)
-        .set("fill", "black")
+    Text::new(format!(
+        "Width: {}, Height: {}, Mines: {}",
+        width, height, mines
+    ))
+    .set("x", svg_width / 2)
+    .set("y", get_header_size(width, height) / 2)
+    .set("text-anchor", "middle")
+    .set("dominant-baseline", "middle")
+    .set("font-size", font_size)
+    .set("fill", "black")
 }
 
 fn create_grid(dimensions: (u32, u32, u32)) -> Path {
@@ -82,7 +97,7 @@ fn create_grid(dimensions: (u32, u32, u32)) -> Path {
         .set("d", grid)
 }
 
-fn create_cells(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>) -> Text {
+fn create_cells(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>, mode: SVG_Mode) -> Text {
     let (width, height, _) = dimensions;
     let font_size = CELL_SIZE as f32 * 0.8;
     let mut text = Text::new("")
@@ -99,21 +114,32 @@ fn create_cells(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>) -> Text {
             if let Cell::Empty = cell {
                 continue;
             }
-            let position = (CELL_SIZE * x, get_header_size(width, height) + CELL_SIZE * y);
-            let mut cell_tspan = create_cell(position, cell);
-            // start hidden
-            cell_tspan = cell_tspan.set("visibility", "hidden");
-            // random delay for reveal (seconds)
-            let delay = rng.random_range(0.0..(width * height) as f32 * 0.01);
-            let animate = Animate::new()
-                .set("attributeName", "visibility")
-                .set("from", "hidden")
-                .set("to", "visible")
-                .set("begin", format!("{}s", delay))
-                .set("dur", "0.1s")
-                .set("fill", "freeze");
-            cell_tspan = cell_tspan.add(animate);
-            text = text.add(cell_tspan);
+            let position = (
+                CELL_SIZE * x,
+                get_header_size(width, height) + CELL_SIZE * y,
+            );
+
+            match mode {
+                SVG_Mode::Normal => {
+                    text = text.add(create_cell(position, cell));
+                }
+                SVG_Mode::RevealRandom(delay) => {
+                    let mut cell_tspan = create_cell(position, cell);
+                    // start hidden
+                    cell_tspan = cell_tspan.set("visibility", "hidden");
+                    // random delay for reveal (seconds)
+                    let delay = rng.random_range(0.0..(width * height) as f32 * delay);
+                    let animate = Animate::new()
+                        .set("attributeName", "visibility")
+                        .set("from", "hidden")
+                        .set("to", "visible")
+                        .set("begin", format!("{}s", delay))
+                        .set("dur", "0.1s")
+                        .set("fill", "freeze");
+                    cell_tspan = cell_tspan.add(animate);
+                    text = text.add(cell_tspan);
+                }
+            }
         }
     }
     text

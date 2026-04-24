@@ -37,10 +37,22 @@ pub fn solve_component(
     let results: Vec<(usize, Option<bool>)> = (0..component.len())
         .into_par_iter()
         .map(|idx| {
-            let can_be_mine =
-                can_be_value(idx, true, component.len(), constraints, &field_indices, remaining_mines);
-            let can_be_safe =
-                can_be_value(idx, false, component.len(), constraints, &field_indices, remaining_mines);
+            let can_be_mine = can_be_value(
+                idx,
+                true,
+                component.len(),
+                constraints,
+                &field_indices,
+                remaining_mines,
+            );
+            let can_be_safe = can_be_value(
+                idx,
+                false,
+                component.len(),
+                constraints,
+                &field_indices,
+                remaining_mines,
+            );
 
             let determination = match (can_be_mine, can_be_safe) {
                 (true, false) => Some(true),

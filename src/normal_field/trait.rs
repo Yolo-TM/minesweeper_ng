@@ -1,9 +1,9 @@
-use super::{Cell, DefinedField, Mines, SortedCells, SurroundingCells};
 use super::error::FieldError;
+use super::svg::{SVG_Mode, create_field};
+use super::{Cell, DefinedField, Mines, SortedCells, SurroundingCells};
 use serde_json::Value;
 use std::fs::File;
 use std::io::{Read, Write};
-use super::svg;
 
 pub trait MineSweeperField: Clone {
     fn new(width: u32, height: u32, mines: Mines) -> Result<Self, FieldError>;
@@ -164,19 +164,34 @@ pub trait MineSweeperField: Clone {
         let parsed: Value = serde_json::from_str(json)
             .map_err(|e| FieldError::SerializationError(e.to_string()))?;
 
-        let width = parsed["width"].as_u64()
-            .ok_or_else(|| FieldError::InvalidFileData("missing 'width'".into()))? as u32;
-        let height = parsed["height"].as_u64()
-            .ok_or_else(|| FieldError::InvalidFileData("missing 'height'".into()))? as u32;
-        let mines = parsed["mines"].as_u64()
-            .ok_or_else(|| FieldError::InvalidFileData("missing 'mines'".into()))? as u32;
-        let start_x = parsed["start_x"].as_u64()
-            .ok_or_else(|| FieldError::InvalidFileData("missing 'start_x'".into()))? as u32;
-        let start_y = parsed["start_y"].as_u64()
-            .ok_or_else(|| FieldError::InvalidFileData("missing 'start_y'".into()))? as u32;
+        let width = parsed["width"]
+            .as_u64()
+            .ok_or_else(|| FieldError::InvalidFileData("missing 'width'".into()))?
+            as u32;
+        let height = parsed["height"]
+            .as_u64()
+            .ok_or_else(|| FieldError::InvalidFileData("missing 'height'".into()))?
+            as u32;
+        let mines = parsed["mines"]
+            .as_u64()
+            .ok_or_else(|| FieldError::InvalidFileData("missing 'mines'".into()))?
+            as u32;
+        let start_x = parsed["start_x"]
+            .as_u64()
+            .ok_or_else(|| FieldError::InvalidFileData("missing 'start_x'".into()))?
+            as u32;
+        let start_y = parsed["start_y"]
+            .as_u64()
+            .ok_or_else(|| FieldError::InvalidFileData("missing 'start_y'".into()))?
+            as u32;
 
         if start_x >= width || start_y >= height {
-            return Err(FieldError::OutOfBounds { x: start_x, y: start_y, width, height });
+            return Err(FieldError::OutOfBounds {
+                x: start_x,
+                y: start_y,
+                width,
+                height,
+            });
         }
 
         let mut mine_array = vec![];
@@ -193,7 +208,9 @@ pub trait MineSweeperField: Clone {
 
         if mine_array.len() != mines as usize {
             return Err(FieldError::InvalidFileData(format!(
-                "expected {} mines but found {} positions", mines, mine_array.len()
+                "expected {} mines but found {} positions",
+                mines,
+                mine_array.len()
             )));
         }
 
@@ -217,7 +234,12 @@ pub trait MineSweeperField: Clone {
         let start_y = u32::from_le_bytes(buffer[16..20].try_into().unwrap());
 
         if start_x >= width || start_y >= height {
-            return Err(FieldError::OutOfBounds { x: start_x, y: start_y, width, height });
+            return Err(FieldError::OutOfBounds {
+                x: start_x,
+                y: start_y,
+                width,
+                height,
+            });
         }
 
         let mut field = DefinedField::new(width, height, Mines::Count(mines))?;
@@ -234,7 +256,12 @@ pub trait MineSweeperField: Clone {
                     let y = (i * 8 + bit) as u32 / width;
 
                     if x >= width || y >= height {
-                        return Err(FieldError::OutOfBounds { x, y, width, height });
+                        return Err(FieldError::OutOfBounds {
+                            x,
+                            y,
+                            width,
+                            height,
+                        });
                     }
                     mine_positions.push((x, y));
                 }
@@ -243,7 +270,9 @@ pub trait MineSweeperField: Clone {
 
         if mine_positions.len() != mines as usize {
             return Err(FieldError::InvalidFileData(format!(
-                "expected {} mines but found {}", mines, mine_positions.len()
+                "expected {} mines but found {}",
+                mines,
+                mine_positions.len()
             )));
         }
 
@@ -252,7 +281,7 @@ pub trait MineSweeperField: Clone {
         Ok(field)
     }
 
-    fn to_svg(&self, file_path: &str) {
-        svg::create_field(self.get_dimensions(), self.get_field(), file_path)
+    fn to_svg(&self, file_path: &str, creation_mode: SVG_Mode) {
+        create_field(self.get_dimensions(), self.get_field(), file_path, creation_mode)
     }
 }

@@ -14,9 +14,14 @@ pub use iterators::{SortedCells, SurroundingCells};
 pub use mines::Mines;
 pub use random_field::RandomField;
 pub use r#trait::MineSweeperField;
+pub use svg::SVG_Mode;
 
 #[allow(dead_code)]
-pub fn minesweeper_field(width: u32, height: u32, mines: Mines) -> Result<impl MineSweeperField, FieldError> {
+pub fn minesweeper_field(
+    width: u32,
+    height: u32,
+    mines: Mines,
+) -> Result<impl MineSweeperField, FieldError> {
     RandomField::new(width, height, mines)
 }
 

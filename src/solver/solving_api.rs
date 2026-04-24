@@ -133,7 +133,12 @@ impl Solver {
 
         let mut recursive_revealed_fields: Vec<Vec<(u32, u32)>> = Vec::new();
 
-        self.reveal_cell(self.start_cell.0, self.start_cell.1, &mut recursive_revealed_fields, 0);
+        self.reveal_cell(
+            self.start_cell.0,
+            self.start_cell.1,
+            &mut recursive_revealed_fields,
+            0,
+        );
 
         finding.add_recursive_informations(recursive_revealed_fields);
         self.solving_steps.push(finding);

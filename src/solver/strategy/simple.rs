@@ -33,7 +33,7 @@ pub fn solve(solver: &Solver) -> Finding {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{DefinedField};
+    use crate::DefinedField;
 
     #[test]
     fn test_1_1_pattern() {

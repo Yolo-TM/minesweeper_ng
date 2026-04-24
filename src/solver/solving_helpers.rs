@@ -31,7 +31,13 @@ impl Solver {
     }
 
     #[track_caller]
-    pub(super) fn reveal_cell(&mut self, x: u32, y: u32, recursive_revealed_fields: &mut Vec<Vec<(u32, u32)>>, depth: usize) {
+    pub(super) fn reveal_cell(
+        &mut self,
+        x: u32,
+        y: u32,
+        recursive_revealed_fields: &mut Vec<Vec<(u32, u32)>>,
+        depth: usize,
+    ) {
         let state = self.get_state(x, y);
 
         if let CellState::Revealed(_) = state {
@@ -64,7 +70,13 @@ impl Solver {
     }
 
     #[track_caller]
-    pub(super) fn reveal_surrounding_cells(&mut self, x: u32, y: u32, recursive_revealed_fields: &mut Vec<Vec<(u32, u32)>>, depth: usize) {
+    pub(super) fn reveal_surrounding_cells(
+        &mut self,
+        x: u32,
+        y: u32,
+        recursive_revealed_fields: &mut Vec<Vec<(u32, u32)>>,
+        depth: usize,
+    ) {
         // Ensure an vector exists for this depth
         while recursive_revealed_fields.len() <= depth {
             recursive_revealed_fields.push(vec![]);
@@ -72,7 +84,6 @@ impl Solver {
 
         for (sx, sy) in self.surrounding_fields(x, y, None) {
             if let CellState::Hidden(_) = self.get_state(sx, sy) {
-
                 recursive_revealed_fields[depth].push((sx, sy));
                 self.reveal_cell(sx, sy, recursive_revealed_fields, depth + 1);
             }

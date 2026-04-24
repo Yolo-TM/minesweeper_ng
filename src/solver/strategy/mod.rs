@@ -2,8 +2,8 @@
 mod r#macro;
 use super::{Finding, Solver};
 
-mod sat_solver;
 mod reduction;
+mod sat_solver;
 mod simple;
 
 define_strategies! {

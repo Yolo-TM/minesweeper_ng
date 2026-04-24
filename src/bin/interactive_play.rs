@@ -309,7 +309,8 @@ fn main() -> io::Result<()> {
         input.trim().to_string()
     };
 
-    let field = DefinedField::from_file(&filepath).map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+    let field = DefinedField::from_file(&filepath)
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
     terminal::enable_raw_mode()?;
     execute!(io::stdout(), EnterAlternateScreen)?;

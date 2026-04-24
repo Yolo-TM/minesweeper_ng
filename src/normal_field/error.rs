@@ -2,8 +2,15 @@ use std::fmt;
 
 #[derive(Debug)]
 pub enum FieldError {
-    InvalidMineConfig { reason: String },
-    OutOfBounds { x: u32, y: u32, width: u32, height: u32 },
+    InvalidMineConfig {
+        reason: String,
+    },
+    OutOfBounds {
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+    },
     InvalidFileData(String),
     IoError(std::io::Error),
     SerializationError(String),
@@ -15,8 +22,17 @@ impl fmt::Display for FieldError {
             FieldError::InvalidMineConfig { reason } => {
                 write!(f, "Invalid mine configuration: {}", reason)
             }
-            FieldError::OutOfBounds { x, y, width, height } => {
-                write!(f, "Position ({}, {}) out of bounds for {}x{} field", x, y, width, height)
+            FieldError::OutOfBounds {
+                x,
+                y,
+                width,
+                height,
+            } => {
+                write!(
+                    f,
+                    "Position ({}, {}) out of bounds for {}x{} field",
+                    x, y, width, height
+                )
             }
             FieldError::InvalidFileData(msg) => {
                 write!(f, "Invalid file data: {}", msg)

@@ -9,7 +9,7 @@ fn main() {
     //let field: DefinedField = DefinedField::from_file("src/generated/testing/extended_box_logic.minesweeper ").unwrap();
     //solve_field(&field);
     let solved = is_solvable(&field);
-    field.to_svg("output.svg");
+    field.to_svg("output.svg", SVG_Mode::RevealRandom(0.01));
 
     println!("Time elapsed: {:?} - Solved: {:?}", start.elapsed(), solved);
 }
