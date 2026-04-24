@@ -40,6 +40,10 @@ impl Solver {
         true
     }
 
+    pub fn get_solving_steps(&self) ->  Vec<Finding> {
+        return self.solving_steps.clone()
+    }
+
     pub fn solve(&mut self) {
         self.println("Starting solving process...", 8);
         self.println(

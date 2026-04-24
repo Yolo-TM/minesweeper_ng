@@ -7,9 +7,13 @@ fn main() {
     let field: RandomField = RandomField::new(60, 30, Mines::Density(0.30)).unwrap();
     //let field: DefinedField = DefinedField::from_file("src/generated/testing/benchmarking/7.minesweeper").unwrap();
     //let field: DefinedField = DefinedField::from_file("src/generated/testing/extended_box_logic.minesweeper ").unwrap();
-    //solve_field(&field);
-    let solved = is_solvable(&field);
-    field.to_svg("output.svg", SVG_Mode::RevealRandom(0.01));
+
+    let mut solver = create_solver(&field, 0); // 10 for output
+    solver.solve();
+    let solved = solver.is_solved();
+    let _solving_steps = solver.get_solving_steps();
+
+    field.to_svg("output.svg", SVG_Mode::RevealRandom(0.005));
 
     println!("Time elapsed: {:?} - Solved: {:?}", start.elapsed(), solved);
 }
