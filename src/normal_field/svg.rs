@@ -4,7 +4,7 @@ use crate::solver::Finding;
 use rand::RngExt;
 use svg::Document;
 use svg::node::element::path::Data;
-use svg::node::element::{Animate, Path, Rectangle, TSpan, Text};
+use svg::node::element::{Animate, Group, Path, Rectangle, Text};
 
 #[allow(non_camel_case_types)]
 pub enum SVG_Mode {
@@ -23,6 +23,13 @@ const MAX_HEADER_SIZE: u32 = 200;
  - Normal Mode just show all
  - Includes per‑cell reveal animation (tiles start hidden and appear randomly)
 */
+
+fn revealed_bg(cell: &Cell) -> &'static str {
+    match cell {
+        Cell::Empty => "#ddd",
+        _ => "white",
+    }
+}
 
 pub fn create_field(
     dimensions: (u32, u32, u32),
@@ -104,15 +111,14 @@ fn create_grid(dimensions: (u32, u32, u32)) -> Path {
         .set("d", grid)
 }
 
-fn create_cells(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>, mode: SVG_Mode) -> Text {
-    let (width, height, _) = dimensions;
-    let font_size = CELL_SIZE as f32 * 0.8;
-    let mut text = Text::new("")
-        .set("x", 0)
-        .set("y", get_header_size(width, height))
-        .set("text-anchor", "middle")
-        .set("dominant-baseline", "middle")
-        .set("font-size", font_size);
+/// Core cell rendering. Returns a Group containing background rectangles and text.
+fn create_cells(
+    dimensions: (u32, u32, u32),
+    field: &Vec<Vec<Cell>>,
+    mode: SVG_Mode,
+) -> Group {
+    let (w, h, _) = dimensions;
+    let mut group = Group::new();
 
     let mut step_map: std::collections::HashMap<(u32, u32), usize> = std::collections::HashMap::new();
     if let SVG_Mode::RevealSolver(ref findings) = mode {
@@ -135,64 +141,71 @@ fn create_cells(dimensions: (u32, u32, u32), field: &Vec<Vec<Cell>>, mode: SVG_M
     }
 
     let mut rng = rand::rng();
-    for x in 0..width {
-        for y in 0..height {
+    for x in 0..w {
+        for y in 0..h {
             let cell = &field[x as usize][y as usize];
-            if let Cell::Empty = cell {
-                continue;
-            }
-            let position = (
-                CELL_SIZE * x,
-                get_header_size(width, height) + CELL_SIZE * y,
-            );
 
-            match &mode {
-                SVG_Mode::Normal => {
-                    text = text.add(create_cell(position, cell));
+            let pos = (CELL_SIZE * x, get_header_size(w, h) + CELL_SIZE * y);
+            let rect_id = format!("r_{}_{}", x, y);
+            // Base dark rectangle (always added)
+            let mut rect = Rectangle::new()
+                .set("x", CELL_SIZE * x)
+                .set("y", pos.1)
+                .set("width", CELL_SIZE)
+                .set("height", CELL_SIZE)
+                .set("fill", "#222")
+                .set("id", rect_id);
+            // Determine if this cell should animate to light background
+            let (should_animate, delay) = match mode {
+                SVG_Mode::Normal => (false, 0.0),
+                SVG_Mode::RevealRandom(factor) => {
+                    let d = rng.random_range(0.0..(w * h) as f32 * factor);
+                    (true, d)
                 }
-                SVG_Mode::RevealRandom(delay) => {
-                    let mut cell_tspan = create_cell(position, cell);
-                    // start hidden
-                    cell_tspan = cell_tspan.set("visibility", "hidden");
-                    // random delay for reveal (seconds)
-                    let delay = rng.random_range(0.0..(width * height) as f32 * delay);
-                    let animate = Animate::new()
-                        .set("attributeName", "visibility")
-                        .set("from", "hidden")
-                        .set("to", "visible")
-                        .set("begin", format!("{}s", delay))
-                        .set("dur", "0.1s")
-                        .set("fill", "freeze");
-                    cell_tspan = cell_tspan.add(animate);
-                    text = text.add(cell_tspan);
+                SVG_Mode::RevealSolver(_) => {
+                    if let Some(&step) = step_map.get(&(x, y)) {
+                        (true, step as f32 * 0.05)
+                    } else { (false, 0.0) }
                 }
-                SVG_Mode::RevealSolver(_findings) => {
-                    if let Some(&step_idx) = step_map.get(&(x, y)) {
-                        let mut cell_tspan = create_cell(position, cell);
-                        cell_tspan = cell_tspan.set("visibility", "hidden");
-                        let delay = step_idx as f32 * 0.05; // 50ms per step
-                        let animate = Animate::new()
-                            .set("attributeName", "visibility")
-                            .set("from", "hidden")
-                            .set("to", "visible")
-                            .set("begin", format!("{}s", delay))
-                            .set("dur", "0.1s")
-                            .set("fill", "freeze");
-                        cell_tspan = cell_tspan.add(animate);
-                        text = text.add(cell_tspan);
-                    }
-                }
+            };
+
+            if should_animate {
+                let anim = Animate::new()
+                    .set("attributeName", "fill")
+                    .set("from", "#222")
+                    .set("to", revealed_bg(cell))
+                    .set("begin", format!("{}s", delay))
+                    .set("dur", "0.1s")
+                    .set("fill", "freeze");
+                rect = rect.add(anim);
+                // Text appears after background animation
+                let mut txt = create_cell_tspan(pos, cell);
+                txt = txt.set("visibility", "hidden");
+                let txt_anim = Animate::new()
+                    .set("attributeName", "visibility")
+                    .set("from", "hidden")
+                    .set("to", "visible")
+                    .set("begin", format!("{}s", delay + 0.1))
+                    .set("dur", "0.1s")
+                    .set("fill", "freeze");
+                txt = txt.add(txt_anim);
+                group = group.add(rect);
+                group = group.add(txt);
+            } else {
+                // Normal mode: add both rect and text
+                group = group.add(rect);
+                group = group.add(create_cell_tspan(pos, cell));
             }
-        }
+        };
     }
-    text
+    group
 }
 
-fn create_cell(position: (u32, u32), cell: &Cell) -> TSpan {
+fn create_cell_tspan(position: (u32, u32), cell: &Cell) -> Text {
     let cell_text = match cell {
         Cell::Number(num) => num.to_string(),
         Cell::Mine => "💣".to_string(),
-        Cell::Empty => unreachable!(),
+        Cell::Empty => "\u{00A0}".to_string(),
     };
     let color = match cell {
         Cell::Mine => "white",
@@ -207,10 +220,13 @@ fn create_cell(position: (u32, u32), cell: &Cell) -> TSpan {
             8 => "white",
             _ => unreachable!(),
         },
-        Cell::Empty => unreachable!(),
+        Cell::Empty => "transparent",
     };
-    TSpan::new(cell_text)
-        .set("x", position.0 as f32 + CELL_SIZE as f32 * 0.6)
-        .set("y", position.1 as f32 + CELL_SIZE as f32 * 0.6)
+    Text::new(cell_text)
+        .set("x", position.0 as f32 + CELL_SIZE as f32 * 0.5)
+        .set("y", position.1 as f32 + CELL_SIZE as f32 * 0.5)
+        .set("text-anchor", "middle")
+        .set("dominant-baseline", "middle")
+        .set("font-size", CELL_SIZE as f32 * 0.8)
         .set("fill", color)
 }

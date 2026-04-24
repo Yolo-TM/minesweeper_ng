@@ -4,7 +4,7 @@ fn main() {
     let start = std::time::Instant::now();
 
     //let field: RandomField = RandomField::new(10, 10, Mines::Density(0.24)).unwrap();
-    let field: RandomField = RandomField::new(60, 30, Mines::Density(0.20)).unwrap();
+    let field: RandomField = RandomField::new(200, 100, Mines::Density(0.20)).unwrap();
     //let field: DefinedField = DefinedField::from_file("src/generated/testing/benchmarking/7.minesweeper").unwrap();
     //let field: DefinedField = DefinedField::from_file("src/generated/testing/extended_box_logic.minesweeper ").unwrap();
 
