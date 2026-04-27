@@ -1,22 +1,16 @@
-mod generator;
-mod normal_field;
+mod minesweeper_field;
+mod noguess_field;
 mod solver;
-//mod noguess_field;
 
-// Re-export commonly used types for cleaner imports
-pub use normal_field::{
-    Cell, DefinedField, FieldError, MineSweeperField, Mines, RandomField, SVG_Mode,
-    get_evil_ng_field, get_small_test_field,
+pub use minesweeper_field::{
+    Cell, DefinedField, FieldError, MineSweeperField, MineSweeperFieldDisplay,
+    MineSweeperFieldFileIO, Mines, RandomField,
 };
+pub use noguess_field::NoGuessField;
 
-pub use generator::generate;
-pub use solver::{create_solver, is_solvable, solve_field};
+#[cfg(feature = "json")]
+pub use minesweeper_field::MineSweeperFieldJson;
+#[cfg(feature = "svg")]
+pub use minesweeper_field::{MineSweeperFieldSvg, SVG_Mode};
 
-//pub use noguess_field::minesweeper_ng_field;
-pub fn minesweeper_ng_field(
-    width: u32,
-    height: u32,
-    mines: Mines,
-) -> Result<impl MineSweeperField, FieldError> {
-    RandomField::new(width, height, mines)
-}
+pub use solver::{create_solver, is_solvable};
