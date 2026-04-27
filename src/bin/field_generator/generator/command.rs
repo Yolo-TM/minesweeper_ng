@@ -1,5 +1,5 @@
-use crate::Mines;
 use clap::{Arg, ArgAction, ArgGroup, Command};
+use minesweeper_ng_gen::Mines;
 use std::process::exit;
 
 #[derive(Clone)]

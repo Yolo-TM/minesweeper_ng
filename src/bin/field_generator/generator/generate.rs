@@ -1,8 +1,5 @@
-mod batch;
-mod command;
-mod single;
-
-use command::{CommandResult, execute_command};
+use super::command::execute_command;
+use super::{batch, single};
 
 pub fn generate() {
     let res = execute_command();

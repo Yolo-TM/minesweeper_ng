@@ -1,11 +1,8 @@
-use super::CommandResult;
-use crate::MineSweeperField;
-use crate::RandomField;
-use crate::minesweeper_ng_field;
+use super::command::CommandResult;
+use minesweeper_ng_gen::*;
 use std::{path::Path, process::exit};
 
 pub fn generate_field(field_data: CommandResult) {
-    // Check if file already exists and warn user
     if Path::new(&field_data.output).exists() {
         println!(
             "Warning: File '{}' already exists and will be overwritten.",
@@ -25,7 +22,7 @@ pub fn generate_field(field_data: CommandResult) {
     }
 
     if field_data.no_guess {
-        let field = minesweeper_ng_field(field_data.width, field_data.height, field_data.mine_spec)
+        let field = NoGuessField::new(field_data.width, field_data.height, field_data.mine_spec)
             .unwrap_or_else(|err| {
                 eprintln!("Error: {}", err);
                 exit(1);
