@@ -1,8 +1,7 @@
-mod no_guess_field;
+mod candidate;
+mod failed_moves;
+mod field;
+mod frontier;
+mod generator;
 
-use no_guess_field::NoGuessField;
-use crate::{MineSweeperField, Mines};
-
-pub fn minesweeper_ng_field(width: u32, height: u32, mines: Mines) -> impl MineSweeperField {
-    NoGuessField::new(width, height, mines)
-}
+pub use field::NoGuessField;
