@@ -14,3 +14,5 @@ jobs:
           override: true
       - name: Run tests
         run: cargo test --release
+      - name: Run benches
+        run: cargo bench
