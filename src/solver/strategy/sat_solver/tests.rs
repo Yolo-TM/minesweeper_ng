@@ -34,7 +34,7 @@ pub fn create_test_field(pattern: &str) -> DefinedField {
 /// Helper to create a solver and directly set specific cells as revealed
 /// This avoids the cascade reveal behavior of reveal_cell()
 pub fn create_solver_with_reveals(field: &impl MineSweeperField, reveals: &[(u32, u32)]) -> Solver {
-    let mut solver = Solver::new(field, 0);
+    let mut solver = Solver::new(field);
 
     // Directly set cells as revealed without triggering cascade
     for &(x, y) in reveals {
@@ -230,7 +230,7 @@ mod component_tests {
         ";
 
         let field = create_test_field(pattern);
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         let _ = solver.reveal_cell(0, 0, &mut vec![vec![]], 0); // Reveal the safe cell
         solver.flag_cell(1, 0); // Flag the mine
 
@@ -425,10 +425,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_1_1() {
-        let field = DefinedField::from_file("src/generated/patterns/1-1.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/1-1.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
@@ -441,10 +441,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_1_2() {
-        let field = DefinedField::from_file("src/generated/patterns/1-2.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/1-2.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
@@ -457,10 +457,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_1_2_1_r() {
-        let field = DefinedField::from_file("src/generated/patterns/1-2-1-R.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/1-2-1-R.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
@@ -473,10 +473,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_1_2_2_1() {
-        let field = DefinedField::from_file("src/generated/patterns/1-2-2-1.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/1-2-2-1.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
@@ -489,10 +489,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_1_3_1_1() {
-        let field = DefinedField::from_file("src/generated/patterns/1-3-1-1.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/1-3-1-1.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
@@ -505,10 +505,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_1_3_1_2() {
-        let field = DefinedField::from_file("src/generated/patterns/1-3-1-2.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/1-3-1-2.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
@@ -521,10 +521,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_1_3_1_3() {
-        let field = DefinedField::from_file("src/generated/patterns/1-3-1-3.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/1-3-1-3.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
@@ -537,10 +537,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_2_2_2() {
-        let field = DefinedField::from_file("src/generated/patterns/2-2-2.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/2-2-2.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
@@ -553,10 +553,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_b1() {
-        let field = DefinedField::from_file("src/generated/patterns/b1.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/b1.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
@@ -569,10 +569,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_h2() {
-        let field = DefinedField::from_file("src/generated/patterns/h2.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/h2.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);
@@ -585,10 +585,10 @@ mod solver_tests {
 
     #[test]
     fn test_pattern_h3() {
-        let field = DefinedField::from_file("src/generated/patterns/h3.minesweeper")
+        let field = DefinedField::from_file("generated/patterns/h3.minesweeper")
             .expect("Failed to load pattern file");
 
-        let mut solver = Solver::new(&field, 0);
+        let mut solver = Solver::new(&field);
         solver.open_start_cell();
 
         let finding = super::super::solve(&solver);

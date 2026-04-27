@@ -2,7 +2,7 @@ use crate::Cell;
 use colored::{ColoredString, Colorize};
 
 #[derive(Clone)]
-pub enum CellState {
+pub(crate) enum CellState {
     Hidden(Cell),
     Revealed(Cell),
     Flagged(Cell),

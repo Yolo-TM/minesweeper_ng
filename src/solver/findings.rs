@@ -1,7 +1,7 @@
 #[derive(Debug, Clone)]
 pub struct Finding {
     safe_fields: Vec<(u32, u32)>,
-    recursive_informations: Vec<Vec<(u32, u32)>>, // Fields which were also revealed after applying this Findings informations
+    recursive_informations: Vec<Vec<(u32, u32)>>, // Fields which were also revealed recursively after applying this Findings informations
     mine_fields: Vec<(u32, u32)>,
 }
 

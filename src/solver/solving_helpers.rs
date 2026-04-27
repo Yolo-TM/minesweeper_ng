@@ -1,7 +1,6 @@
 use super::{CellState, Solver};
 use crate::Cell;
-use core::panic;
-use std::vec;
+use log::debug;
 
 impl Solver {
     pub(super) fn get_remaining_mines(&self) -> u32 {
@@ -47,11 +46,8 @@ impl Solver {
 
         match cell {
             Cell::Mine => {
-                self.print_field(2);
-                self.println(
-                    &format!("Stepped on a mine at ({}, {})! Solver failed.", x, y),
-                    2,
-                );
+                debug!("{}", self.format_field_state());
+                debug!("Stepped on a mine at ({}, {})! Solver failed.", x, y);
                 panic!("Solver hit a mine!");
             }
             Cell::Number(n) => {
