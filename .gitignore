@@ -1,5 +1,5 @@
 /target
 *.log
 *.minesweeper
-!src/generated/**/*.minesweeper
+!generated/**/*.minesweeper
 .vscode/
