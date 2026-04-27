@@ -1,5 +1,6 @@
 use super::error::FieldError;
 use super::{Cell, MineSweeperField, Mines};
+use log::warn;
 use rand::RngExt;
 
 #[derive(Clone)]
@@ -12,7 +13,33 @@ pub struct RandomField {
 }
 
 impl MineSweeperField for RandomField {
-    fn new(width: u32, height: u32, mines: Mines) -> Result<Self, FieldError> {
+    fn get_mines(&self) -> u32 {
+        self.mines
+    }
+
+    fn get_width(&self) -> u32 {
+        self.width
+    }
+
+    fn get_height(&self) -> u32 {
+        self.height
+    }
+
+    fn get_start_cell(&self) -> (u32, u32) {
+        self.start_cell
+    }
+
+    fn get_cell(&self, x: u32, y: u32) -> &Cell {
+        &self.board[x as usize][y as usize]
+    }
+
+    fn set_cell(&mut self, x: u32, y: u32, cell: Cell) {
+        self.board[x as usize][y as usize] = cell;
+    }
+}
+
+impl RandomField {
+    pub fn new(width: u32, height: u32, mines: Mines) -> Result<Self, FieldError> {
         if !mines.is_valid(width, height) {
             return Err(FieldError::InvalidMineConfig {
                 reason: format!(
@@ -26,7 +53,7 @@ impl MineSweeperField for RandomField {
 
         let percentage = mines.get_percentage(width, height);
         if percentage > 0.25 {
-            println!("Warning: {}% of the fields are mines!", percentage * 100.0);
+            warn!("{}% of the fields are mines!", percentage * 100.0);
         }
 
         let board = vec![vec![Cell::Empty; height as usize]; width as usize];
@@ -44,36 +71,6 @@ impl MineSweeperField for RandomField {
         Ok(field)
     }
 
-    fn get_mines(&self) -> u32 {
-        self.mines
-    }
-
-    fn get_width(&self) -> u32 {
-        self.width
-    }
-
-    fn get_height(&self) -> u32 {
-        self.height
-    }
-
-    fn get_start_cell(&self) -> (u32, u32) {
-        self.start_cell
-    }
-
-    fn get_field(&self) -> &Vec<Vec<Cell>> {
-        &self.board
-    }
-
-    fn get_cell(&self, x: u32, y: u32) -> &Cell {
-        &self.board[x as usize][y as usize]
-    }
-
-    fn set_cell(&mut self, x: u32, y: u32, cell: Cell) {
-        self.board[x as usize][y as usize] = cell;
-    }
-}
-
-impl RandomField {
     fn initialize(&mut self) {
         self.place_mines();
         self.assign_numbers();

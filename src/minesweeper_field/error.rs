@@ -14,6 +14,7 @@ pub enum FieldError {
     InvalidFileData(String),
     IoError(std::io::Error),
     SerializationError(String),
+    Deadlock(String),
 }
 
 impl fmt::Display for FieldError {
@@ -41,6 +42,7 @@ impl fmt::Display for FieldError {
             FieldError::SerializationError(msg) => {
                 write!(f, "Serialization error: {}", msg)
             }
+            FieldError::Deadlock(msg) => write!(f, "Generation deadlock: {}", msg),
         }
     }
 }

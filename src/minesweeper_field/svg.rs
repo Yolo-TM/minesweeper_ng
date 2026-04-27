@@ -1,4 +1,4 @@
-// SVG rendering for Minesweeper fields with reveal animation
+use super::MineSweeperField;
 use crate::Cell;
 use crate::solver::Finding;
 use rand::RngExt;
@@ -13,48 +13,41 @@ pub enum SVG_Mode {
     RevealSolver(Vec<Finding>),
 }
 
+pub trait MineSweeperFieldSvg: MineSweeperField {
+    fn to_svg(&self, file_path: &str, creation_mode: SVG_Mode) {
+        let dimensions = self.get_dimensions();
+        let (width, height, _) = dimensions;
+
+        let document = Document::new()
+            .set(
+                "viewBox",
+                (
+                    0,
+                    0,
+                    CELL_SIZE * width,
+                    get_header_size(width, height) + CELL_SIZE * height,
+                ),
+            )
+            .add(create_background(dimensions))
+            .add(create_header(dimensions))
+            .add(create_grid(dimensions))
+            .add(create_cells(dimensions, self, creation_mode));
+
+        svg::save(file_path, &document).unwrap();
+    }
+}
+
+impl<T: MineSweeperField> MineSweeperFieldSvg for T {}
+
 const CELL_SIZE: u32 = 20;
 const MIN_HEADER_SIZE: u32 = 60;
 const MAX_HEADER_SIZE: u32 = 200;
-
-/*
- Output an Image as SVG file
-
- - Normal Mode just show all
- - Includes per‑cell reveal animation (tiles start hidden and appear randomly)
-*/
 
 fn revealed_bg(cell: &Cell) -> &'static str {
     match cell {
         Cell::Empty => "#ddd",
         _ => "white",
     }
-}
-
-pub fn create_field(
-    dimensions: (u32, u32, u32),
-    field: &Vec<Vec<Cell>>,
-    file_path: &str,
-    mode: SVG_Mode,
-) {
-    let (width, height, _mines) = dimensions;
-
-    let document = Document::new()
-        .set(
-            "viewBox",
-            (
-                0,
-                0,
-                CELL_SIZE * width,
-                get_header_size(width, height) + CELL_SIZE * height,
-            ),
-        )
-        .add(create_background(dimensions))
-        .add(create_header(dimensions))
-        .add(create_grid(dimensions))
-        .add(create_cells(dimensions, field, mode));
-
-    svg::save(file_path, &document).unwrap();
 }
 
 fn get_header_size(width: u32, height: u32) -> u32 {
@@ -114,13 +107,14 @@ fn create_grid(dimensions: (u32, u32, u32)) -> Path {
 /// Core cell rendering. Returns a Group containing background rectangles and text.
 fn create_cells(
     dimensions: (u32, u32, u32),
-    field: &Vec<Vec<Cell>>,
+    field: &impl MineSweeperField,
     mode: SVG_Mode,
 ) -> Group {
     let (w, h, _) = dimensions;
     let mut group = Group::new();
 
-    let mut step_map: std::collections::HashMap<(u32, u32), usize> = std::collections::HashMap::new();
+    let mut step_map: std::collections::HashMap<(u32, u32), usize> =
+        std::collections::HashMap::new();
     if let SVG_Mode::RevealSolver(ref findings) = mode {
         for (step_idx, finding) in findings.iter().enumerate() {
             // safe fields
@@ -143,7 +137,7 @@ fn create_cells(
     let mut rng = rand::rng();
     for x in 0..w {
         for y in 0..h {
-            let cell = &field[x as usize][y as usize];
+            let cell = field.get_cell(x, y);
 
             let pos = (CELL_SIZE * x, get_header_size(w, h) + CELL_SIZE * y);
             let rect_id = format!("r_{}_{}", x, y);
@@ -165,7 +159,9 @@ fn create_cells(
                 SVG_Mode::RevealSolver(_) => {
                     if let Some(&step) = step_map.get(&(x, y)) {
                         (true, step as f32 * 0.05)
-                    } else { (false, 0.0) }
+                    } else {
+                        (false, 0.0)
+                    }
                 }
             };
 
@@ -196,7 +192,7 @@ fn create_cells(
                 group = group.add(rect);
                 group = group.add(create_cell_tspan(pos, cell));
             }
-        };
+        }
     }
     group
 }

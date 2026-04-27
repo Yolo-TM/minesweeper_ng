@@ -1,8 +1,8 @@
 pub struct SortedCells {
-    pub width: u32,
-    pub height: u32,
-    pub current_x: u32,
-    pub current_y: u32,
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+    pub(crate) current_x: u32,
+    pub(crate) current_y: u32,
 }
 
 impl Iterator for SortedCells {
@@ -26,13 +26,13 @@ impl Iterator for SortedCells {
 }
 
 pub struct SurroundingCells {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
-    pub range: u8,
-    pub dx: i8,
-    pub dy: i8,
+    pub(crate) x: u32,
+    pub(crate) y: u32,
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+    pub(crate) range: u8,
+    pub(crate) dx: i8,
+    pub(crate) dy: i8,
 }
 
 impl Iterator for SurroundingCells {
