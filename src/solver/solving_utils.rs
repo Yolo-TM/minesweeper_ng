@@ -2,7 +2,7 @@ use super::Solver;
 use crate::minesweeper_field::{SortedCells, SurroundingCells};
 
 impl Solver {
-    pub(crate) fn format_field_state(&self) -> String {
+    pub fn format_field_state(&self) -> String {
         let mut output = String::new();
 
         output.push_str("\n╔═");
