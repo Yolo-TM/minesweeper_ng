@@ -13,4 +13,4 @@ pub use minesweeper_field::MineSweeperFieldJson;
 #[cfg(feature = "svg")]
 pub use minesweeper_field::{MineSweeperFieldSvg, SVG_Mode};
 
-pub use solver::{create_solver, is_solvable};
+pub use solver::{Finding, Solver, create_solver, is_solvable};
