@@ -24,6 +24,25 @@ fn solver_benchmarks(c: &mut Criterion) {
     group.finish();
 }
 
+fn evil_field_benchmark(c: &mut Criterion) {
+    let mut group = c.benchmark_group("solver_evil");
+    group.measurement_time(std::time::Duration::from_secs(10));
+
+    if let Ok(field) = DefinedField::from_file("generated/testing/evil_ng_field.minesweeper") {
+        group.bench_function("evil_ng_field", |b| {
+            b.iter(|| is_solvable(black_box(&field)))
+        });
+    }
+
+    if let Ok(field) = DefinedField::from_file("generated/testing/hard.minesweeper") {
+        group.bench_function("hard_field", |b| {
+            b.iter(|| is_solvable(black_box(&field)))
+        });
+    }
+
+    group.finish();
+}
+
 fn ng_generation_benchmarks(c: &mut Criterion) {
     let mut group = c.benchmark_group("ng_generation");
     group.measurement_time(std::time::Duration::from_secs(10));
@@ -43,5 +62,5 @@ fn ng_generation_benchmarks(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, solver_benchmarks, ng_generation_benchmarks);
+criterion_group!(benches, solver_benchmarks, evil_field_benchmark, ng_generation_benchmarks);
 criterion_main!(benches);

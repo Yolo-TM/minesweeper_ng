@@ -6,7 +6,7 @@
 > After release 0.9.0 AI was used as a writing tool; the design was still made by me and the AI written code thoroughly reviewed and refactored.
 >> This README is also partially AI generated
 
-![Animated SVG showing the solver revealing cells step by step on a 150x90 no-guess field](./generated/solver_run.svg)
+![Animated SVG showing the solver revealing cells step by step on a 150x90 no-guess field](./generated/150x90_2565_mines.svg)
 
 ## Overview
 
@@ -20,6 +20,7 @@ A Rust library and set of binaries for generating and solving Minesweeper fields
   - [Error Handling](#error-handling)
 - [Binaries](#binaries)
 - [Output](#output)
+- [Benchmarks](#benchmarks)
 - [Roadmap](#roadmap)
 - [Other Solvers](#other-solvers)
 
@@ -230,6 +231,34 @@ let steps: Vec<Finding> = solver.get_solving_steps();
 field.to_svg("output.svg", SVG_Mode::RevealSolving(steps));
 ```
 
+## Benchmarks
+
+Example benchmark run for the fields seen below.
+
+```bash
+> cargo bench --bench solver -- solver_evil
+
+solver_evil/evil_ng_field  time:   [1.8103 ms 1.8252 ms 1.8434 ms]
+Found 3 outliers among 100 measurements (3.00%)
+  1 (1.00%) high mild
+  2 (2.00%) high severe
+
+solver_evil/hard_field  time:   [483.82 µs 485.64 µs 487.46 µs]
+Found 5 outliers among 100 measurements (5.00%)
+  2 (2.00%) low mild
+  3 (3.00%) high mild
+```
+
+### Evil NG Field
+
+Scrapped by hand from [Minesweeper Online](minesweeper.online), sry
+![Animated SVG showing the solver](./generated/evil_ng_field_solved.svg)
+
+### Hard
+
+Sub Part of the Evil NG Field
+![Animated SVG showing the solver](./generated/hard_solved.svg)
+
 ## Roadmap
 
 - allow any 0-cell from any island to be the start tile (currently only one start tile per field)
@@ -239,5 +268,5 @@ field.to_svg("output.svg", SVG_Mode::RevealSolving(steps));
 ## Other Solvers
 
 - [mrgris](https://mrgris.com/projects/minesweepr/demo/player/)
-- [JS Minesweeper](https://davidnhill.github.io/JSMinesweeper/index.html)
+- [JS Minesweeper](https://github.com/davidnhill/JSMinesweeper)
 - [Logigames](https://www.logigames.com/minesweeper/solver)
