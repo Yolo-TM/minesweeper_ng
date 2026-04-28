@@ -85,9 +85,9 @@ fn show(&self)                                      // colored terminal output (
 
 ### Solver
 
-The solver uses a layered strategy pipeline, applying each strategy in order until the field is fully solved or no further progress can be made:
+The solver only performs actions that are **100% logically safe** — every reveal and every flag it places is guaranteed to be correct. Strategies are ordered from cheapest to most expensive, restarting from the fastest after each successful deduction, so heavier strategies only run when simpler ones are exhausted.
 
-1. **Simple** — flags cells where all neighbors must be mines, reveals cells where all mines are already flagged
+1. **Simple** — flags cells where neighbour count = mine count, if minecount = 0 reveal neighbours which are hidden
 2. **Reduction** — subtracts overlapping constraints between adjacent numbered cells
 3. **SAT** — encodes remaining constraints as a satisfiability problem and checks which cell states are forced across all valid solutions
 4. **MineCount** — when no mines remain, all hidden cells are safe
