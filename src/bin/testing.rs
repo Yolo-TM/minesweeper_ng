@@ -26,7 +26,7 @@ fn main() {
     //    solver.solve();
     //    solved = solver.is_solved();
     //    let solving_steps = solver.get_solving_steps();
-    //    field.to_svg("output.svg", SVG_Mode::RevealSolver(solving_steps));
+    //    field.to_svg("output.svg", SVG_Mode::RevealSolving(solving_steps));
     //}
 
     //debug!("Time elapsed: {:?} - Solved: {:?}", start.elapsed(), solved);

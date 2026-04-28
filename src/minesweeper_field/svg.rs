@@ -10,7 +10,7 @@ use svg::node::element::{Animate, Group, Path, Rectangle, Text};
 pub enum SVG_Mode {
     Normal,
     RevealRandom(f32),
-    RevealSolver(Vec<Finding>),
+    RevealSolving(Vec<Finding>),
 }
 
 pub trait MineSweeperFieldSvg: MineSweeperField {
@@ -115,7 +115,7 @@ fn create_cells(
 
     let mut step_map: std::collections::HashMap<(u32, u32), usize> =
         std::collections::HashMap::new();
-    if let SVG_Mode::RevealSolver(ref findings) = mode {
+    if let SVG_Mode::RevealSolving(ref findings) = mode {
         for (step_idx, finding) in findings.iter().enumerate() {
             // safe fields
             for &pos in finding.get_safe_fields() {
@@ -126,7 +126,7 @@ fn create_cells(
                 step_map.entry(pos).or_insert(step_idx);
             }
             // recursive informations
-            for inner in finding.get_recursive_informations() {
+            for inner in finding.get_recursive_revelations() {
                 for &pos in inner {
                     step_map.entry(pos).or_insert(step_idx);
                 }
@@ -156,7 +156,7 @@ fn create_cells(
                     let d = rng.random_range(0.0..(w * h) as f32 * factor);
                     (true, d)
                 }
-                SVG_Mode::RevealSolver(_) => {
+                SVG_Mode::RevealSolving(_) => {
                     if let Some(&step) = step_map.get(&(x, y)) {
                         (true, step as f32 * 0.05)
                     } else {
