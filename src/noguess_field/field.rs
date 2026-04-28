@@ -46,4 +46,3 @@ impl NoGuessField {
         Ok(NoGuessField(field))
     }
 }
-

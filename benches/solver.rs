@@ -1,6 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use std::hint::black_box;
 use minesweeper_ng_gen::*;
+use std::hint::black_box;
 
 fn load_field(index: u32) -> Option<DefinedField> {
     DefinedField::from_file(&format!(
@@ -35,9 +35,7 @@ fn evil_field_benchmark(c: &mut Criterion) {
     }
 
     if let Ok(field) = DefinedField::from_file("generated/testing/hard.minesweeper") {
-        group.bench_function("hard_field", |b| {
-            b.iter(|| is_solvable(black_box(&field)))
-        });
+        group.bench_function("hard_field", |b| b.iter(|| is_solvable(black_box(&field))));
     }
 
     group.finish();
@@ -62,5 +60,10 @@ fn ng_generation_benchmarks(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, solver_benchmarks, evil_field_benchmark, ng_generation_benchmarks);
+criterion_group!(
+    benches,
+    solver_benchmarks,
+    evil_field_benchmark,
+    ng_generation_benchmarks
+);
 criterion_main!(benches);
