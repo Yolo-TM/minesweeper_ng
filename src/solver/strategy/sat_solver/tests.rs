@@ -1,5 +1,6 @@
 use super::find_independent_components;
-use crate::solver::{Solver, cell_state::CellState};
+use crate::CellState;
+use crate::solver::Solver;
 use crate::{DefinedField, MineSweeperField, Mines};
 
 /// Helper to create a test field from a string pattern

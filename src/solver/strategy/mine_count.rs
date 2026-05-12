@@ -1,5 +1,4 @@
 use super::{Finding, Solver};
-use crate::solver::CellState;
 
 /*
 Mine count strategy:
@@ -17,7 +16,7 @@ pub fn solve(solver: &Solver) -> Finding {
     }
 
     for (x, y) in solver.sorted_fields() {
-        if matches!(solver.get_state(x, y), CellState::Hidden(_)) {
+        if solver.get_state(x, y).is_hidden() {
             finding.add_safe_field((x, y));
         }
     }

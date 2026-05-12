@@ -1,4 +1,5 @@
 mod cell;
+mod cell_state;
 mod defined_field;
 mod display;
 mod error;
@@ -14,6 +15,7 @@ mod json_io;
 mod svg;
 
 pub use cell::Cell;
+pub use cell_state::{CellState, InvalidTransition};
 pub use defined_field::DefinedField;
 pub use display::MineSweeperFieldDisplay;
 pub use error::FieldError;

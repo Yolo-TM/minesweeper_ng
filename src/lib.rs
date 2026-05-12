@@ -3,8 +3,9 @@ mod noguess_field;
 mod solver;
 
 pub use minesweeper_field::{
-    Cell, DefinedField, FieldError, MineSweeperField, MineSweeperFieldDisplay,
-    MineSweeperFieldFileIO, Mines, RandomField,
+    Cell, CellState, DefinedField, FieldError, InvalidTransition, MineSweeperField,
+    MineSweeperFieldDisplay, MineSweeperFieldFileIO, Mines, RandomField, SortedCells,
+    SurroundingCells,
 };
 pub use noguess_field::NoGuessField;
 

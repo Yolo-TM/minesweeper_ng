@@ -1,4 +1,5 @@
-use super::{CellState, Solver};
+use super::Solver;
+use crate::CellState;
 use crate::Cell;
 use log::debug;
 
@@ -6,7 +7,7 @@ impl Solver {
     pub(super) fn get_remaining_mines(&self) -> u32 {
         let mut flagged_count = 0;
         for (x, y) in self.sorted_fields() {
-            if matches!(self.get_state(x, y), CellState::Flagged(_)) {
+            if self.get_state(x, y).is_flagged() {
                 flagged_count += 1;
             }
         }
@@ -18,15 +19,8 @@ impl Solver {
     }
 
     pub(super) fn flag_cell(&mut self, x: u32, y: u32) {
-        let state = self.get_state(x, y);
-
-        if !matches!(state, CellState::Hidden(_)) {
-            return;
-        }
-
-        // Don't bother checking if it's actually a mine here, if its no mine, were definitely hitting one in the next step
-        let cell = state.get_cell().clone();
-        self.state[x as usize][y as usize] = CellState::Flagged(cell);
+        // flag() enforces Hidden → Flagged; silently ignore invalid transitions
+        let _ = self.state[x as usize][y as usize].flag();
     }
 
     #[track_caller]
@@ -37,12 +31,10 @@ impl Solver {
         recursive_revealed_fields: &mut Vec<Vec<(u32, u32)>>,
         depth: usize,
     ) {
-        let state = self.get_state(x, y);
-
-        if let CellState::Revealed(_) = state {
+        if self.get_state(x, y).is_revealed() {
             return;
         }
-        let cell = state.get_cell().clone();
+        let cell = self.get_state(x, y).cell().clone();
 
         match cell {
             Cell::Mine => {
@@ -51,14 +43,19 @@ impl Solver {
                 panic!("Solver hit a mine!");
             }
             Cell::Number(n) => {
-                self.state[x as usize][y as usize] = CellState::Revealed(cell);
+                // reveal() enforces Hidden → Revealed
+                self.state[x as usize][y as usize]
+                    .reveal()
+                    .expect("reveal_cell called on non-hidden cell");
 
                 if self.get_surrounding_flag_count(x, y) == n {
                     self.reveal_surrounding_cells(x, y, recursive_revealed_fields, depth);
                 }
             }
             Cell::Empty => {
-                self.state[x as usize][y as usize] = CellState::Revealed(cell);
+                self.state[x as usize][y as usize]
+                    .reveal()
+                    .expect("reveal_cell called on non-hidden cell");
 
                 self.reveal_surrounding_cells(x, y, recursive_revealed_fields, depth);
             }
@@ -73,13 +70,13 @@ impl Solver {
         recursive_revealed_fields: &mut Vec<Vec<(u32, u32)>>,
         depth: usize,
     ) {
-        // Ensure an vector exists for this depth
+        // Ensure a vector exists for this depth
         while recursive_revealed_fields.len() <= depth {
             recursive_revealed_fields.push(vec![]);
         }
 
         for (sx, sy) in self.surrounding_fields(x, y, None) {
-            if let CellState::Hidden(_) = self.get_state(sx, sy) {
+            if self.get_state(sx, sy).is_hidden() {
                 recursive_revealed_fields[depth].push((sx, sy));
                 self.reveal_cell(sx, sy, recursive_revealed_fields, depth + 1);
             }
@@ -87,54 +84,31 @@ impl Solver {
     }
 
     pub(super) fn has_unrevealed_neighbours(&self, x: u32, y: u32) -> bool {
-        for (new_x, new_y) in self.surrounding_fields(x, y, None) {
-            if let CellState::Hidden(_) = self.get_state(new_x, new_y) {
-                return true;
-            }
-        }
-
-        false
+        self.surrounding_fields(x, y, None)
+            .any(|(nx, ny)| self.get_state(nx, ny).is_hidden())
     }
 
     pub(super) fn get_surrounding_flag_count(&self, x: u32, y: u32) -> u8 {
-        let mut flag_count = 0;
-
-        for (sx, sy) in self.surrounding_fields(x, y, None) {
-            if let CellState::Flagged(_) = self.get_state(sx, sy) {
-                flag_count += 1;
-            }
-        }
-
-        flag_count
+        self.surrounding_fields(x, y, None)
+            .filter(|&(sx, sy)| self.get_state(sx, sy).is_flagged())
+            .count() as u8
     }
 
     pub(super) fn get_surrounding_unrevealed_count(&self, x: u32, y: u32) -> u8 {
-        let mut count = 0;
-
-        for (new_x, new_y) in self.surrounding_fields(x, y, None) {
-            if let CellState::Hidden(_) = self.get_state(new_x, new_y) {
-                count += 1;
-            }
-        }
-
-        count
+        self.surrounding_fields(x, y, None)
+            .filter(|&(nx, ny)| self.get_state(nx, ny).is_hidden())
+            .count() as u8
     }
 
     pub(super) fn get_surrounding_unrevealed(&self, x: u32, y: u32) -> Vec<(u32, u32)> {
-        let mut hidden = vec![];
-
-        for (new_x, new_y) in self.surrounding_fields(x, y, None) {
-            if let CellState::Hidden(_) = self.get_state(new_x, new_y) {
-                hidden.push((new_x, new_y));
-            }
-        }
-
-        hidden
+        self.surrounding_fields(x, y, None)
+            .filter(|&(nx, ny)| self.get_state(nx, ny).is_hidden())
+            .collect()
     }
 
     pub(super) fn get_reduced_count(&self, x: u32, y: u32) -> u8 {
         let flag_count = self.get_surrounding_flag_count(x, y);
-        let number = match self.get_state(x, y).get_cell() {
+        let number = match self.get_state(x, y).cell() {
             Cell::Number(n) => n,
             _ => panic!(
                 "get_reduced_count called on non-number cell at ({}, {})",
@@ -153,8 +127,8 @@ impl Solver {
     }
 
     pub(super) fn has_informations(&self, x: u32, y: u32) -> bool {
-        matches!(self.get_state(x, y), CellState::Revealed(_))
-            && matches!(self.get_state(x, y).get_cell(), Cell::Number(_))
+        self.get_state(x, y).is_revealed()
+            && matches!(self.get_state(x, y).cell(), Cell::Number(_))
             && self.has_unrevealed_neighbours(x, y)
     }
 }

@@ -1,6 +1,6 @@
 use super::failed_moves::{FailedDoubleMoves, FailedMoves};
 use super::frontier::Frontier;
-use crate::solver::CellState;
+use crate::CellState;
 use crate::{Cell, DefinedField, MineSweeperField};
 use rayon::prelude::*;
 

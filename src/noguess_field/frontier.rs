@@ -1,4 +1,4 @@
-use crate::solver::CellState;
+use crate::CellState;
 use crate::{Cell, MineSweeperField};
 use std::collections::{HashSet, VecDeque};
 

@@ -1,4 +1,4 @@
-use super::cell_state::CellState;
+use crate::CellState;
 use super::findings::Finding;
 use super::strategy::SolvingStrategy;
 use crate::{Cell, MineSweeperField};
@@ -45,7 +45,7 @@ impl Solver {
 
     pub(crate) fn revealed_count(&self) -> u32 {
         self.sorted_fields()
-            .filter(|&(x, y)| matches!(self.get_state(x, y), CellState::Revealed(_)))
+            .filter(|&(x, y)| self.get_state(x, y).is_revealed())
             .count() as u32
     }
 
@@ -55,7 +55,7 @@ impl Solver {
 
     pub fn is_solved(&self) -> bool {
         self.sorted_fields()
-            .filter(|&(x, y)| !matches!(self.get_state(x, y), CellState::Revealed(_)))
+            .filter(|&(x, y)| !self.get_state(x, y).is_revealed())
             .count() as u32
             == self.mines
     }
