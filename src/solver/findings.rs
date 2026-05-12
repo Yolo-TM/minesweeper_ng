@@ -1,17 +1,13 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Finding {
     safe_fields: Vec<(u32, u32)>,
-    recursive_informations: Vec<Vec<(u32, u32)>>, // Fields which were also revealed recursively after applying this Findings informations
+    recursive_informations: Vec<Vec<(u32, u32)>>,
     mine_fields: Vec<(u32, u32)>,
 }
 
 impl Finding {
     pub fn new() -> Self {
-        Finding {
-            safe_fields: Vec::new(),
-            recursive_informations: Vec::new(),
-            mine_fields: Vec::new(),
-        }
+        Self::default()
     }
 
     pub fn success(&self) -> bool {
@@ -43,13 +39,13 @@ impl Finding {
     }
 
     pub fn add_recursive_informations(&mut self, fields: Vec<Vec<(u32, u32)>>) {
-        for i in 0..fields.len() {
+        for (i, wave) in fields.iter().enumerate() {
             if self.recursive_informations.len() <= i {
                 self.recursive_informations.push(Vec::new());
             }
 
             // Avoid adding fields which are already known as safe or were revealed in previous steps
-            'field_loop: for field in fields[i].iter() {
+            'field_loop: for field in wave.iter() {
                 if self.safe_fields.contains(field) {
                     continue;
                 }

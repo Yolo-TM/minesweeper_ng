@@ -168,7 +168,7 @@ fn propagate(
 }
 
 fn backtrack_search(
-    assignment: &mut Vec<Option<bool>>,
+    assignment: &mut [Option<bool>],
     constraints: &[Constraint],
     field_indices: &HashMap<(u32, u32), usize>,
     remaining_mines: u32,
@@ -179,7 +179,7 @@ fn backtrack_search(
     };
 
     for value in [false, true] {
-        let mut branch = assignment.clone();
+        let mut branch = assignment.to_owned();
         branch[position] = Some(value);
 
         if propagate(&mut branch, constraints, field_indices, remaining_mines)

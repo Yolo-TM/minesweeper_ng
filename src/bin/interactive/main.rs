@@ -18,8 +18,8 @@ fn main() -> io::Result<()> {
         let height: u32 = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(15);
         App::new_create(width, height)
     } else if args.len() > 1 {
-        let field = DefinedField::from_file(&args[1])
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        let field =
+            DefinedField::from_file(&args[1]).map_err(|e| io::Error::other(e.to_string()))?;
         App::new_play(field)
     } else {
         App::new_create(20, 15)

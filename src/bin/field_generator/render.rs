@@ -157,6 +157,7 @@ pub fn render_form(frame: &mut Frame, params: &Params, focused: Field, error: &O
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn render_generating(
     frame: &mut Frame,
     params: &Params,

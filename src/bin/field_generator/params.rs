@@ -161,7 +161,7 @@ pub fn is_toggle(f: Field) -> bool {
     matches!(f, Field::UseDensity | Field::NoGuess)
 }
 
-pub fn get_field_str_mut<'a>(params: &'a mut Params, f: Field) -> &'a mut String {
+pub fn get_field_str_mut(params: &mut Params, f: Field) -> &mut String {
     match f {
         Field::Width => &mut params.width,
         Field::Height => &mut params.height,

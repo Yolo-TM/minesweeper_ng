@@ -102,14 +102,12 @@ fn tui_loop(terminal: &mut ratatui::DefaultTerminal, screen: &mut Screen) -> io:
                 } else {
                     Duration::from_millis(100)
                 };
-                if event::poll(timeout)? {
-                    if let Event::Key(KeyEvent { kind, code, .. }) = event::read()? {
-                        if kind == KeyEventKind::Press {
-                            if *finished || code == KeyCode::Esc {
-                                return Ok(());
-                            }
-                        }
-                    }
+                if event::poll(timeout)?
+                    && let Event::Key(KeyEvent { kind, code, .. }) = event::read()?
+                    && kind == KeyEventKind::Press
+                    && (*finished || code == KeyCode::Esc)
+                {
+                    return Ok(());
                 }
 
                 if done.load(Ordering::Relaxed) >= *total {

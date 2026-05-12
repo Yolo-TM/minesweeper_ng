@@ -38,7 +38,6 @@ pub fn start_generation(
         rayon::scope(|s| {
             for id in 1..=total {
                 let tx = tx.clone();
-                let mines = mines.clone();
                 let output = output.clone();
                 let done2 = done2.clone();
                 let errors2 = errors2.clone();

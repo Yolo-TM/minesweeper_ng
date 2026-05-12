@@ -106,7 +106,7 @@ fn build_command() -> Command {
             )
             .group(
                 ArgGroup::new("mine_spec")
-                    .args(&["mines", "percentage"])
+                    .args(["mines", "percentage"])
                     .required(true),
             )
     }

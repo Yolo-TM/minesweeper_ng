@@ -1,7 +1,7 @@
 use super::Solver;
-use crate::CellState;
 use crate::Cell;
-use log::debug;
+use crate::CellState;
+use crate::game_ops::{self, RevealResult};
 
 impl Solver {
     pub(super) fn get_remaining_mines(&self) -> u32 {
@@ -20,66 +20,37 @@ impl Solver {
 
     pub(super) fn flag_cell(&mut self, x: u32, y: u32) {
         // flag() enforces Hidden → Flagged; silently ignore invalid transitions
-        let _ = self.state[x as usize][y as usize].flag();
+        let _ = game_ops::flag_cell(&mut self.state, x, y);
     }
 
-    #[track_caller]
     pub(super) fn reveal_cell(
         &mut self,
         x: u32,
         y: u32,
         recursive_revealed_fields: &mut Vec<Vec<(u32, u32)>>,
-        depth: usize,
     ) {
-        if self.get_state(x, y).is_revealed() {
-            return;
-        }
-        let cell = self.get_state(x, y).cell().clone();
+        let result = game_ops::reveal_cell(&mut self.state, self.width, self.height, x, y);
 
-        match cell {
-            Cell::Mine => {
-                debug!("{}", self.format_field_state());
-                debug!("Stepped on a mine at ({}, {})! Solver failed.", x, y);
-                panic!("Solver hit a mine!");
-            }
-            Cell::Number(n) => {
-                // reveal() enforces Hidden → Revealed
-                self.state[x as usize][y as usize]
-                    .reveal()
-                    .expect("reveal_cell called on non-hidden cell");
-
-                if self.get_surrounding_flag_count(x, y) == n {
-                    self.reveal_surrounding_cells(x, y, recursive_revealed_fields, depth);
+        match result {
+            RevealResult::Mine => panic!("Solver hit a mine at ({}, {})!", x, y),
+            RevealResult::Revealed { cascades, .. } => {
+                // Map cascade depth layers into the solver's recursive_revealed_fields format
+                for (i, wave) in cascades.into_iter().enumerate() {
+                    while recursive_revealed_fields.len() <= i {
+                        recursive_revealed_fields.push(vec![]);
+                    }
+                    recursive_revealed_fields[i].extend(wave);
                 }
             }
-            Cell::Empty => {
-                self.state[x as usize][y as usize]
-                    .reveal()
-                    .expect("reveal_cell called on non-hidden cell");
-
-                self.reveal_surrounding_cells(x, y, recursive_revealed_fields, depth);
+            RevealResult::Chord { cascades, .. } => {
+                for (i, wave) in cascades.into_iter().enumerate() {
+                    while recursive_revealed_fields.len() <= i {
+                        recursive_revealed_fields.push(vec![]);
+                    }
+                    recursive_revealed_fields[i].extend(wave);
+                }
             }
-        }
-    }
-
-    #[track_caller]
-    pub(super) fn reveal_surrounding_cells(
-        &mut self,
-        x: u32,
-        y: u32,
-        recursive_revealed_fields: &mut Vec<Vec<(u32, u32)>>,
-        depth: usize,
-    ) {
-        // Ensure a vector exists for this depth
-        while recursive_revealed_fields.len() <= depth {
-            recursive_revealed_fields.push(vec![]);
-        }
-
-        for (sx, sy) in self.surrounding_fields(x, y, None) {
-            if self.get_state(sx, sy).is_hidden() {
-                recursive_revealed_fields[depth].push((sx, sy));
-                self.reveal_cell(sx, sy, recursive_revealed_fields, depth + 1);
-            }
+            RevealResult::AlreadyRevealed | RevealResult::Flagged => {}
         }
     }
 

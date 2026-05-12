@@ -1,6 +1,6 @@
 use colored::{ColoredString, Colorize};
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Cell {
     Empty,
     Mine,

@@ -2,6 +2,14 @@ use colored::{ColoredString, Colorize};
 
 use super::Cell;
 
+/// Visibility state of a single board cell.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Visibility {
+    Hidden,
+    Revealed,
+    Flagged,
+}
+
 /// Tracks the player-visible state of a single board cell.
 ///
 /// Uses a state machine to enforce valid transitions:
@@ -14,10 +22,9 @@ use super::Cell;
 /// Invalid transitions (e.g. revealing a flagged cell, flagging a revealed cell)
 /// return `Err(InvalidTransition)`.
 #[derive(Clone, Debug)]
-pub enum CellState {
-    Hidden(Cell),
-    Revealed(Cell),
-    Flagged(Cell),
+pub struct CellState {
+    cell: Cell,
+    visibility: Visibility,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,11 +40,22 @@ impl std::fmt::Display for InvalidTransition {
 }
 
 impl CellState {
+    /// Creates a new cell state, defaulting to `Hidden`.
+    pub fn new(cell: Cell) -> Self {
+        Self {
+            cell,
+            visibility: Visibility::Hidden,
+        }
+    }
+
+    /// Creates a new cell state with the given visibility.
+    pub fn with_visibility(cell: Cell, visibility: Visibility) -> Self {
+        Self { cell, visibility }
+    }
+
     /// Returns the underlying field cell, regardless of visibility.
     pub fn cell(&self) -> &Cell {
-        match self {
-            Self::Hidden(c) | Self::Revealed(c) | Self::Flagged(c) => c,
-        }
+        &self.cell
     }
 
     /// Alias for `cell()` — used by the solver.
@@ -45,38 +63,43 @@ impl CellState {
         self.cell()
     }
 
+    /// Returns the current visibility state.
+    pub fn visibility(&self) -> Visibility {
+        self.visibility
+    }
+
     pub fn get_colored(&self) -> ColoredString {
-        match self {
-            CellState::Hidden(_) => "?".black().bold(),
-            CellState::Revealed(cell) => cell.get_colored(),
-            CellState::Flagged(_) => "F".red().bold(),
+        match self.visibility {
+            Visibility::Hidden => "?".black().bold(),
+            Visibility::Revealed => self.cell.get_colored(),
+            Visibility::Flagged => "F".red().bold(),
         }
     }
 
     pub fn is_hidden(&self) -> bool {
-        matches!(self, Self::Hidden(_))
+        self.visibility == Visibility::Hidden
     }
 
     pub fn is_revealed(&self) -> bool {
-        matches!(self, Self::Revealed(_))
+        self.visibility == Visibility::Revealed
     }
 
     pub fn is_flagged(&self) -> bool {
-        matches!(self, Self::Flagged(_))
+        self.visibility == Visibility::Flagged
     }
 
     /// Hidden → Revealed. Fails from Revealed or Flagged.
     pub fn reveal(&mut self) -> Result<(), InvalidTransition> {
-        match self {
-            Self::Hidden(_) => {
-                *self = Self::Revealed(self.cell().clone());
+        match self.visibility {
+            Visibility::Hidden => {
+                self.visibility = Visibility::Revealed;
                 Ok(())
             }
-            Self::Revealed(_) => Err(InvalidTransition {
+            Visibility::Revealed => Err(InvalidTransition {
                 from: "Revealed",
                 to: "Revealed",
             }),
-            Self::Flagged(_) => Err(InvalidTransition {
+            Visibility::Flagged => Err(InvalidTransition {
                 from: "Flagged",
                 to: "Revealed",
             }),
@@ -85,16 +108,16 @@ impl CellState {
 
     /// Hidden → Flagged. Fails from Revealed or Flagged.
     pub fn flag(&mut self) -> Result<(), InvalidTransition> {
-        match self {
-            Self::Hidden(_) => {
-                *self = Self::Flagged(self.cell().clone());
+        match self.visibility {
+            Visibility::Hidden => {
+                self.visibility = Visibility::Flagged;
                 Ok(())
             }
-            Self::Revealed(_) => Err(InvalidTransition {
+            Visibility::Revealed => Err(InvalidTransition {
                 from: "Revealed",
                 to: "Flagged",
             }),
-            Self::Flagged(_) => Err(InvalidTransition {
+            Visibility::Flagged => Err(InvalidTransition {
                 from: "Flagged",
                 to: "Flagged",
             }),
@@ -103,16 +126,16 @@ impl CellState {
 
     /// Flagged → Hidden. Fails from Hidden or Revealed.
     pub fn unflag(&mut self) -> Result<(), InvalidTransition> {
-        match self {
-            Self::Flagged(_) => {
-                *self = Self::Hidden(self.cell().clone());
+        match self.visibility {
+            Visibility::Flagged => {
+                self.visibility = Visibility::Hidden;
                 Ok(())
             }
-            Self::Hidden(_) => Err(InvalidTransition {
+            Visibility::Hidden => Err(InvalidTransition {
                 from: "Hidden",
                 to: "Hidden",
             }),
-            Self::Revealed(_) => Err(InvalidTransition {
+            Visibility::Revealed => Err(InvalidTransition {
                 from: "Revealed",
                 to: "Hidden",
             }),

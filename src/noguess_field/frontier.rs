@@ -12,7 +12,7 @@ impl Frontier {
     /// Each connected group of revealed numbers defines one frontier; all hidden cells
     /// adjacent to that group belong to it. Mine count is read from the actual board.
     pub(super) fn identify_all(
-        grid: &Vec<Vec<CellState>>,
+        grid: &[Vec<CellState>],
         board: &impl MineSweeperField,
     ) -> Vec<Frontier> {
         let width = grid.len() as u32;
@@ -23,15 +23,11 @@ impl Frontier {
         };
 
         let is_revealed_number = |x: u32, y: u32| -> bool {
-            matches!(
-                &grid[x as usize][y as usize],
-                CellState::Revealed(Cell::Number(_))
-            )
+            let cs = &grid[x as usize][y as usize];
+            cs.is_revealed() && matches!(cs.cell(), Cell::Number(_))
         };
 
-        let is_hidden = |x: u32, y: u32| -> bool {
-            matches!(&grid[x as usize][y as usize], CellState::Hidden(_))
-        };
+        let is_hidden = |x: u32, y: u32| -> bool { grid[x as usize][y as usize].is_hidden() };
 
         let neighbors = |x: u32, y: u32| -> Vec<(u32, u32)> {
             let mut result = Vec::with_capacity(8);

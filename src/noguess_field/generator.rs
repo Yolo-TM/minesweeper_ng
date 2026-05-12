@@ -14,7 +14,7 @@ pub(super) fn generate(
     mines: Mines,
     batch_size: usize,
 ) -> Result<NoGuessField, FieldError> {
-    let random_field = RandomField::new(width, height, mines.clone())?;
+    let random_field = RandomField::new(width, height, mines)?;
 
     // Copy the random layout into a DefinedField so we can mutate mines freely
     let mut field = DefinedField::new(width, height, mines)?;

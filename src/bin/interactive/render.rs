@@ -1,4 +1,4 @@
-use super::state::{App, AppScreen, CreateState, Overlay, PlayState, PlayerCellState};
+use super::state::{App, AppScreen, CreateState, Overlay, PlayState};
 use minesweeper_ng_gen::{Cell, MineSweeperField};
 use ratatui::{
     Frame,
@@ -116,19 +116,19 @@ pub fn render_play(frame: &mut Frame, state: &PlayState) {
         for vx in 0..visible_w {
             let x = state.scroll_x + vx;
             let is_cursor = x == state.cursor_x && y == state.cursor_y;
-            let is_start =
-                (x, y) == start && state.state[x as usize][y as usize] == PlayerCellState::Hidden;
+            let cs = &state.state[x as usize][y as usize];
+            let is_start = (x, y) == start && cs.is_hidden();
 
-            let (text, mut style) = match state.state[x as usize][y as usize] {
-                PlayerCellState::Hidden => ("? ".to_string(), Style::default()),
-                PlayerCellState::Flagged => {
-                    ("F ".to_string(), Style::default().fg(Color::Red).bold())
-                }
-                PlayerCellState::Revealed => match state.field.get_cell(x, y) {
+            let (text, mut style) = if cs.is_hidden() {
+                ("? ".to_string(), Style::default())
+            } else if cs.is_flagged() {
+                ("F ".to_string(), Style::default().fg(Color::Red).bold())
+            } else {
+                match cs.cell() {
                     Cell::Empty => ("  ".to_string(), Style::default()),
                     Cell::Mine => ("# ".to_string(), Style::default().fg(Color::White).bold()),
                     Cell::Number(n) => (format!("{} ", n), Style::default().fg(cell_color(*n))),
-                },
+                }
             };
 
             if is_cursor {

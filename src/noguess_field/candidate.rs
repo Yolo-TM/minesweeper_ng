@@ -10,11 +10,12 @@ impl CandidatePicker {
     /// Returns up to `batch_size` (remove, place) candidates.
     /// Heuristic candidates come first; brute-force fills the remainder if needed.
     /// Returns `None` only when every possible pair is exhausted (deadlock).
+    #[allow(clippy::type_complexity)]
     pub(super) fn pick(
         frontiers: &[Frontier],
         field: &DefinedField,
         failed: &FailedMoves,
-        solver_grid: &Vec<Vec<CellState>>,
+        solver_grid: &[Vec<CellState>],
         batch_size: usize,
     ) -> Option<Vec<((u32, u32), (u32, u32))>> {
         let multi = frontiers.len() > 1;
@@ -103,11 +104,12 @@ impl CandidatePicker {
     /// Returns up to `batch_size` double-move candidates: two independent (remove, place) pairs
     /// applied simultaneously. Used when all single-move options are exhausted.
     /// Returns `None` only when every double pair is also exhausted (true deadlock).
+    #[allow(clippy::type_complexity)]
     pub(super) fn pick_double(
         frontiers: &[Frontier],
         field: &DefinedField,
         failed: &FailedDoubleMoves,
-        solver_grid: &Vec<Vec<CellState>>,
+        solver_grid: &[Vec<CellState>],
         batch_size: usize,
     ) -> Option<Vec<((u32, u32), (u32, u32), (u32, u32), (u32, u32))>> {
         // Collect all frontier mine cells, most-constrained first
@@ -162,7 +164,7 @@ impl CandidatePicker {
     }
 }
 
-fn revealed_number_neighbor_count(x: u32, y: u32, grid: &Vec<Vec<CellState>>) -> usize {
+fn revealed_number_neighbor_count(x: u32, y: u32, grid: &[Vec<CellState>]) -> usize {
     let width = grid.len() as i32;
     let height = if width > 0 { grid[0].len() as i32 } else { 0 };
     let mut count = 0;
@@ -174,10 +176,8 @@ fn revealed_number_neighbor_count(x: u32, y: u32, grid: &Vec<Vec<CellState>>) ->
             let nx = x as i32 + dx;
             let ny = y as i32 + dy;
             if nx >= 0 && ny >= 0 && nx < width && ny < height {
-                if matches!(
-                    &grid[nx as usize][ny as usize],
-                    CellState::Revealed(Cell::Number(_))
-                ) {
+                let cs = &grid[nx as usize][ny as usize];
+                if cs.is_revealed() && matches!(cs.cell(), Cell::Number(_)) {
                     count += 1;
                 }
             }
@@ -201,7 +201,7 @@ fn placement_multi_frontier(frontiers: &[Frontier], field: &DefinedField) -> Vec
 fn placement_single_frontier(
     frontiers: &[Frontier],
     field: &DefinedField,
-    grid: &Vec<Vec<CellState>>,
+    grid: &[Vec<CellState>],
 ) -> Vec<(u32, u32)> {
     let width = grid.len() as u32;
     let height = if width > 0 { grid[0].len() as u32 } else { 0 };
@@ -210,7 +210,7 @@ fn placement_single_frontier(
     let mut interior: Vec<(u32, u32)> = Vec::new();
     for x in 0..width {
         for y in 0..height {
-            if !matches!(&grid[x as usize][y as usize], CellState::Hidden(_)) {
+            if !grid[x as usize][y as usize].is_hidden() {
                 continue;
             }
             if matches!(field.get_cell(x, y), Cell::Mine) {
@@ -234,7 +234,7 @@ fn placement_single_frontier(
         .collect()
 }
 
-fn has_revealed_number_neighbor(x: u32, y: u32, grid: &Vec<Vec<CellState>>) -> bool {
+fn has_revealed_number_neighbor(x: u32, y: u32, grid: &[Vec<CellState>]) -> bool {
     let width = grid.len() as i32;
     let height = if width > 0 { grid[0].len() as i32 } else { 0 };
     for dx in -1i32..=1 {
@@ -245,10 +245,8 @@ fn has_revealed_number_neighbor(x: u32, y: u32, grid: &Vec<Vec<CellState>>) -> b
             let nx = x as i32 + dx;
             let ny = y as i32 + dy;
             if nx >= 0 && ny >= 0 && nx < width && ny < height {
-                if matches!(
-                    &grid[nx as usize][ny as usize],
-                    CellState::Revealed(Cell::Number(_))
-                ) {
+                let cs = &grid[nx as usize][ny as usize];
+                if cs.is_revealed() && matches!(cs.cell(), Cell::Number(_)) {
                     return true;
                 }
             }
@@ -257,13 +255,13 @@ fn has_revealed_number_neighbor(x: u32, y: u32, grid: &Vec<Vec<CellState>>) -> b
     false
 }
 
-fn all_non_mine_hidden_cells(field: &DefinedField, grid: &Vec<Vec<CellState>>) -> Vec<(u32, u32)> {
+fn all_non_mine_hidden_cells(field: &DefinedField, grid: &[Vec<CellState>]) -> Vec<(u32, u32)> {
     let width = grid.len() as u32;
     let height = if width > 0 { grid[0].len() as u32 } else { 0 };
     let mut result = Vec::new();
     for x in 0..width {
         for y in 0..height {
-            if matches!(&grid[x as usize][y as usize], CellState::Hidden(_))
+            if grid[x as usize][y as usize].is_hidden()
                 && !matches!(field.get_cell(x, y), Cell::Mine)
             {
                 result.push((x, y));

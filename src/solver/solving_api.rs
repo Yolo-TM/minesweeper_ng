@@ -1,6 +1,6 @@
-use crate::CellState;
 use super::findings::Finding;
 use super::strategy::SolvingStrategy;
+use crate::CellState;
 use crate::{Cell, MineSweeperField};
 use log::{debug, trace};
 
@@ -28,7 +28,7 @@ impl Solver {
         let state = (0..field.get_width())
             .map(|x| {
                 (0..field.get_height())
-                    .map(|y| CellState::Hidden(field.get_cell(x, y).clone()))
+                    .map(|y| CellState::new(*field.get_cell(x, y)))
                     .collect()
             })
             .collect();
@@ -122,7 +122,7 @@ impl Solver {
 
         let mut recursive_revealed_fields: Vec<Vec<(u32, u32)>> = Vec::new();
         for (x, y) in step_solution.get_safe_fields() {
-            self.reveal_cell(*x, *y, &mut recursive_revealed_fields, 0);
+            self.reveal_cell(*x, *y, &mut recursive_revealed_fields);
         }
         for (x, y) in step_solution.get_mine_fields() {
             self.flag_cell(*x, *y);
@@ -152,7 +152,6 @@ impl Solver {
             self.start_cell.0,
             self.start_cell.1,
             &mut recursive_revealed_fields,
-            0,
         );
 
         finding.add_recursive_informations(recursive_revealed_fields);

@@ -1,6 +1,6 @@
 use super::find_independent_components;
-use crate::CellState;
 use crate::solver::Solver;
+use crate::{CellState, Visibility};
 use crate::{DefinedField, MineSweeperField, Mines};
 
 /// Helper to create a test field from a string pattern
@@ -40,7 +40,8 @@ pub fn create_solver_with_reveals(field: &impl MineSweeperField, reveals: &[(u32
     // Directly set cells as revealed without triggering cascade
     for &(x, y) in reveals {
         let cell = field.get_cell(x, y);
-        solver.state[x as usize][y as usize] = CellState::Revealed(cell.clone());
+        solver.state[x as usize][y as usize] =
+            CellState::with_visibility(*cell, Visibility::Revealed);
     }
 
     solver
@@ -232,7 +233,7 @@ mod component_tests {
 
         let field = create_test_field(pattern);
         let mut solver = Solver::new(&field);
-        let _ = solver.reveal_cell(0, 0, &mut vec![vec![]], 0); // Reveal the safe cell
+        let _ = solver.reveal_cell(0, 0, &mut vec![vec![]]); // Reveal the safe cell
         solver.flag_cell(1, 0); // Flag the mine
 
         let components = find_independent_components(&solver);

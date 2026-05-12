@@ -4,6 +4,7 @@ mod defined_field;
 mod display;
 mod error;
 mod file_io;
+pub mod game_ops;
 mod iterators;
 mod mines;
 mod random_field;
@@ -15,7 +16,7 @@ mod json_io;
 mod svg;
 
 pub use cell::Cell;
-pub use cell_state::{CellState, InvalidTransition};
+pub use cell_state::{CellState, InvalidTransition, Visibility};
 pub use defined_field::DefinedField;
 pub use display::MineSweeperFieldDisplay;
 pub use error::FieldError;

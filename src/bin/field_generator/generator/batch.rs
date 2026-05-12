@@ -15,7 +15,6 @@ pub fn generate_fields(field_data: CommandResult) {
             "Error setting up output directory '{}': {}",
             field_data.output, err
         );
-        return;
     });
 
     let progress = ProgressBar::new(field_data.count as u64);
@@ -56,7 +55,7 @@ fn setup_output_directory(output: &String) -> io::Result<()> {
             output
         );
     } else {
-        fs::create_dir_all(&output).map_err(|e| {
+        fs::create_dir_all(output).map_err(|e| {
             io::Error::new(
                 e.kind(),
                 format!("Failed to create directory '{}': {}", output, e),

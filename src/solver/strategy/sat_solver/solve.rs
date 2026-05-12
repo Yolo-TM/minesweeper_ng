@@ -14,7 +14,7 @@ pub fn solve(solver: &Solver) -> Finding {
     for (i, component) in components.iter().enumerate() {
         trace!("  Component {}: {} fields", i + 1, component.len());
 
-        let constraints = build_constraints(solver, &component);
+        let constraints = build_constraints(solver, component);
 
         trace!(
             "  Component {} has {} constraints",
@@ -23,7 +23,7 @@ pub fn solve(solver: &Solver) -> Finding {
         );
 
         let remaining_mines = solver.get_remaining_mines();
-        let component_finding = solve_component(&component, &constraints, remaining_mines);
+        let component_finding = solve_component(component, &constraints, remaining_mines);
 
         trace!(
             "  Component {} found {} mines, {} safe",

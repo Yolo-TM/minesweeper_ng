@@ -44,10 +44,7 @@ pub fn find_independent_components(solver: &Solver) -> Vec<Vec<(u32, u32)>> {
         for &field1 in &constraint_fields {
             for &field2 in &constraint_fields {
                 if field1 != field2 {
-                    adjacency
-                        .entry(field1)
-                        .or_insert_with(HashSet::new)
-                        .insert(field2);
+                    adjacency.entry(field1).or_default().insert(field2);
                 }
             }
         }

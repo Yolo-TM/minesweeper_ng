@@ -28,7 +28,7 @@ impl Solver {
         for _ in 0..self.width {
             output.push_str("══");
         }
-        output.push_str("╝");
+        output.push('╝');
 
         output
     }

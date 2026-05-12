@@ -1,13 +1,7 @@
 use super::popups::{ConfirmPopup, TextInput};
-use minesweeper_ng_gen::{Cell, DefinedField, MineSweeperField, Mines};
+use minesweeper_ng_gen::game_ops::{self, RevealResult};
+use minesweeper_ng_gen::{Cell, CellState, DefinedField, MineSweeperField, Mines};
 use std::time::{Duration, Instant};
-
-#[derive(Copy, Clone, PartialEq)]
-pub enum PlayerCellState {
-    Hidden,
-    Revealed,
-    Flagged,
-}
 
 pub enum AppScreen {
     Create(CreateState),
@@ -56,7 +50,7 @@ impl App {
 
 pub struct PlayState {
     pub field: DefinedField,
-    pub state: Vec<Vec<PlayerCellState>>,
+    pub state: Vec<Vec<CellState>>,
     pub cursor_x: u32,
     pub cursor_y: u32,
     pub game_over: bool,
@@ -71,10 +65,13 @@ pub struct PlayState {
 
 impl PlayState {
     pub fn new(field: DefinedField) -> Self {
-        let state = vec![
-            vec![PlayerCellState::Hidden; field.get_height() as usize];
-            field.get_width() as usize
-        ];
+        let state = (0..field.get_width())
+            .map(|x| {
+                (0..field.get_height())
+                    .map(|y| CellState::new(*field.get_cell(x, y)))
+                    .collect()
+            })
+            .collect();
         let (start_x, start_y) = field.get_start_cell();
         Self {
             field,
@@ -127,80 +124,34 @@ impl PlayState {
     }
 
     pub fn reveal_cell(&mut self, x: u32, y: u32) {
-        if self.game_over || self.state[x as usize][y as usize] != PlayerCellState::Hidden {
+        if self.game_over {
             return;
         }
 
         self.start_timer();
 
-        let mut stack = vec![(x, y)];
-        while let Some((cx, cy)) = stack.pop() {
-            if self.game_over || self.state[cx as usize][cy as usize] != PlayerCellState::Hidden {
-                continue;
+        let result = game_ops::reveal_cell(
+            &mut self.state,
+            self.field.get_width(),
+            self.field.get_height(),
+            x,
+            y,
+        );
+
+        match result {
+            RevealResult::Mine => {
+                self.game_over = true;
+                self.stop_timer();
+                self.message = Some("GAME OVER! You hit a mine!".into());
             }
-
-            self.state[cx as usize][cy as usize] = PlayerCellState::Revealed;
-            match self.field.get_cell(cx, cy) {
-                Cell::Mine => {
-                    self.game_over = true;
-                    self.stop_timer();
-                    self.message = Some("GAME OVER! You hit a mine!".into());
-                    return;
-                }
-                Cell::Empty => {
-                    for (nx, ny) in self.field.surrounding_fields(cx, cy, None) {
-                        if self.state[nx as usize][ny as usize] == PlayerCellState::Hidden {
-                            stack.push((nx, ny));
-                        }
-                    }
-                }
-                Cell::Number(_) => {}
+            RevealResult::Revealed { .. } => {
+                self.check_win();
             }
-        }
-        self.check_win();
-    }
-
-    pub fn try_chord(&mut self, x: u32, y: u32) {
-        if self.game_over {
-            return;
-        }
-        let required = self.field.get_cell(x, y).get_number();
-
-        let mut flag_count: u8 = 0;
-        let mut hidden_count: u8 = 0;
-        for (nx, ny) in self.field.surrounding_fields(x, y, None) {
-            match self.state[nx as usize][ny as usize] {
-                PlayerCellState::Flagged => flag_count += 1,
-                PlayerCellState::Hidden => hidden_count += 1,
-                PlayerCellState::Revealed => {}
+            RevealResult::Chord { flagged, .. } => {
+                self.flags_placed += flagged.len() as u32;
+                self.check_win();
             }
-        }
-
-        if hidden_count + flag_count == required && hidden_count > 0 {
-            for (nx, ny) in self.field.surrounding_fields(x, y, None) {
-                if self.state[nx as usize][ny as usize] == PlayerCellState::Hidden {
-                    self.state[nx as usize][ny as usize] = PlayerCellState::Flagged;
-                    self.flags_placed += 1;
-                }
-            }
-            return;
-        }
-
-        if flag_count != required {
-            return;
-        }
-
-        let to_reveal: Vec<_> = self
-            .field
-            .surrounding_fields(x, y, None)
-            .filter(|(nx, ny)| self.state[*nx as usize][*ny as usize] == PlayerCellState::Hidden)
-            .collect();
-
-        for (nx, ny) in to_reveal {
-            self.reveal_cell(nx, ny);
-            if self.game_over {
-                break;
-            }
+            RevealResult::AlreadyRevealed | RevealResult::Flagged => {}
         }
     }
 
@@ -208,16 +159,13 @@ impl PlayState {
         if self.game_over {
             return;
         }
-        match self.state[x as usize][y as usize] {
-            PlayerCellState::Hidden => {
-                self.state[x as usize][y as usize] = PlayerCellState::Flagged;
-                self.flags_placed += 1;
-            }
-            PlayerCellState::Flagged => {
-                self.state[x as usize][y as usize] = PlayerCellState::Hidden;
-                self.flags_placed -= 1;
-            }
-            PlayerCellState::Revealed => {}
+        let cs = &self.state[x as usize][y as usize];
+        if cs.is_flagged() {
+            let _ = game_ops::unflag_cell(&mut self.state, x, y);
+            self.flags_placed -= 1;
+        } else if cs.is_hidden() {
+            let _ = game_ops::flag_cell(&mut self.state, x, y);
+            self.flags_placed += 1;
         }
     }
 
@@ -225,7 +173,7 @@ impl PlayState {
         let unrevealed: u32 = self
             .field
             .sorted_fields()
-            .filter(|(x, y)| self.state[*x as usize][*y as usize] != PlayerCellState::Revealed)
+            .filter(|(x, y)| !self.state[*x as usize][*y as usize].is_revealed())
             .count() as u32;
 
         if unrevealed == self.field.get_mines() {
@@ -247,7 +195,13 @@ impl PlayState {
         }
         for x in 0..self.field.get_width() {
             for y in 0..self.field.get_height() {
-                self.state[x as usize][y as usize] = PlayerCellState::Revealed;
+                let cs = &mut self.state[x as usize][y as usize];
+                if cs.is_flagged() {
+                    let _ = cs.unflag();
+                }
+                if cs.is_hidden() {
+                    let _ = cs.reveal();
+                }
             }
         }
     }

@@ -1,7 +1,5 @@
 use super::popups::{ConfirmPopup, TextInput};
-use super::state::{
-    App, AppScreen, ConfirmPurpose, CreateState, InputPurpose, Overlay, PlayState, PlayerCellState,
-};
+use super::state::{App, AppScreen, ConfirmPurpose, CreateState, InputPurpose, Overlay, PlayState};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use minesweeper_ng_gen::{MineSweeperField, MineSweeperFieldFileIO};
 use ratatui::layout::Rect;
@@ -98,35 +96,34 @@ fn handle_overlay_key(app: &mut App, code: KeyCode) {
 fn handle_input_submit(app: &mut App, purpose: InputPurpose, value: String) {
     match purpose {
         InputPurpose::SetWidth => {
-            if let Ok(w) = value.parse::<u32>() {
-                if w >= 3 {
-                    if let AppScreen::Create(state) = &mut app.screen {
-                        let old_h = state.field.get_height();
-                        state.resize(w, old_h);
-                    }
-                    app.overlay = Overlay::TextInput(
-                        TextInput::new("Resize", "New height: "),
-                        InputPurpose::SetHeight,
-                    );
+            if let Ok(w) = value.parse::<u32>()
+                && w >= 3
+            {
+                if let AppScreen::Create(state) = &mut app.screen {
+                    let old_h = state.field.get_height();
+                    state.resize(w, old_h);
                 }
+                app.overlay = Overlay::TextInput(
+                    TextInput::new("Resize", "New height: "),
+                    InputPurpose::SetHeight,
+                );
             }
         }
         InputPurpose::SetHeight => {
-            if let Ok(h) = value.parse::<u32>() {
-                if h >= 3 {
-                    if let AppScreen::Create(state) = &mut app.screen {
-                        let cur_w = state.field.get_width();
-                        state.resize(cur_w, h);
-                    }
-                }
+            if let Ok(h) = value.parse::<u32>()
+                && h >= 3
+                && let AppScreen::Create(state) = &mut app.screen
+            {
+                let cur_w = state.field.get_width();
+                state.resize(cur_w, h);
             }
         }
         InputPurpose::SaveFilename => {
-            if !value.is_empty() {
-                if let AppScreen::Create(state) = &app.screen {
-                    let filepath = format!("{}.minesweeper", value);
-                    let _ = state.field.to_file(&filepath);
-                }
+            if !value.is_empty()
+                && let AppScreen::Create(state) = &app.screen
+            {
+                let filepath = format!("{}.minesweeper", value);
+                let _ = state.field.to_file(&filepath);
             }
             app.quit = true;
         }
@@ -160,12 +157,7 @@ pub fn handle_play_key(state: &mut PlayState, code: KeyCode) -> AppAction {
         KeyCode::Left => state.move_cursor(-1, 0),
         KeyCode::Right => state.move_cursor(1, 0),
         KeyCode::Char(' ') if !state.game_over => {
-            let cs = state.state[state.cursor_x as usize][state.cursor_y as usize];
-            if cs == PlayerCellState::Revealed {
-                state.try_chord(state.cursor_x, state.cursor_y);
-            } else {
-                state.reveal_cell(state.cursor_x, state.cursor_y);
-            }
+            state.reveal_cell(state.cursor_x, state.cursor_y);
         }
         KeyCode::Char('f' | 'F') => state.toggle_flag(state.cursor_x, state.cursor_y),
         KeyCode::Char('r' | 'R') => state.reveal_all(),
