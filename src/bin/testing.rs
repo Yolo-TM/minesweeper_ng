@@ -31,7 +31,7 @@ fn main() {
 
     //debug!("Time elapsed: {:?} - Solved: {:?}", start.elapsed(), solved);
 
-    let field = match NoGuessField::new(20, 20, Mines::Density(0.4)) {
+    let field = match NoGuessField::new(10, 10, Mines::Density(0.15)) {
         Ok(field) => {
             info!("Created Field in {:?} ", start.elapsed());
             field

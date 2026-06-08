@@ -4,7 +4,7 @@ mod solver;
 
 pub use minesweeper_field::{
     Cell, CellState, DefinedField, FieldError, InvalidTransition, MineSweeperField,
-    MineSweeperFieldDisplay, MineSweeperFieldFileIO, Mines, RandomField, SortedCells,
+    MineSweeperFieldDisplay, MineSweeperFieldFileIO, MineSweeperFieldMetrics, Mines, RandomField, SortedCells,
     SurroundingCells, Visibility, game_ops,
 };
 pub use noguess_field::NoGuessField;

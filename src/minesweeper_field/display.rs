@@ -1,9 +1,9 @@
-use super::MineSweeperField;
+use super::{MineSweeperField, MineSweeperFieldMetrics};
 
-pub trait MineSweeperFieldDisplay: MineSweeperField {
+pub trait MineSweeperFieldDisplay: MineSweeperField + MineSweeperFieldMetrics {
     fn show(&self) {
         let (w, h, m) = self.get_dimensions();
-        println!("Width: {}, Height: {}, Mines: {}", w, h, m);
+        println!("Width: {}, Height: {}, Mines: {}, 3BV: {}", w, h, m, self.get_3bv());
         println!("Start field: {:?}", self.get_start_cell());
 
         print!("╔═");
